@@ -20,6 +20,7 @@ import { newCodeRecord, verifyCode, normalizeEmail, isValidEmail } from "./auth.
 import { QUEST, newProgress, advance, collectSeal } from "./quests.mjs";
 import { validateProduct, validateAgentConfig, validateAppearance } from "./merchants.mjs";
 import { checkCap, monthKey } from "./usage.mjs";
+import { APPS, findApp, validateConfig, healthFor, publicApp, AppError } from "./apps.mjs";
 import { newState, say, confirmAndRun } from "./conversation.mjs";
 import {
   createCampaign, requestPayment, markPaid, activate, tick, pause, resume, cancel,
@@ -208,6 +209,28 @@ const routes = {
     if (!db.store) return { error: "requires_database" };
     await db.store.approveKnowledge(params.id);
     return { approved: true };
+  },
+
+  "GET /apps": () => ({ apps: APPS.map(publicApp) }),
+
+  "GET /merchants/:merchantId/apps": async (_b, params) => {
+    if (!db.store) return { apps: APPS.map((a) => ({ ...publicApp(a), connected: false, health: "not_connected" })) };
+    return { apps: await db.store.listMerchantApps(params.merchantId) };
+  },
+
+  "POST /merchants/:merchantId/apps/:appId/connect": async (body, params) => {
+    const app = findApp(params.appId);
+    if (!app) return { error: "unknown_app" };
+    const config = validateConfig(app, body.config ?? {});
+    await db.store?.ensureMerchant(params.merchantId, body.ownerId ?? "demo_user");
+    await db.store?.connectApp(params.merchantId, app.id, config);
+    return { app: app.id, connected: true, health: healthFor(app), config };
+  },
+
+  "DELETE /merchants/:merchantId/apps/:appId/connect": async (_b, params) => {
+    if (!findApp(params.appId)) return { error: "unknown_app" };
+    await db.store?.disconnectApp(params.merchantId, params.appId);
+    return { app: params.appId, connected: false, health: "not_connected" };
   },
 
   "GET /quests/lost-seals": () => ({ quest: QUEST }),

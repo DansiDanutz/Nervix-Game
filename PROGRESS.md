@@ -36,6 +36,9 @@ Unblocked application work is complete and verified (below).
   - Sequential steps, unique seals, no purchase required; progress persists per user.
   - Live: skip → `out_of_order`; step1-3 → advance; seal before step → `seal_locked`; collect → 1 seal; replay → `already_collected`; **step 3 + seal survive restart**.
   - Client: HUD seal counter, **E** collects a nearby seal marker.
+- App integration catalog: `apps.mjs`, store connect/list/disconnect, seed 3 apps.
+  - Config validated per app; demo connectors always report `demo`; credentials never returned.
+  - Live: missing field → `AppError`; connect → `health demo`; only `booking` connected for mer_1; **mer_2 sees none** (tenant isolation); disconnect works.
 - Agent knowledge + metering: `usage.mjs`, knowledge routes, migration `009_usage` (+ `monthly_request_cap`).
   - Unapproved knowledge is never used; approved content grounds the answer; cap blocks further inference (`cap_reached`); usage recorded per month.
   - Live: unapproved → "I don't have that information"; approved → "The rooftop is open on Fridays at 19:00."; cap 1 → `cap_reached`; usage row `2026-11 2`.

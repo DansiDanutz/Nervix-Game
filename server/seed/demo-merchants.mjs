@@ -28,6 +28,12 @@ sql.push(`INSERT INTO districts (id, name, slot_count) VALUES
   ('entertainment-district', 'Entertainment District', 2)
 ON CONFLICT (id) DO NOTHING;`);
 
+sql.push(`INSERT INTO apps (id, name, category, integration, auth_required, config_schema) VALUES
+  ('booking', 'Booking Desk', 'appointments', 'server-api', true, '{"configFields":["calendar"]}'::jsonb),
+  ('loyalty', 'Loyalty Card', 'retention', 'server-api', true, '{"configFields":["programme"]}'::jsonb),
+  ('arcade', 'Arcade Table', 'entertainment', 'embedded', false, '{"configFields":[]}'::jsonb)
+ON CONFLICT (id) DO NOTHING;`);
+
 sql.push(`INSERT INTO quests (id, title, steps) VALUES ('lost-seals', 'The Lost Seals of the City',
   '[{"id":"find-fountain"},{"id":"meet-guide"},{"id":"seal-court"},{"id":"seal-cafe"},{"id":"seal-venue"}]'::jsonb)
 ON CONFLICT (id) DO NOTHING;`);

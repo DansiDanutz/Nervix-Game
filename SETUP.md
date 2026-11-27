@@ -43,7 +43,7 @@ Demo endpoints: `POST /session`, `POST /auth/signup`, `POST /auth/login`, `POST 
 `POST /agent/:propertyId/message`, `POST /agent/:propertyId/confirm`,
 `POST /campaigns`, `POST /campaigns/:id/{request-payment,pay,tick,pause,resume,cancel}`,
 `GET /placements/:id/servable`, `GET /quests/lost-seals`, `GET /progress?userId=…`, `POST /progress`,
-`GET/POST /merchants/:id/knowledge`, `POST /merchants/:id/knowledge/:kid/approve`, `GET /orders?buyerId=…`, `GET/POST /merchants/:id/products`, `PATCH /merchants/:id/agent`, `PATCH /merchants/:id/appearance`.
+`GET /apps`, `GET /merchants/:id/apps`, `POST/DELETE /merchants/:id/apps/:appId/connect`, `GET/POST /merchants/:id/knowledge`, `POST /merchants/:id/knowledge/:kid/approve`, `GET /orders?buyerId=…`, `GET/POST /merchants/:id/products`, `PATCH /merchants/:id/agent`, `PATCH /merchants/:id/appearance`.
 
 ## Database
 
