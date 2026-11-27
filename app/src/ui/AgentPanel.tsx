@@ -32,6 +32,22 @@ export function AgentPanel({ propertyId, agentName }: { propertyId: string; agen
     }
   }
 
+  async function speak(text: string) {
+    try {
+      const res = await api.speak(propertyId, text);
+      if (res.audioUrl) {
+        void new Audio(res.audioUrl).play();
+        return;
+      }
+    } catch {
+      /* fall through to the browser voice */
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
   async function confirm() {
     if (!pending) return;
     setBusy(true);
@@ -58,6 +74,11 @@ export function AgentPanel({ propertyId, agentName }: { propertyId: string; agen
         {turns.map((turn, i) => (
           <p key={i} className={turn.role === "player" ? "turn turn--player" : "turn"}>
             {turn.text}
+            {turn.role === "agent" && (
+              <button type="button" className="turn__speak" onClick={() => void speak(turn.text)} aria-label="Read aloud">
+                Read aloud
+              </button>
+            )}
           </p>
         ))}
         {busy && <p className="panel__hint">…</p>}

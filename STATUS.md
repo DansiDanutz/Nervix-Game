@@ -15,6 +15,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Admin UI | working | role-aware panel, suspend/reinstate, audit trail |
 | Admin + moderation | working | `/admin/*` role-gated, actions audited, suspension persisted |
 | App catalog | working (demo connectors) | `apps.mjs`; per-merchant connect, health `demo`, tenant isolated |
+| Voice | working (fallback) | `/speak` + browser speech; server provider optional (`SPEECH_*`) |
 | Agent knowledge + caps | working | approved-only grounding, per-month request cap, usage recorded |
 | Merchant onboarding | working | products, agent config, appearance; validated and persisted |
 | Account UI | working | `AuthPanel.tsx` email → code → verified session |

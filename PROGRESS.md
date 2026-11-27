@@ -51,6 +51,8 @@ Omit secrets. Record evidence, not intentions.
 - Admin + moderation: migration `010_moderation`, store admin/audit, `/admin/*` routes.
   - Role checked server-side; every admin action writes `audit_events`.
   - Live: non-admin → `forbidden`; admin lists 4 merchants; suspend mer_1 → `suspended true`; audit shows `('merchant.suspend','mer_1')`.
+- Milestone 2 (unblocked parts): agent grounds on the merchant's **real Postgres catalog** (product name/price/fulfilment) with the static list only as fallback; replaceable speech provider + `/agent/:id/speak` with browser text-to-speech fallback; `ACCEPTANCE.md` maps all 17 criteria.
+  - Live: cheesecake 600 EUR answered from DB; unknown product → support offer; no provider → `available:false` and client falls back; `pnpm build` green.
 - App integration catalog: `apps.mjs`, store connect/list/disconnect, seed 3 apps.
   - Config validated per app; demo connectors always report `demo`; credentials never returned.
   - Live: missing field → `AppError`; connect → `health demo`; only `booking` connected for mer_1; **mer_2 sees none** (tenant isolation); disconnect works.

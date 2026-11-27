@@ -12,7 +12,7 @@ import { createOrder, applyPaymentEvent, fulfil, refund, ORDER_STATES } from "./
 import { provisionProperty } from "./provision.mjs";
 import { createCheckout, verifyWebhook, DEMO_MODE } from "./nervixpay.demo.mjs";
 import { buildContext, TOOLS } from "./agent.mjs";
-import { createProvider } from "./provider.mjs";
+import { createProvider, createSpeechProvider } from "./provider.mjs";
 import { PostgresStore } from "./store.mjs";
 import { attachPresence } from "./presence.mjs";
 import { createHash } from "node:crypto";
@@ -54,6 +54,7 @@ const db = {
   campaigns: [],
   conversations: new Map(),
   provider: createProvider(),
+  speech: createSpeechProvider(),
   store: process.env.DATABASE_URL ? new PostgresStore(process.env.DATABASE_URL) : null,
   catalog: [
     { sku: "coffee", name: "Coffee", unitAmountMinor: 450, currency: "EUR", fulfillment: "pickup", active: true, merchantId: "mer_1" },
@@ -267,6 +268,17 @@ const routes = {
     return { placements: await db.store.listPlacements() };
   },
 
+  "POST /agent/:propertyId/speak": async (body, params) => {
+    if (!db.properties.some((p) => p.id === params.propertyId)) return { error: "unknown_property" };
+    const text = String(body.text ?? "").slice(0, 600);
+    if (!text || !db.speech.available) return { available: false, audioUrl: null };
+    try {
+      return { available: true, audioUrl: await db.speech.speak(text) };
+    } catch (error) {
+      return { available: true, audioUrl: null, error: error.message };
+    }
+  },
+
   "GET /quests/lost-seals": () => ({ quest: QUEST }),
 
   "GET /progress": async (_b, params) => {
@@ -356,11 +368,12 @@ const routes = {
     const budget = checkCap({ cap, used: usage.requests ?? 0 });
     if (!budget.allowed) return { error: "cap_reached", remaining: 0 };
 
+    const catalog = db.store ? await db.store.listProducts(merchantId) : db.catalog;
     const ctx = {
       config,
       knowledge,
-      catalog: db.catalog,
-      context: buildContext({ config, knowledge, catalog: db.catalog }),
+      catalog,
+      context: buildContext({ config, knowledge, catalog }),
       orders: db.orders,
       state,
       userId: body.userId ?? "demo_user",
@@ -378,11 +391,12 @@ const routes = {
     if (!state && db.store) state = await db.store.getConversation(params.propertyId);
     if (!state) state = newState();
     db.conversations.set(params.propertyId, state);
+    const catalog = db.store ? await db.store.listProducts(body.merchantId ?? "mer_1") : db.catalog;
     const ctx = {
       config: db.agent.config,
       knowledge: db.agent.knowledge,
-      catalog: db.catalog,
-      context: buildContext({ config: db.agent.config, knowledge: db.agent.knowledge, catalog: db.catalog }),
+      catalog,
+      context: buildContext({ config: db.agent.config, knowledge: db.agent.knowledge, catalog }),
       orders: db.orders,
       state,
       userId: body.userId ?? "demo_user",

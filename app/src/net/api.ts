@@ -150,6 +150,8 @@ export const api = {
     call<{ config: Record<string, unknown> }>(`/merchants/${merchantId}/agent`, { propertyId, ...config }),
   updateAppearance: (merchantId: string, propertyId: string, appearance: Record<string, string>) =>
     call<{ appearance: Record<string, string> }>(`/merchants/${merchantId}/appearance`, { propertyId, ...appearance }),
+  speak: (propertyId: string, text: string) =>
+    call<{ available: boolean; audioUrl: string | null }>(`/agent/${propertyId}/speak`, { text }),
   confirm: (propertyId: string, action: AgentAction) =>
     call<{ result: unknown }>(`/agent/${propertyId}/confirm`, { action }),
 };

@@ -48,7 +48,22 @@ export const localProvider = {
         best = entry;
       }
     }
-    return bestScore >= 0.34 ? best.text : null;
+    if (bestScore >= 0.34) return best.text;
+
+    // Fall back to the merchant's own catalog, priced from the database.
+    const product = (context.catalog ?? []).find((p) => {
+      const have = tokens(`${p.name} ${p.sku}`);
+      for (const t of wanted) {
+        if (have.has(t)) return true;
+        for (const h of have) if (h.startsWith(t) || t.startsWith(h)) return true;
+      }
+      return false;
+    });
+    if (product) {
+      const price = `${product.unitAmountMinor} ${product.currency}`;
+      return `${product.name} is ${price}, ${product.fulfillment}.`;
+    }
+    return null;
   },
 };
 
@@ -81,4 +96,29 @@ export function createProvider(env = process.env) {
     return remoteProvider({ baseUrl: env.AGENT_MODEL_BASE_URL, apiKey: env.AGENT_MODEL_KEY, model: env.AGENT_MODEL_MODEL });
   }
   return localProvider;
+}
+/**
+ * Replaceable speech provider. Returns null when no provider is configured, so
+ * the client falls back to text (and to the browser's own speech synthesis).
+ */
+export function createSpeechProvider(env = process.env) {
+  if (!env.SPEECH_BASE_URL || !env.SPEECH_KEY) {
+    return { name: "none", available: false, async speak() { return null; } };
+  }
+  const base = env.SPEECH_BASE_URL.replace(/\/$/, "");
+  const key = env.SPEECH_KEY;
+  return {
+    name: "remote",
+    available: true,
+    async speak(text) {
+      const res = await fetch(`${base}/audio/speech`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model: env.SPEECH_MODEL ?? "tts-1", voice: env.SPEECH_VOICE ?? "alloy", input: text }),
+      });
+      if (!res.ok) throw new Error(`speech ${res.status}`);
+      const buf = Buffer.from(await res.arrayBuffer());
+      return `data:audio/mpeg;base64,${buf.toString("base64")}`;
+    },
+  };
 }
