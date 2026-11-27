@@ -13,6 +13,7 @@ import { provisionProperty } from "./provision.mjs";
 import { createCheckout, verifyWebhook, DEMO_MODE } from "./nervixpay.demo.mjs";
 import { buildContext, TOOLS } from "./agent.mjs";
 import { createProvider } from "./provider.mjs";
+import { PostgresStore } from "./store.mjs";
 import { newState, say, confirmAndRun } from "./conversation.mjs";
 import {
   createCampaign, requestPayment, markPaid, activate, tick, pause, resume, cancel,
@@ -34,6 +35,7 @@ const db = {
   campaigns: [],
   conversations: new Map(),
   provider: createProvider(),
+  store: process.env.DATABASE_URL ? new PostgresStore(process.env.DATABASE_URL) : null,
   catalog: [
     { sku: "coffee", name: "Coffee", unitAmountMinor: 450, currency: "EUR", fulfillment: "pickup", active: true, merchantId: "mer_1" },
     { sku: "pastry", name: "Pastry", unitAmountMinor: 300, currency: "EUR", fulfillment: "pickup", active: true, merchantId: "mer_1" },
@@ -62,22 +64,36 @@ async function readJson(req) {
 const routes = {
   "GET /health": () => ({ ok: true, demo: DEMO_MODE, uptime: process.uptime() }),
 
-  "POST /session": async (body) => ({
-    userId: body.userId ?? `demo_${Math.random().toString(36).slice(2, 10)}`,
-    displayName: body.displayName ?? "Traveler",
-    role: "player",
-    demo: true,
-  }),
+  "POST /session": async (body) => {
+    const session = {
+      userId: body.userId ?? `demo_${Math.random().toString(36).slice(2, 10)}`,
+      displayName: body.displayName ?? "Traveler",
+      role: "player",
+      demo: true,
+    };
+    await db.store?.ensureUser(session.userId, session.displayName);
+    return session;
+  },
 
   "POST /merchants/provision": async (body) => {
     const result = provisionProperty({ userId: body.userId, businessType: body.businessType ?? "merchant", slots, existing: db.properties });
-    if (result.created) db.properties.push(result.property);
+    if (result.created) {
+      db.properties.push(result.property);
+      await db.store?.saveProperty(result.property);
+    }
     return result;
+  },
+
+  "GET /orders/:id": async (_b, p) => {
+    const order = db.store ? await db.store.getOrder(p.id) : db.orders.get(p.id);
+    return order ? { order } : { error: "not_found" };
   },
 
   "GET /catalog": () => ({ items: db.catalog.filter((p) => p.active) }),
 
   "POST /orders": async (body) => {
+    await db.store?.ensureUser(body.buyerId);
+    await db.store?.ensureMerchant(body.merchantId ?? "mer_1", body.buyerId);
     const order = createOrder({
       id: `ord_${db.orders.size + 1}`,
       buyerId: body.buyerId,
@@ -88,6 +104,7 @@ const routes = {
       terms: body.terms ?? "demo",
     });
     db.orders.set(order.id, order);
+    await db.store?.saveOrder(order);
     return { order, checkout: createCheckout(order) };
   },
 
@@ -97,6 +114,7 @@ const routes = {
     const event = verifyWebhook(body);
     const next = applyPaymentEvent(order, event);
     db.orders.set(next.id, next);
+    await db.store?.saveOrder(next);
     return { order: next };
   },
 
@@ -105,6 +123,7 @@ const routes = {
     if (!order) return { error: "not_found" };
     const next = fulfil(order);
     db.orders.set(next.id, next);
+    await db.store?.saveOrder(next);
     return { order: next };
   },
 

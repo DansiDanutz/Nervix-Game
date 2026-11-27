@@ -8,8 +8,9 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Backend order/payment state machine | working (demo) | `node --test test/` → 14/14 pass |
 | Idempotent property provisioning | working (demo) | same test run |
 | Demo NervixPay adapter | demo | `server/src/nervixpay.demo.mjs`, `DEMO_MODE = true` |
-| Database schema | authored, unapplied | `server/db/migrations/001_init.sql` (no Postgres reachable) |
-| Seed demo merchants | authored, unapplied | `server/seed/demo-merchants.mjs` emits SQL |
+| Database schema | applied | `nervix_world` on PG 16.15; migrations 001–004 green |
+| Seed demo merchants | applied | 3 users / 3 merchants / 3 properties / 3 agents |
+| Persistence | working | `store.mjs`; order survives process restart |
 | Browser runtime | builds | `pnpm build` → tsc + Vite, 593 modules |
 | 3D world | **blockout only** | no `.blend`, no GLB; `CityScene` falls back to primitives |
 | Blender pipeline | **blocked** | Blender not installed |
@@ -24,9 +25,8 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 ## Blocked by an external dependency
 
 1. **Blender 4.x** — blocks every visual deliverable and Milestone 0.
-2. **Four concept images** — blocks visual verification against the intended direction.
-3. **NervixPay live docs/credentials** — blocks real payments; demo adapter covers the journey meanwhile.
-4. **Postgres instance** — blocks applying the schema and seed.
+2. **Four concept images** — present but not visually inspected (no image input).
+3. **NervixPay live docs/credentials** — blocks real payments; demo adapter covers the journey.
 
 ## Measured
 

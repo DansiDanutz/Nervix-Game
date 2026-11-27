@@ -14,7 +14,7 @@ Omit secrets. Record evidence, not intentions.
 | pnpm | 10.32.1 | `pnpm --version` (needs `--store-dir` inside the workspace; the global store is outside the sandbox) |
 | Blender | **missing** | `command -v blender` → guard shim; `/opt/homebrew/bin/blender` does not exist; no `Blender.app` |
 | Reference images (4) | **present** | `docs/references/` — 4 PNG, 1672×941, SHA-256 recorded; mapped to ref1–ref4 |
-| Postgres | not reachable | schema authored, unapplied |
+| Postgres | **16.15 at /tmp:5432** | `nervix_world` created; migrations 001–004 applied; seed 3/3/3/3 |
 | NervixPay | demo only | no documented endpoints or credentials |
 
 ## Current milestone
@@ -36,8 +36,10 @@ Unblocked application work is complete and verified (below).
   - `cd server && node --test test/` → **41 tests, 41 pass, 0 fail**.
   - API smoke test (curl, port 8787/8788): provision→created, retry→`created:false`; order total 750 EUR; `payment_created`→pending_payment; `payment_succeeded`→paid; replay→paid (no double fulfil); fulfil→fulfilled; unauthorized `open_app` denied; campaign awaiting_payment→scheduled→active→servable `True cmp_now`; unpaid placement `servable False`.
 - Demo NervixPay adapter: `server/src/nervixpay.demo.mjs` (`DEMO_MODE = true`, labelled simulated).
-- Schema: `server/db/migrations/001_init.sql` (users, merchants, properties, agents, products, orders, payments, payment_events, entitlements, campaigns, quests, progress, audit).
-- Seed: `server/seed/demo-merchants.mjs` (emits idempotent SQL; no DB to apply it to).
+- Schema: `server/db/migrations/001_init.sql` plus `002_text_ids`, `003_users_text`, `004_merchants_text` (stable text ids), all **applied** to `nervix_world`.
+- Persistence: `server/src/store.mjs` (pg). With `DATABASE_URL` set, orders/properties/users/merchants persist.
+  - Verified: create → `payment_created` → `payment_succeeded` → DB row `ord_1 paid 900`; **read back after restart** with items.
+- Seed: `server/seed/demo-merchants.mjs` → 3 users, 3 merchants, 3 properties, 3 agents (apostrophe-safe, idempotent).
 - Browser runtime: `app/` React 19 + TypeScript + Three.js + R3F.
   - `cd app && pnpm build` → `tsc --noEmit` clean, Vite build **593 modules**, 1173 kB / 327 kB gzip.
   - Third-person controller, camera follow, collision bounds, proximity interaction, HUD, quest shell.
@@ -60,7 +62,7 @@ Unblocked application work is complete and verified (below).
 4. Apply the schema to Postgres and seed demo merchants.
 5. Point `AGENT_MODEL_BASE_URL` / `AGENT_MODEL_KEY` at a provider to replace the offline `localProvider`; add voice when configured.
 6. Measure frame time on the desktop and mobile profiles; code-split the three.js bundle.
-7. Apply the schema to Postgres and replace the in-memory demo store.
+7. Replace the in-memory conversation/campaign state with the Postgres store.
 
 ## Conventions
 

@@ -37,9 +37,30 @@ Demo endpoints: `POST /session`, `POST /merchants/provision`, `GET /catalog`,
 
 ## Database
 
+Verified on PostgreSQL 16.15 (Homebrew) at `/tmp:5432`, database `nervix_world`.
+
 ```sh
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f server/db/migrations/001_init.sql
+createdb -h /tmp nervix_world
+psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/001_init.sql
+psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/002_text_ids.sql
+psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/003_users_text.sql
+psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/004_merchants_text.sql
+node server/seed/demo-merchants.mjs | psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1
 ```
+
+Migrations 002–004 convert `orders.id`, `properties.id`, `users.id` and `merchants.id` to `text`
+so the application's stable ids (`ord_1`, `prop_<hash>`, `mer_1`) persist verbatim.
+
+## Persistence
+
+Set `DATABASE_URL` to switch the API from the in-memory store to Postgres:
+
+```sh
+DATABASE_URL="postgresql:///nervix_world?host=/tmp" PORT=8787 node server/src/index.mjs
+```
+
+Verified: order created → `payment_created` → `payment_succeeded` lands as `paid` in the
+`orders` table, and `GET /orders/:id` returns it with items **after a process restart**.
 
 ## Environment variables
 
