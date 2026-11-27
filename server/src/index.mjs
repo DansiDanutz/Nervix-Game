@@ -7,6 +7,7 @@
  *   PORT=8787 node src/index.mjs
  */
 
+import { linkRegistry, registeredCheckout } from "./link-registry.mjs";
 import http from "node:http";
 import { createOrder, applyPaymentEvent, fulfil, refund, ORDER_STATES, EVENTS } from "./ledger.mjs";
 import { provisionProperty } from "./provision.mjs";
@@ -30,6 +31,7 @@ import {
 } from "./campaigns.mjs";
 
 const PORT = Number(process.env.PORT ?? 8787);
+const registry = linkRegistry(process.env.WORLD_REGISTRY_URL);
 let orderSeq = 0;
 
 const slots = [
@@ -369,7 +371,10 @@ const routes = {
     });
     db.orders.set(order.id, order);
     await db.store?.saveOrder(order);
-    return { order, checkout: db.payments ? await db.payments.createCheckout(order) : demoCheckout(order) };
+    if (!db.payments) return { order, checkout: demoCheckout(order) };
+    const result = await registeredCheckout(order, db.payments, registry);
+    db.orders.set(order.id, result.order);
+    return result;
   },
 
   "POST /orders/:id/events": async (body, params) => {

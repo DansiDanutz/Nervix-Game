@@ -122,3 +122,4 @@ Omit secrets. Record evidence, not intentions.
 - Automation touches only `NERVIX_MANAGED`; hand-edited content is never deleted.
 - Money is integer minor units; authoritative order state is server-side.
 - No secrets or customer records in `.blend` files, exports or git.
+- Live checkout now persists the provider link ID against the game order before returning its URL; see SETUP.md.
