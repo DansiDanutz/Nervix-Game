@@ -1,15 +1,14 @@
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { CityScene, type Marker } from "./scene/CityScene";
-import { PlayerController } from "./player/PlayerController";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import type { Marker } from "./scene/CityScene";
 import { Hud } from "./ui/Hud";
 import { AgentPanel } from "./ui/AgentPanel";
 import { AuthPanel } from "./ui/AuthPanel";
 import { MerchantPanel } from "./ui/MerchantPanel";
 import { CheckoutPanel } from "./ui/CheckoutPanel";
 import { AdsPanel } from "./ui/AdsPanel";
-import { RemotePlayers } from "./scene/RemotePlayers";
 import { usePresence } from "./net/presence";
+
+const SceneView = lazy(() => import("./scene/SceneView"));
 import { api, type Session, type QuestProgress } from "./net/api";
 import { loadSession } from "./net/session";
 
@@ -20,6 +19,8 @@ export function App() {
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [nearby, setNearby] = useState<Marker | null>(null);
   const [quest, setQuest] = useState<QuestProgress | null>(null);
+  const [fps, setFps] = useState(0);
+  const [entered, setEntered] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showMerchant, setShowMerchant] = useState(false);
   const [showOrders, setShowOrders] = useState(false);
@@ -64,30 +65,29 @@ export function App() {
 
   return (
     <div className="app">
-      <Canvas shadows camera={{ position: [0, 4, 12], fov: 55, near: 0.1, far: 200 }}>
-        <color attach="background" args={["#bfe0ea"]} />
-        <fog attach="fog" args={["#bfe0ea", 30, 90]} />
-        <hemisphereLight intensity={0.55} groundColor="#c9b18a" />
-        <directionalLight
-          position={[12, 18, 8]}
-          intensity={1.5}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
+      {!entered && (
+        <button type="button" className="app__enter" onClick={() => setEntered(true)}>
+          Enter the city
+        </button>
+      )}
+      {entered && <Suspense fallback={null}>
+        <SceneView
+          markers={markers}
+          onMarkers={onMarkers}
+          onNearby={setNearby}
+          onMove={sendMove}
+          onFps={setFps}
+          players={players}
+          selfId={session?.userId ?? ""}
         />
-        <Suspense fallback={null}>
-          <CityScene onMarkers={onMarkers} />
-        </Suspense>
-        <PlayerController markers={markers} onNearby={setNearby} onMove={sendMove} />
-        <RemotePlayers players={players} selfId={session?.userId ?? ""} />
-      </Canvas>
+      </Suspense>}
 
       <Hud session={session ?? { userId: "", displayName: "", role: "player", demo: true }} nearby={nearby} seals={quest?.seals.length ?? 0} />
 
       <div className="app__side">
         <div className="app__status" role="status">
           {status === "connected" ? "demo API connected" : status === "connecting" ? "connecting…" : "API offline — blockout only"}
-          {" · presence "}
+          {" · fps "}{fps || "—"}{" · presence "}
           {presence === "live" ? `live (${players.length})` : presence}
         </div>
         {showAuth && (

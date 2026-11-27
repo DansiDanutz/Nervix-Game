@@ -39,4 +39,5 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 
 ## Measured
 
-- App bundle: 1,178 kB minified / 328 kB gzip (three.js dominates). Code-splitting is an open performance task against the 60 FPS desktop / 30 FPS mobile targets, which are **not yet measured**.
+- App shell: 17.15 kB minified / 5.63 kB gzip; three.js 1168 kB is a lazy chunk loaded on **Enter the city** (was a single 1188 kB chunk).
+- FPS is shown live in the status pill but **not yet measured against the 60/30 profiles** — that needs the Blender district.
