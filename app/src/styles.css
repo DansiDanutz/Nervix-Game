@@ -336,3 +336,24 @@ body,
 .panel__grid button {
   grid-column: span 2;
 }
+
+.panel__order {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 6px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee4d2;
+}
+
+.panel__order em {
+  font-style: normal;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.panel__order button {
+  grid-column: span 2;
+  padding: 6px 8px;
+  font-size: 11px;
+}

@@ -19,6 +19,8 @@ The app boots into an explicit **blockout** (ground, fountain, two placeholder b
 
 The client talks to the demo API at `http://localhost:8787` (override with `VITE_API_URL`). Start the API first; the HUD shows "demo API connected" or "API offline — blockout only". The side panel holds the account card (email → 6-digit code → verified) and the merchant's AI employee: ask a question, and a confirming action (checkout, support) requires an explicit **Confirm**.
 
+Checkout: the Orders panel lists the player's orders and offers **Pay (demo)** then **Fulfil**; outcomes are simulated and a redirect is never treated as proof of payment.
+
 The Lost Seals quest: progress is sequential and persisted per user; walk up to a seal marker and press **E** to collect it. Three seals complete the quest — no purchase required.
 
 Multiplayer presence uses `ws://localhost:8787/presence` (override with `VITE_WS_URL`). Other players in the district appear as capsules; the status pill shows `presence live (n)`. Presence carries public position only — merchant conversations are never broadcast.
@@ -41,7 +43,7 @@ Demo endpoints: `POST /session`, `POST /auth/signup`, `POST /auth/login`, `POST 
 `POST /agent/:propertyId/message`, `POST /agent/:propertyId/confirm`,
 `POST /campaigns`, `POST /campaigns/:id/{request-payment,pay,tick,pause,resume,cancel}`,
 `GET /placements/:id/servable`, `GET /quests/lost-seals`, `GET /progress?userId=…`, `POST /progress`,
-`GET/POST /merchants/:id/products`, `PATCH /merchants/:id/agent`, `PATCH /merchants/:id/appearance`.
+`GET /orders?buyerId=…`, `GET/POST /merchants/:id/products`, `PATCH /merchants/:id/agent`, `PATCH /merchants/:id/appearance`.
 
 ## Database
 

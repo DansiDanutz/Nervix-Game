@@ -36,6 +36,9 @@ Unblocked application work is complete and verified (below).
   - Sequential steps, unique seals, no purchase required; progress persists per user.
   - Live: skip → `out_of_order`; step1-3 → advance; seal before step → `seal_locked`; collect → 1 seal; replay → `already_collected`; **step 3 + seal survive restart**.
   - Client: HUD seal counter, **E** collects a nearby seal marker.
+- Checkout + order history: `CheckoutPanel.tsx`, `GET /orders?buyerId=`, demo pay/fulfil.
+  - Fixed id generation (`ord_1` collided with persisted rows) → unique `ord_<time>_<seq>`.
+  - Live: order 750 EUR → paid → fulfilled; list empty before, `[(ord_…, fulfilled)]` **after restart**.
 - Merchant onboarding: `server/src/merchants.mjs` (validators) + product/agent/appearance routes; migration `008_property_palette`; `MerchantPanel.tsx` in the client.
   - Prices are integer minor units; templates, tones, languages and tools are whitelisted; agent config upserts.
   - Live: float money → `MerchantError`; unknown tool → `MerchantError`; appearance `cafe_shop/#123456` persisted; agent `Sana/warm/en+ro` persisted; `pnpm build` green.

@@ -71,7 +71,7 @@ export function runTool(tool, args, ctx) {
       const cart = args.cart;
       if (!cart?.lines?.length) throw new ToolError("cart is required");
       const order = createOrder({
-        id: `ord_${ctx.orders.size + 1}`,
+        id: `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
         buyerId: ctx.userId,
         merchantId: ctx.merchantId,
         items: cart.lines,

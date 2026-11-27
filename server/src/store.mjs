@@ -261,6 +261,18 @@ export class PostgresStore {
     return rows[0] ?? null;
   }
 
+  async listOrders(buyerId, limit = 20) {
+    const { rows } = await this.pool.query(
+      `SELECT id, state, total_minor, currency, fulfillment, created_at
+       FROM orders WHERE buyer_id = $1 ORDER BY created_at DESC LIMIT $2`,
+      [buyerId, limit],
+    );
+    return rows.map((r) => ({
+      id: r.id, state: r.state, totalMinor: r.total_minor,
+      currency: r.currency, fulfillment: r.fulfillment, createdAt: r.created_at,
+    }));
+  }
+
   async close() {
     await this.pool.end();
   }

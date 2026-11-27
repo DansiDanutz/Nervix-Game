@@ -26,6 +26,7 @@ import {
 } from "./campaigns.mjs";
 
 const PORT = Number(process.env.PORT ?? 8787);
+let orderSeq = 0;
 
 const slots = [
   ...Array.from({ length: 8 }, (_, i) => ({
@@ -99,6 +100,11 @@ const routes = {
       await db.store?.saveProperty(result.property);
     }
     return result;
+  },
+
+  "GET /orders": async (_b, params) => {
+    if (!db.store) return { orders: [...db.orders.values()].map((o) => ({ id: o.id, state: o.state, totalMinor: o.totalMinor, currency: o.currency })) };
+    return { orders: await db.store.listOrders(params.buyerId ?? "demo_user") };
   },
 
   "GET /orders/:id": async (_b, p) => {
@@ -210,7 +216,7 @@ const routes = {
     await db.store?.ensureUser(body.buyerId);
     await db.store?.ensureMerchant(body.merchantId ?? "mer_1", body.buyerId);
     const order = createOrder({
-      id: `ord_${db.orders.size + 1}`,
+      id: `ord_${Date.now().toString(36)}_${++orderSeq}`,
       buyerId: body.buyerId,
       merchantId: body.merchantId ?? "mer_1",
       items: body.items,
