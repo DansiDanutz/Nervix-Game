@@ -147,5 +147,6 @@ curl -X POST "$NERVIXPAY_BASE_URL/api/v1/webhook" \
 `RESEND_API_KEY` is set in `~/.config/nervixpay/nervix-world.env`; verification codes are emailed
 and `devCode` is `null`. Verified: signup returns `{ emailed: true, devCode: null }`.
 
-The sender is `onboarding@resend.dev` (Resend's shared test sender). Before production, verify your
-own domain in Resend → Domains and change `EMAIL_FROM` to an address on it.
+The sender is `no-reply@nervix.space` — the domain verified under this Resend key's account
+(`GET /domains` → `nervix.space verified`, `dangg.live not_started`). `nervixpay.live` belongs to a
+different Resend account and returns 403 for this key.
