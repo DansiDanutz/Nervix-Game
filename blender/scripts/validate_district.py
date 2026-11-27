@@ -50,10 +50,11 @@ def main():
     check("ad_surface", "ad_surface" in kinds, "ad_surface present" if "ad_surface" in kinds else "missing")
     check("interior", "interior" in kinds, "interior present" if "interior" in kinds else "missing")
 
-    npcs = [o for o in meshes if o.name.startswith("nervix_npc_")]
+    npc_names = {"nervix_npc_merchant", "nervix_npc_cafe", "nervix_npc_host"}
+    npcs = [o for o in meshes if o.name in npc_names]
     check("npc_variants", len(npcs) == 3, f"npcs={len(npcs)}")
 
-    fountain = [o for o in meshes if o.name.startswith("nervix_fountain")]
+    fountain = [o for o in meshes if o.name.startswith("fountain")]
     check("fountain", len(fountain) >= 4, f"fountain_parts={len(fountain)}")
 
     heights = [height(o) for o in npcs]

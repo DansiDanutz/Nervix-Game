@@ -26,6 +26,10 @@ Omit secrets. Record evidence, not intentions.
 - Repo created; AGPL-3.0-only; asset policy in `docs/ASSETS.md`.
 - Master spec captured: `docs/MASTER_PROMPT.md`. Environment: `docs/ENVIRONMENT.md`.
 - `bpy` tooling: `build_m0.py` (scene builder), `validate_scene.py`, `export_glb.py`.
+- **Milestone 1 visual pass (executed):** richer district — 142 meshes, two-storey merchant house with balcony, café with awning + 3 outdoor tables, detailed interior (counter, stools, shelves, jars, rug, pendants), casino with 3 arches/piers/steps, fountain (5 parts), 6 trees, 4 lamps, 3 benches, 3 distinct NPCs with hair; **palette sampled from the four reference images inside Blender** (linear RGBA printed); reference planes in a non-exported collection.
+  - `validate_district.py` → **12/12 PASS** (142 meshes, 3 buildings, 3 NPCs, 5 fountain parts, 6 actions).
+  - Published 9 chunks; app loads canvas, `demo API connected`, presence live.
+  - Perf: **~24–26 FPS under SwiftShader software rendering** (was 60 with the sparse scene) — needs a GPU run; optimisation is the next task.
 - **Milestone 1 (executed):** `blender --background --python blender/scripts/build_district.py` → `nervix_city_district_01.blend` with plaza + fountain (4 parts), streets, merchant house, café + working interior, casino with arches, 3 NPC variants, ad surface, 3 property slots.
   - `validate_district.py` → **12/12 PASS** (metric, 31 meshes, 3 buildings, 3 slots, ad, interior, 3 NPCs, fountain, 1.800 m NPCs, 2.100 m door, materials, 6 actions).
   - Export: **9 GLB chunks** (district 494,904 B; plaza 87,244; NPCs 366,348; house/cafe/casino/interior/props) + manifest with **12 markers**; copied to `app/public/`; `pnpm build` green.

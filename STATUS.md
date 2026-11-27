@@ -23,7 +23,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Seed demo merchants | applied | 3 users / 3 merchants / 3 properties / 3 agents |
 | Persistence | working | `store.mjs`; orders, properties, campaigns, conversations survive restart |
 | Browser runtime | builds, wired to API | `pnpm build` → tsc + Vite, 595 modules; agent chat + confirm UI |
-| 3D world | **Milestone 1 live** | district `.blend`, 9 GLB chunks (district 495 kB), 12 markers; validate 12/12 |
+| 3D world | **Milestone 1 rich live** | 142 meshes, sampled palette, 12/12 validation; ~24 fps software | district `.blend`, 9 GLB chunks (district 495 kB), 12 markers; validate 12/12 |
 | Blender pipeline | working | Blender 5.3.0; M0 7/7 and M1 12/12 validation, exports verified |
 | Reference images | present, not visually inspected | `docs/references/` 4 PNG 1672×941, hashes + palette check |
 | Merchant AI employees | working (offline provider) | `agent.mjs` + `conversation.mjs`; grounded replies, authorized tools, confirmation gate |
