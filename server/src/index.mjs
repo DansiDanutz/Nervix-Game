@@ -17,6 +17,7 @@ import { PostgresStore } from "./store.mjs";
 import { attachPresence } from "./presence.mjs";
 import { createHash } from "node:crypto";
 import { newCodeRecord, verifyCode, normalizeEmail, isValidEmail } from "./auth.mjs";
+import { QUEST, newProgress, advance, collectSeal } from "./quests.mjs";
 import { newState, say, confirmAndRun } from "./conversation.mjs";
 import {
   createCampaign, requestPayment, markPaid, activate, tick, pause, resume, cancel,
@@ -138,6 +139,30 @@ const routes = {
     if (!user) return { error: "no_such_user" };
     await db.store.markVerified(user.id);
     return { userId: user.id, displayName: user.display_name, role: "player", verified: true, demo: true };
+  },
+
+  "GET /quests/lost-seals": () => ({ quest: QUEST }),
+
+  "GET /progress": async (_b, params) => {
+    const userId = params.userId ?? "demo_user";
+    await db.store?.ensureUser(userId);
+    const stored = db.store ? await db.store.getProgress(userId, QUEST.id) : null;
+    return { progress: stored ?? newProgress() };
+  },
+
+  "POST /progress": async (body) => {
+    const userId = body.userId ?? "demo_user";
+    await db.store?.ensureUser(userId);
+    const stored = (db.store ? await db.store.getProgress(userId, QUEST.id) : null) ?? newProgress();
+    const result = body.seal
+      ? collectSeal(stored, body.seal)
+      : advance(stored, body.step);
+    if (result.error) return { error: result.error, progress: result.progress };
+    if (db.store) {
+      const p = result.progress;
+      await db.store.saveProgress({ userId, questId: QUEST.id, stepIndex: p.stepIndex, seals: p.seals, completed: p.completed });
+    }
+    return { progress: result.progress };
   },
 
   "GET /catalog": () => ({ items: db.catalog.filter((p) => p.active) }),
@@ -308,6 +333,7 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  params = { ...Object.fromEntries(url.searchParams.entries()), ...params };
   if (!handler) return send(res, 404, { error: "not_found", path });
   try {
     const body = req.method === "POST" ? await readJson(req) : {};

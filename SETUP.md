@@ -19,6 +19,8 @@ The app boots into an explicit **blockout** (ground, fountain, two placeholder b
 
 The client talks to the demo API at `http://localhost:8787` (override with `VITE_API_URL`). Start the API first; the HUD shows "demo API connected" or "API offline — blockout only". The side panel is the merchant's AI employee: ask a question, and a confirming action (checkout, support) requires an explicit **Confirm**.
 
+The Lost Seals quest: progress is sequential and persisted per user; walk up to a seal marker and press **E** to collect it. Three seals complete the quest — no purchase required.
+
 Multiplayer presence uses `ws://localhost:8787/presence` (override with `VITE_WS_URL`). Other players in the district appear as capsules; the status pill shows `presence live (n)`. Presence carries public position only — merchant conversations are never broadcast.
 
 ## Server
@@ -38,7 +40,7 @@ Demo endpoints: `POST /session`, `POST /auth/signup`, `POST /auth/login`, `POST 
 `POST /orders`, `POST /orders/:id/events`, `POST /orders/:id/fulfil`,
 `POST /agent/:propertyId/message`, `POST /agent/:propertyId/confirm`,
 `POST /campaigns`, `POST /campaigns/:id/{request-payment,pay,tick,pause,resume,cancel}`,
-`GET /placements/:id/servable`.
+`GET /placements/:id/servable`, `GET /quests/lost-seals`, `GET /progress?userId=…`, `POST /progress`.
 
 ## Database
 

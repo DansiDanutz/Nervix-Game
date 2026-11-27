@@ -37,6 +37,13 @@ export interface AgentAction {
   acknowledged: boolean;
 }
 
+export interface QuestProgress {
+  questId: string;
+  stepIndex: number;
+  seals: string[];
+  completed: boolean;
+}
+
 export interface AgentReply {
   text: string;
   citations: { id: string; kind: string; uri: string | null }[];
@@ -63,6 +70,11 @@ export const api = {
   catalog: () => call<{ items: CatalogItem[] }>("/catalog"),
   message: (propertyId: string, message: string, tool?: string, args?: Record<string, unknown>) =>
     call<AgentReply>(`/agent/${propertyId}/message`, { message, tool, args }),
+  progress: (userId: string) => call<{ progress: QuestProgress }>(`/progress?userId=${encodeURIComponent(userId)}`),
+  collectSeal: (userId: string, seal: string) =>
+    call<{ progress: QuestProgress }>("/progress", { userId, seal }),
+  advance: (userId: string, step: string) =>
+    call<{ progress: QuestProgress }>("/progress", { userId, step }),
   confirm: (propertyId: string, action: AgentAction) =>
     call<{ result: unknown }>(`/agent/${propertyId}/confirm`, { action }),
 };

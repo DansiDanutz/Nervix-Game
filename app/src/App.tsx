@@ -6,7 +6,7 @@ import { Hud } from "./ui/Hud";
 import { AgentPanel } from "./ui/AgentPanel";
 import { RemotePlayers } from "./scene/RemotePlayers";
 import { usePresence } from "./net/presence";
-import { api, type Session } from "./net/api";
+import { api, type Session, type QuestProgress } from "./net/api";
 import { loadSession } from "./net/session";
 
 export function App() {
@@ -15,6 +15,7 @@ export function App() {
   const [status, setStatus] = useState("connecting");
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [nearby, setNearby] = useState<Marker | null>(null);
+  const [quest, setQuest] = useState<QuestProgress | null>(null);
   const onMarkers = useCallback((m: Marker[]) => setMarkers(m), []);
   const { players, status: presence, sendMove } = usePresence({
     userId: session?.userId ?? "guest",
@@ -31,6 +32,7 @@ export function App() {
         if (!alive) return;
         setSession(s);
         setPropertyId(property.id);
+        setQuest((await api.progress(s.userId)).progress);
         setStatus("connected");
       } catch {
         if (alive) setStatus("offline");
@@ -40,6 +42,17 @@ export function App() {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "e") return;
+      if (!session || !nearby) return;
+      if (!nearby.id.toLowerCase().includes("seal") || quest?.seals.includes(nearby.id)) return;
+      void api.collectSeal(session.userId, nearby.id).then((r) => setQuest(r.progress));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [session, nearby, quest]);
 
   return (
     <div className="app">
@@ -61,7 +74,7 @@ export function App() {
         <RemotePlayers players={players} selfId={session?.userId ?? ""} />
       </Canvas>
 
-      <Hud session={session ?? { userId: "", displayName: "", role: "player", demo: true }} nearby={nearby} seals={0} />
+      <Hud session={session ?? { userId: "", displayName: "", role: "player", demo: true }} nearby={nearby} seals={quest?.seals.length ?? 0} />
 
       <div className="app__side">
         <div className="app__status" role="status">

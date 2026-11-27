@@ -199,10 +199,11 @@ CREATE TABLE quests (
 );
 
 CREATE TABLE progress (
-  user_id       uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id       text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   quest_id      text NOT NULL REFERENCES quests(id),
   step_index    integer NOT NULL DEFAULT 0,
   completed     boolean NOT NULL DEFAULT false,
+  seals         jsonb NOT NULL DEFAULT '[]'::jsonb,
   PRIMARY KEY (user_id, quest_id)
 );
 

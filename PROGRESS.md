@@ -32,11 +32,15 @@ Unblocked application work is complete and verified (below).
 - Conversational agent: `server/src/provider.mjs` (offline `localProvider` + replaceable OpenAI-compatible `remoteProvider`) and `server/src/conversation.mjs` (grounded replies, server-side tool execution, cart totals recomputed from the catalog, confirmation gate).
   - API smoke test: "what time do you open?" → "We open at 08:00 and close at 20:00." (1 citation); unknown question → offers support, invents nothing; `open_app` denied; confirmed checkout → order `ord_1` 900 EUR `created`, checkout `awaiting_payment`.
 - Paid campaigns: `server/src/campaigns.mjs` — draft→awaiting_payment→scheduled→active, pause/resume, expiry, exclusive-placement conflict detection, servable only when paid and in period.
+- Lost Seals quest: `server/src/quests.mjs` (pure) + `/quests/lost-seals`, `/progress`; migration 001 patched with `seals`, seed inserts the quest.
+  - Sequential steps, unique seals, no purchase required; progress persists per user.
+  - Live: skip → `out_of_order`; step1-3 → advance; seal before step → `seal_locked`; collect → 1 seal; replay → `already_collected`; **step 3 + seal survive restart**.
+  - Client: HUD seal counter, **E** collects a nearby seal marker.
 - Verified email identity: `server/src/auth.mjs` (pure code logic) + `/auth/signup`, `/auth/login`, `/auth/verify`; migration `007_verification` applied.
   - Codes are 6 digits, hashed (SHA-256) at rest, single-use, 10-minute expiry.
   - Live: signup → `devCode`; wrong code → `mismatch`; correct → `verified true`; replay → `already_used`.
 - Shared presence: `server/src/presence.mjs` (ws) + `app/src/net/presence.ts`, `RemotePlayers`.
-  - `node --test test/` → **50 tests, 50 pass, 0 fail** (auth, presence, ledger, provisioning, campaigns, agent).
+  - `node --test test/` → **58 tests, 58 pass, 0 fail** (auth, presence, quests, ledger, provisioning, campaigns, agent).
   - Live: two clients join → both see each other; move → `x=5 z=-2` broadcast; leave → removed. Public position only.
 - Runnable demo API: `server/src/index.mjs` (node:http, in-memory or Postgres, zero deps beyond pg/ws).
   - API smoke test: provision→created, retry→`created:false`; order total 750 EUR; `payment_created`→pending_payment; `payment_succeeded`→paid; replay→paid (no double fulfil); fulfil→fulfilled; unauthorized `open_app` denied; campaign awaiting_payment→scheduled→active→servable `True cmp_now`; unpaid placement `servable False`.

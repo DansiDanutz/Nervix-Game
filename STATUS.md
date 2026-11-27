@@ -5,7 +5,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Capability | State | Evidence |
 |---|---|---|
 | Repo + licence | working | `LICENSE` AGPL-3.0-only, commit `3c0fbca` |
-| Backend order/payment state machine | working (demo) | `node --test test/` → 50/50 pass |
+| Backend order/payment state machine | working (demo) | `node --test test/` → 58/58 pass |
 | Idempotent property provisioning | working (demo) | same test run |
 | Demo NervixPay adapter | demo | `server/src/nervixpay.demo.mjs`, `DEMO_MODE = true` |
 | Database schema | applied | `nervix_world` on PG 16.15; migrations 001–007 green |
@@ -20,6 +20,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Paid advertising | state machine + API working (demo) | `server/src/campaigns.mjs`; unpaid campaigns never serve |
 | Demo API | working | `PORT=8787 node server/src/index.mjs`; curl smoke-tested |
 | Live NervixPay | **blocked** | endpoints/credentials undocumented here |
+| Lost Seals quest | working (persisted) | `quests.mjs` + `/progress`; sequential steps, 3 seals, survives restart |
 | Multiplayer presence | working (demo) | `presence.mjs` + `usePresence`; 2 clients see each other, leave removes them |
 | Ads | schema + state machine | `ad_placements`, `campaigns` tables; `campaigns.mjs` |
 

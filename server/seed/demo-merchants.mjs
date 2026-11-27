@@ -28,6 +28,10 @@ sql.push(`INSERT INTO districts (id, name, slot_count) VALUES
   ('entertainment-district', 'Entertainment District', 2)
 ON CONFLICT (id) DO NOTHING;`);
 
+sql.push(`INSERT INTO quests (id, title, steps) VALUES ('lost-seals', 'The Lost Seals of the City',
+  '[{"id":"find-fountain"},{"id":"meet-guide"},{"id":"seal-court"},{"id":"seal-cafe"},{"id":"seal-venue"}]'::jsonb)
+ON CONFLICT (id) DO NOTHING;`);
+
 sql.push(`INSERT INTO ad_placements (id, district, kind, slot_id, price_minor, currency) VALUES
   ('plaza-1', 'central-plaza', 'noticeboard', 'slot-plaza-1', 5000, 'EUR'),
   ('cafe-9', 'coffee-courtyard', 'poster', 'slot-cafe-9', 2500, 'EUR')
