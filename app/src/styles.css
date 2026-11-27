@@ -126,3 +126,140 @@ body,
     font-size: 11px;
   }
 }
+.app__side {
+  position: absolute;
+  top: 72px;
+  right: 16px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.app__side > * {
+  pointer-events: auto;
+}
+
+.app__status {
+  align-self: flex-end;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 18px rgba(43, 33, 24, 0.16);
+}
+
+.panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel__tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--plum);
+  color: #fff;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.panel__log {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.panel__hint {
+  margin: 0;
+  opacity: 0.6;
+}
+
+.panel__error {
+  margin: 0;
+  color: #a33;
+}
+
+.turn {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #f3ede2;
+}
+
+.turn--player {
+  background: var(--teal);
+  color: #fff;
+}
+
+.panel__confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #fff4d6;
+}
+
+.panel__confirm span {
+  flex: 1;
+}
+
+.panel__form {
+  display: flex;
+  gap: 6px;
+}
+
+.panel__form input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #d8cdb8;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.panel button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--teal);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.panel button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (max-width: 900px) {
+  .app__side {
+    left: 16px;
+    right: 16px;
+    width: auto;
+    top: auto;
+    bottom: 16px;
+  }
+  .panel__log {
+    max-height: 140px;
+  }
+}

@@ -42,8 +42,9 @@ Unblocked application work is complete and verified (below).
   - Migrations `005_conversations`, `006_campaigns_text` applied.
 - Seed: `server/seed/demo-merchants.mjs` → 3 users, 3 merchants, 3 properties, 3 agents (apostrophe-safe, idempotent).
 - Browser runtime: `app/` React 19 + TypeScript + Three.js + R3F.
-  - `cd app && pnpm build` → `tsc --noEmit` clean, Vite build **593 modules**, 1173 kB / 327 kB gzip.
+  - `cd app && pnpm build` → `tsc --noEmit` clean, Vite build **595 modules**, 1176 kB / 328 kB gzip.
   - Third-person controller, camera follow, collision bounds, proximity interaction, HUD, quest shell.
+  - Wired to the API: session, property provisioning, catalog, agent chat with confirmation UI; CORS enabled on the server; status pill shows connected/offline.
   - Boots into a labelled **blockout** until the Blender export exists.
 - Docs: `SETUP.md`, `BLENDER_GUIDE.md`, `STATUS.md`, `.env.example`.
 - Four concept images filed: `docs/references/ref1..ref4`, with mapping, hashes and palette check (`docs/references/README.md`). **Not visually inspected** — no image input in this session.

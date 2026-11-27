@@ -23,10 +23,21 @@ import {
 const PORT = Number(process.env.PORT ?? 8787);
 
 const slots = [
-  { id: "slot-01", template: "merchant_house", district: "merchant-quarter" },
-  { id: "slot-02", template: "merchant_house", district: "merchant-quarter" },
-  { id: "slot-03", template: "cafe_shop", district: "coffee-courtyard" },
-  { id: "slot-07", template: "casino_venue", district: "entertainment-district" },
+  ...Array.from({ length: 8 }, (_, i) => ({
+    id: `slot-${String(i + 1).padStart(2, "0")}`,
+    template: "merchant_house",
+    district: "merchant-quarter",
+  })),
+  ...Array.from({ length: 4 }, (_, i) => ({
+    id: `cafe-${i + 1}`,
+    template: "cafe_shop",
+    district: "coffee-courtyard",
+  })),
+  ...Array.from({ length: 2 }, (_, i) => ({
+    id: `venue-${i + 1}`,
+    template: "casino_venue",
+    district: "entertainment-district",
+  })),
 ];
 
 const db = {
@@ -228,6 +239,16 @@ const routes = {
 };
 
 const server = http.createServer(async (req, res) => {
+  // The Vite dev server runs on another origin; the API is public demo data.
+  res.setHeader("access-control-allow-origin", "*");
+  res.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
+  res.setHeader("access-control-allow-headers", "content-type");
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   const url = new URL(req.url, `http://${req.headers.host}`);
   const path = url.pathname.replace(/\/$/, "") || "/";
   const key = `${req.method} ${path}`;

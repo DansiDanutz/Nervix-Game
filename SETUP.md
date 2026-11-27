@@ -17,6 +17,8 @@ pnpm build      # tsc --noEmit && vite build  (verified green)
 
 The app boots into an explicit **blockout** (ground, fountain, two placeholder blocks) until `public/manifest.json` and the exported GLBs exist. That blockout is temporary and has a replacement path: Milestone 1's Blender district.
 
+The client talks to the demo API at `http://localhost:8787` (override with `VITE_API_URL`). Start the API first; the HUD shows "demo API connected" or "API offline — blockout only". The side panel is the merchant's AI employee: ask a question, and a confirming action (checkout, support) requires an explicit **Confirm**.
+
 ## Server
 
 ```sh

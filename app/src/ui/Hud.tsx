@@ -1,4 +1,3 @@
-import type { Session } from "../net/session";
 import type { Marker } from "../scene/CityScene";
 
 const QUEST_STEPS = [
@@ -12,7 +11,7 @@ export function Hud({
   nearby,
   seals,
 }: {
-  session: Session;
+  session: { displayName: string; role: string; demo: boolean };
   nearby: Marker | null;
   seals: number;
 }) {
