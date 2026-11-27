@@ -151,6 +151,47 @@ export class PostgresStore {
     return { history: rows[0].history ?? [], support: rows[0].support ?? [] };
   }
 
+  async createUser({ id, email, displayName, verified = false }) {
+    await this.pool.query(
+      `INSERT INTO users (id, email, display_name, role, email_verified)
+       VALUES ($1, $2, $3, 'player', $4)
+       ON CONFLICT (id) DO NOTHING`,
+      [id, email, displayName, verified],
+    );
+  }
+
+  async findUserByEmail(email) {
+    const { rows } = await this.pool.query("SELECT id, display_name, email_verified FROM users WHERE email = $1", [email]);
+    return rows[0] ?? null;
+  }
+
+  async markVerified(userId) {
+    await this.pool.query("UPDATE users SET email_verified = true WHERE id = $1", [userId]);
+  }
+
+  async createCode({ email, codeHash, expiresAt }) {
+    const { rows } = await this.pool.query(
+      `INSERT INTO verification_codes (email, code_hash, expires_at) VALUES ($1, $2, $3) RETURNING id`,
+      [email, codeHash, expiresAt],
+    );
+    return rows[0].id;
+  }
+
+  async latestCode(email) {
+    const { rows } = await this.pool.query(
+      `SELECT id, code_hash, expires_at, consumed_at FROM verification_codes
+       WHERE email = $1 ORDER BY id DESC LIMIT 1`,
+      [email],
+    );
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    return { id: r.id, codeHash: r.code_hash, expiresAt: r.expires_at, consumedAt: r.consumed_at };
+  }
+
+  async consumeCode(id) {
+    await this.pool.query("UPDATE verification_codes SET consumed_at = now() WHERE id = $1", [id]);
+  }
+
   async close() {
     await this.pool.end();
   }

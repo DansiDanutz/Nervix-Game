@@ -33,7 +33,8 @@ PORT=8787 node src/index.mjs
 curl -s localhost:8787/health
 ```
 
-Demo endpoints: `POST /session`, `POST /merchants/provision`, `GET /catalog`,
+Demo endpoints: `POST /session`, `POST /auth/signup`, `POST /auth/login`, `POST /auth/verify`,
+`POST /merchants/provision`, `GET /catalog`,
 `POST /orders`, `POST /orders/:id/events`, `POST /orders/:id/fulfil`,
 `POST /agent/:propertyId/message`, `POST /agent/:propertyId/confirm`,
 `POST /campaigns`, `POST /campaigns/:id/{request-payment,pay,tick,pause,resume,cancel}`,
@@ -82,6 +83,15 @@ Copy `.env.example` to `.env` and fill in. **No key is committed.** The NervixPa
 | `NERVIXPAY_WEBHOOK_SECRET` | live only, server-side |
 | `AGENT_MODEL_BASE_URL`, `AGENT_MODEL_KEY` | merchant AI employee provider |
 | `SPEECH_BASE_URL`, `SPEECH_KEY` | optional voice |
+
+## Identity
+
+`POST /auth/signup` creates an unverified user and a single-use 6-digit code (hashed at rest,
+10-minute expiry). `POST /auth/login` issues a new code. `POST /auth/verify` consumes it and
+marks the user verified.
+
+**The API returns `devCode` because this is the demo.** In production the code is emailed and
+never returned; matching an email alone never grants access to an existing account.
 
 ## What is demo
 

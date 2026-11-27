@@ -15,6 +15,8 @@ import { buildContext, TOOLS } from "./agent.mjs";
 import { createProvider } from "./provider.mjs";
 import { PostgresStore } from "./store.mjs";
 import { attachPresence } from "./presence.mjs";
+import { createHash } from "node:crypto";
+import { newCodeRecord, verifyCode, normalizeEmail, isValidEmail } from "./auth.mjs";
 import { newState, say, confirmAndRun } from "./conversation.mjs";
 import {
   createCampaign, requestPayment, markPaid, activate, tick, pause, resume, cancel,
@@ -100,6 +102,42 @@ const routes = {
   "GET /orders/:id": async (_b, p) => {
     const order = db.store ? await db.store.getOrder(p.id) : db.orders.get(p.id);
     return order ? { order } : { error: "not_found" };
+  },
+
+  "POST /auth/signup": async (body) => {
+    if (!db.store) return { error: "identity_requires_database" };
+    const email = normalizeEmail(body.email);
+    if (!isValidEmail(email)) return { error: "invalid_email" };
+    const userId = `usr_${createHash("sha256").update(email).digest("hex").slice(0, 12)}`;
+    const displayName = String(body.displayName ?? email.split("@")[0]).slice(0, 40);
+    await db.store.createUser({ id: userId, email, displayName, verified: false });
+    const record = newCodeRecord(email);
+    await db.store.createCode(record);
+    // The code is returned only because this is the demo; production emails it.
+    return { userId, email, displayName, verified: false, devCode: record.code };
+  },
+
+  "POST /auth/login": async (body) => {
+    if (!db.store) return { error: "identity_requires_database" };
+    const email = normalizeEmail(body.email);
+    const user = await db.store.findUserByEmail(email);
+    if (!user) return { error: "no_such_user" };
+    const record = newCodeRecord(email);
+    await db.store.createCode(record);
+    return { userId: user.id, email, devCode: record.code };
+  },
+
+  "POST /auth/verify": async (body) => {
+    if (!db.store) return { error: "identity_requires_database" };
+    const email = normalizeEmail(body.email);
+    const record = await db.store.latestCode(email);
+    const check = verifyCode({ record, code: String(body.code ?? "") });
+    if (!check.ok) return { error: check.reason };
+    await db.store.consumeCode(record.id);
+    const user = await db.store.findUserByEmail(email);
+    if (!user) return { error: "no_such_user" };
+    await db.store.markVerified(user.id);
+    return { userId: user.id, displayName: user.display_name, role: "player", verified: true, demo: true };
   },
 
   "GET /catalog": () => ({ items: db.catalog.filter((p) => p.active) }),
