@@ -1,0 +1,34 @@
+# Blender
+*.blend1
+*.blend2
+__pycache__/
+*.pyc
+
+# Exports (generated)
+exports/*.glb
+exports/*.gltf
+exports/*.bin
+!exports/.gitkeep
+
+# Runtime
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
