@@ -19,6 +19,8 @@ The app boots into an explicit **blockout** (ground, fountain, two placeholder b
 
 The client talks to the demo API at `http://localhost:8787` (override with `VITE_API_URL`). Start the API first; the HUD shows "demo API connected" or "API offline — blockout only". The side panel is the merchant's AI employee: ask a question, and a confirming action (checkout, support) requires an explicit **Confirm**.
 
+Multiplayer presence uses `ws://localhost:8787/presence` (override with `VITE_WS_URL`). Other players in the district appear as capsules; the status pill shows `presence live (n)`. Presence carries public position only — merchant conversations are never broadcast.
+
 ## Server
 
 ```sh

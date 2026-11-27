@@ -32,9 +32,11 @@ Unblocked application work is complete and verified (below).
 - Conversational agent: `server/src/provider.mjs` (offline `localProvider` + replaceable OpenAI-compatible `remoteProvider`) and `server/src/conversation.mjs` (grounded replies, server-side tool execution, cart totals recomputed from the catalog, confirmation gate).
   - API smoke test: "what time do you open?" → "We open at 08:00 and close at 20:00." (1 citation); unknown question → offers support, invents nothing; `open_app` denied; confirmed checkout → order `ord_1` 900 EUR `created`, checkout `awaiting_payment`.
 - Paid campaigns: `server/src/campaigns.mjs` — draft→awaiting_payment→scheduled→active, pause/resume, expiry, exclusive-placement conflict detection, servable only when paid and in period.
-- Runnable demo API: `server/src/index.mjs` (node:http, in-memory, zero deps).
-  - `cd server && node --test test/` → **41 tests, 41 pass, 0 fail**.
-  - API smoke test (curl, port 8787/8788): provision→created, retry→`created:false`; order total 750 EUR; `payment_created`→pending_payment; `payment_succeeded`→paid; replay→paid (no double fulfil); fulfil→fulfilled; unauthorized `open_app` denied; campaign awaiting_payment→scheduled→active→servable `True cmp_now`; unpaid placement `servable False`.
+- Shared presence: `server/src/presence.mjs` (ws) + `app/src/net/presence.ts`, `RemotePlayers`.
+  - `node --test test/` → **43 tests, 43 pass, 0 fail** (2 presence tests).
+  - Live: two clients join → both see each other; move → `x=5 z=-2` broadcast; leave → removed. Public position only.
+- Runnable demo API: `server/src/index.mjs` (node:http, in-memory or Postgres, zero deps beyond pg/ws).
+  - API smoke test: provision→created, retry→`created:false`; order total 750 EUR; `payment_created`→pending_payment; `payment_succeeded`→paid; replay→paid (no double fulfil); fulfil→fulfilled; unauthorized `open_app` denied; campaign awaiting_payment→scheduled→active→servable `True cmp_now`; unpaid placement `servable False`.
 - Demo NervixPay adapter: `server/src/nervixpay.demo.mjs` (`DEMO_MODE = true`, labelled simulated).
 - Schema: `server/db/migrations/001_init.sql` plus `002_text_ids`, `003_users_text`, `004_merchants_text` (stable text ids), all **applied** to `nervix_world`.
 - Persistence: `server/src/store.mjs` (pg). With `DATABASE_URL` set, orders, properties, users, merchants, **campaigns and conversations** persist.

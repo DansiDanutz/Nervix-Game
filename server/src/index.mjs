@@ -14,6 +14,7 @@ import { createCheckout, verifyWebhook, DEMO_MODE } from "./nervixpay.demo.mjs";
 import { buildContext, TOOLS } from "./agent.mjs";
 import { createProvider } from "./provider.mjs";
 import { PostgresStore } from "./store.mjs";
+import { attachPresence } from "./presence.mjs";
 import { newState, say, confirmAndRun } from "./conversation.mjs";
 import {
   createCampaign, requestPayment, markPaid, activate, tick, pause, resume, cancel,
@@ -277,6 +278,8 @@ const server = http.createServer(async (req, res) => {
     return send(res, 400, { error: error.name ?? "error", message: error.message });
   }
 });
+
+attachPresence(server);
 
 async function boot() {
   if (db.store) {

@@ -4,6 +4,8 @@ import { CityScene, type Marker } from "./scene/CityScene";
 import { PlayerController } from "./player/PlayerController";
 import { Hud } from "./ui/Hud";
 import { AgentPanel } from "./ui/AgentPanel";
+import { RemotePlayers } from "./scene/RemotePlayers";
+import { usePresence } from "./net/presence";
 import { api, type Session } from "./net/api";
 import { loadSession } from "./net/session";
 
@@ -14,6 +16,11 @@ export function App() {
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [nearby, setNearby] = useState<Marker | null>(null);
   const onMarkers = useCallback((m: Marker[]) => setMarkers(m), []);
+  const { players, status: presence, sendMove } = usePresence({
+    userId: session?.userId ?? "guest",
+    name: session?.displayName ?? "Traveler",
+    district: "central-plaza",
+  });
 
   useEffect(() => {
     let alive = true;
@@ -50,7 +57,8 @@ export function App() {
         <Suspense fallback={null}>
           <CityScene onMarkers={onMarkers} />
         </Suspense>
-        <PlayerController markers={markers} onNearby={setNearby} />
+        <PlayerController markers={markers} onNearby={setNearby} onMove={sendMove} />
+        <RemotePlayers players={players} selfId={session?.userId ?? ""} />
       </Canvas>
 
       <Hud session={session ?? { userId: "", displayName: "", role: "player", demo: true }} nearby={nearby} seals={0} />
@@ -58,6 +66,8 @@ export function App() {
       <div className="app__side">
         <div className="app__status" role="status">
           {status === "connected" ? "demo API connected" : status === "connecting" ? "connecting…" : "API offline — blockout only"}
+          {" · presence "}
+          {presence === "live" ? `live (${players.length})` : presence}
         </div>
         {propertyId && <AgentPanel propertyId={propertyId} agentName="Mira" />}
       </div>

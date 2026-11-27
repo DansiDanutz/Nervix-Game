@@ -19,7 +19,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Paid advertising | state machine + API working (demo) | `server/src/campaigns.mjs`; unpaid campaigns never serve |
 | Demo API | working | `PORT=8787 node server/src/index.mjs`; curl smoke-tested |
 | Live NervixPay | **blocked** | endpoints/credentials undocumented here |
-| Multiplayer presence | not started | — |
+| Multiplayer presence | working (demo) | `presence.mjs` + `usePresence`; 2 clients see each other, leave removes them |
 | Ads | schema + state machine | `ad_placements`, `campaigns` tables; `campaigns.mjs` |
 
 ## Blocked by an external dependency

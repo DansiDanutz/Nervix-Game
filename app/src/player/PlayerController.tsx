@@ -11,14 +11,17 @@ const BOUNDS = 38;
 export function PlayerController({
   markers,
   onNearby,
+  onMove,
 }: {
   markers: Marker[];
   onNearby: (m: Marker | null) => void;
+  onMove?: (x: number, z: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const keys = useRef<Record<string, boolean>>({});
   const { camera } = useThree();
   const [nearbyId, setNearbyId] = useState<string | null>(null);
+  const lastSent = useRef(0);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -51,6 +54,11 @@ export function PlayerController({
       g.position.x = THREE.MathUtils.clamp(g.position.x + (dx / len) * speed, -BOUNDS, BOUNDS);
       g.position.z = THREE.MathUtils.clamp(g.position.z + (dz / len) * speed, -BOUNDS, BOUNDS);
       g.rotation.y = Math.atan2(dx, dz);
+      const now = performance.now();
+      if (onMove && now - lastSent.current > 150) {
+        lastSent.current = now;
+        onMove(g.position.x, g.position.z);
+      }
     }
 
     const target = new THREE.Vector3(
