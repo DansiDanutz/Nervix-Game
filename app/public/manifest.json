@@ -5,47 +5,47 @@
     {
       "id": "nervix_city_district_01",
       "file": "nervix_city_district_01.glb",
-      "bytes": 2428960
+      "bytes": 911728
     },
     {
       "id": "nervix_plaza",
       "file": "nervix_plaza.glb",
-      "bytes": 96480
+      "bytes": 33116
     },
     {
       "id": "nervix_street",
       "file": "nervix_street.glb",
-      "bytes": 16852
+      "bytes": 11392
     },
     {
       "id": "nervix_merchanthouse",
       "file": "nervix_merchanthouse.glb",
-      "bytes": 110176
+      "bytes": 44644
     },
     {
       "id": "nervix_cafe",
       "file": "nervix_cafe.glb",
-      "bytes": 89912
+      "bytes": 30340
     },
     {
       "id": "nervix_casino",
       "file": "nervix_casino.glb",
-      "bytes": 28740
+      "bytes": 25016
     },
     {
       "id": "nervix_cafeinterior",
       "file": "nervix_cafeinterior.glb",
-      "bytes": 232884
+      "bytes": 64556
     },
     {
       "id": "nervix_npcs",
       "file": "nervix_npcs.glb",
-      "bytes": 570872
+      "bytes": 406188
     },
     {
       "id": "nervix_props",
       "file": "nervix_props.glb",
-      "bytes": 1291736
+      "bytes": 304728
     }
   ],
   "markers": [

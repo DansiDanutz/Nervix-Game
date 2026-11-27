@@ -80,7 +80,7 @@ def box(name, size, loc, material, coll, rot=(0, 0, 0)):
     return move(o, coll)
 
 
-def cyl(name, r, depth, loc, material, coll, verts=24, rot=(0, 0, 0)):
+def cyl(name, r, depth, loc, material, coll, verts=16, rot=(0, 0, 0)):
     bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=depth, location=loc, vertices=verts, rotation=rot)
     o = bpy.context.object
     o.name = name
@@ -89,7 +89,7 @@ def cyl(name, r, depth, loc, material, coll, verts=24, rot=(0, 0, 0)):
 
 
 def sph(name, r, loc, material, coll, scale=(1, 1, 1)):
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=r, location=loc)
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=r, location=loc, segments=12, ring_count=8)
     o = bpy.context.object
     o.name = name
     o.scale = scale
@@ -103,6 +103,25 @@ def cone(name, r1, r2, depth, loc, material, coll, verts=4, rot=(0, 0, 0)):
     o.name = name
     o.data.materials.append(material)
     return move(o, coll)
+
+
+def no_shadow(o):
+    o.visible_shadow = False
+    return o
+
+
+def join_static(coll):
+    """Merge non-marker, non-modified meshes in a collection into one object."""
+    meshes = [o for o in coll.objects
+              if o.type == "MESH" and not o.get("nervix_marker_kind") and not o.modifiers and "door" not in o.name]
+    if len(meshes) < 2:
+        return
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in meshes:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = meshes[0]
+    bpy.ops.object.join()
+    meshes[0].name = f"{coll.name.lower()}_static"
 
 
 def marker(o, kind, slot=None, collision=False):
@@ -141,7 +160,7 @@ def awning(name, loc, w, d, material, coll):
 def tree(name, loc, trunk, leaf, coll, scale=1.0):
     cyl(f"{name}_trunk", 0.16 * scale, 1.6 * scale, (loc[0], loc[1], 0.8 * scale), trunk, coll, 10)
     for i, (dx, dy, dz, r) in enumerate(((0, 0, 2.1, 0.9), (0.45, 0.2, 1.8, 0.6), (-0.4, -0.2, 1.9, 0.65))):
-        sph(f"{name}_leaf{i}", r * scale, (loc[0] + dx * scale, loc[1] + dy * scale, dz * scale), leaf, coll, (1, 1, 0.85))
+        no_shadow(sph(f"{name}_leaf{i}", r * scale, (loc[0] + dx * scale, loc[1] + dy * scale, dz * scale), leaf, coll, (1, 1, 0.85)))
 
 
 def lamp(name, loc, metal, glow, coll):
@@ -261,10 +280,10 @@ def build():
 
     # Plaza.
     marker(box("nervix_plaza", (26, 26, 0.1), (0, 0, -0.05), sand, c_plaza), "ground", collision=True)
-    cyl("fountain_base", 3.2, 0.5, (0, 0, 0.25), marble, c_plaza, 32)
-    cyl("fountain_bowl", 2.4, 0.35, (0, 0, 0.68), marble, c_plaza, 32)
+    cyl("fountain_base", 3.2, 0.5, (0, 0, 0.25), marble, c_plaza, 20)
+    cyl("fountain_bowl", 2.4, 0.35, (0, 0, 0.68), marble, c_plaza, 20)
     cyl("fountain_column", 0.28, 1.5, (0, 0, 1.6), marble, c_plaza, 12)
-    cyl("fountain_upper", 1.1, 0.25, (0, 0, 2.4), marble, c_plaza, 24)
+    cyl("fountain_upper", 1.1, 0.25, (0, 0, 2.4), marble, c_plaza, 16)
     sph("fountain_finial", 0.32, (0, 0, 2.75), brass, c_plaza)
 
     # Streets.
@@ -284,7 +303,7 @@ def build():
     window("house_w4", (-7, 3.05, 4.6), 1.1, 1.2, timber, glass, c_house)
     box("house_balcony", (4.2, 1.2, 0.18), (-9, 3.4, 3.5), cream, c_house)
     for i, x in enumerate((-10.8, -9.9, -9.0, -8.1, -7.2)):
-        cyl(f"baluster_{i}", 0.05, 0.7, (x, 3.95, 3.95), cream, c_house, 8)
+        no_shadow(cyl(f"baluster_{i}", 0.05, 0.7, (x, 3.95, 3.95), cream, c_house, 8))
     marker(box("house_sign", (2.6, 0.12, 0.9), (-9, 3.15, 3.0), plum, c_house), "sign", "slot-01")
     awning("house_awning", (-9, 3.6, 2.6), 3.4, 1.4, teal, c_house)
 
@@ -300,17 +319,17 @@ def build():
         cyl(f"cafe_table_{i}", 0.55, 0.08, (x, y, 0.75), timber, c_props, 20)
         cyl(f"cafe_table_leg_{i}", 0.08, 0.75, (x, y, 0.38), timber, c_props, 8)
         for j, dx in enumerate((-0.8, 0.8)):
-            cyl(f"cafe_chair_{i}_{j}", 0.28, 0.06, (x + dx, y, 0.45), timber, c_props, 16)
+            no_shadow(cyl(f"cafe_chair_{i}_{j}", 0.28, 0.06, (x + dx, y, 0.45), timber, c_props, 16))
 
     # Cafe interior.
     marker(box("cafe_floor", (8, 6, 0.06), (9, 0, 0.03), cream, c_interior), "interior", "slot-02")
     box("counter", (5.0, 0.9, 1.1), (9, 0.6, 0.55), timber, c_interior)
     box("counter_top", (5.2, 1.0, 0.08), (9, 0.6, 1.14), marble, c_interior)
     for i, x in enumerate((7.0, 9.0, 11.0)):
-        cyl(f"stool_{i}", 0.3, 0.7, (x, -0.4, 0.35), timber, c_interior, 16)
+        no_shadow(cyl(f"stool_{i}", 0.3, 0.7, (x, -0.4, 0.35), timber, c_interior, 16))
     box("shelf", (3.0, 0.35, 1.6), (9, 2.6, 1.2), timber, c_interior)
     for i, x in enumerate((8.0, 9.0, 10.0)):
-        sph(f"jar_{i}", 0.14, (x, 2.55, 1.9), brass, c_interior)
+        no_shadow(sph(f"jar_{i}", 0.14, (x, 2.55, 1.9), brass, c_interior))
     box("rug", (4.0, 2.4, 0.02), (9, -1.6, 0.07), plum, c_interior)
     for i, x in enumerate((7.2, 10.8)):
         cyl(f"pendant_{i}", 0.22, 0.18, (x, 0.6, 2.6), glow, c_interior, 16)
@@ -347,6 +366,9 @@ def build():
     character("nervix_npc_merchant", (-7.0, -2.6, 0), plum, skin, hair_m, c_npc, 0.4)
     character("nervix_npc_cafe", (7.0, -2.4, 0), teal, skin, hair_c, c_npc, -0.5)
     character("nervix_npc_host", (2.6, 8.8, 0), terra, skin, hair_h, c_npc, 3.0, 1.05)
+
+    for c in (c_street, c_props, c_interior, c_house, c_cafe, c_casino):
+        join_static(c)
 
     # Light + camera.
     bpy.ops.object.light_add(type="SUN", location=(14, -12, 18))

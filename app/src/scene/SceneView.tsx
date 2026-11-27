@@ -19,7 +19,7 @@ export interface SceneProps {
 /** The 3D view is loaded lazily so the interface paints before three.js. */
 export default function SceneView(props: SceneProps) {
   return (
-    <Canvas shadows camera={{ position: [0, 4, 12], fov: 55, near: 0.1, far: 200 }}>
+    <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 4, 12], fov: 55, near: 0.1, far: 200 }}>
       <color attach="background" args={["#bfe0ea"]} />
       <fog attach="fog" args={["#bfe0ea", 30, 90]} />
       <hemisphereLight intensity={0.55} groundColor="#c9b18a" />
@@ -27,8 +27,8 @@ export default function SceneView(props: SceneProps) {
         position={[12, 18, 8]}
         intensity={1.5}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
       />
       <Suspense fallback={null}>
         <CityScene onMarkers={props.onMarkers} />
