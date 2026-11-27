@@ -28,8 +28,11 @@ Unblocked application work is complete and verified (below).
 - Master spec captured: `docs/MASTER_PROMPT.md`. Environment: `docs/ENVIRONMENT.md`.
 - `bpy` tooling authored: `blender/scripts/validate_scene.py`, `export_glb.py` (**unexecuted**).
 - Backend state machine + provisioning: `server/src/ledger.mjs`, `provision.mjs`.
-  - `cd server && node --test test/` → **14 tests, 14 pass, 0 fail**.
-  - Covers integer minor units, illegal transitions, duplicate webhook (no double fulfilment), exhausted slots.
+- Merchant AI employee rules: `server/src/agent.mjs` — approved-knowledge grounding, per-merchant tool authorization, confirmation before checkout/support, player text treated as untrusted data.
+- Paid campaigns: `server/src/campaigns.mjs` — draft→awaiting_payment→scheduled→active, pause/resume, expiry, exclusive-placement conflict detection, servable only when paid and in period.
+- Runnable demo API: `server/src/index.mjs` (node:http, in-memory, zero deps).
+  - `cd server && node --test test/` → **31 tests, 31 pass, 0 fail**.
+  - API smoke test (curl, port 8787/8788): provision→created, retry→`created:false`; order total 750 EUR; `payment_created`→pending_payment; `payment_succeeded`→paid; replay→paid (no double fulfil); fulfil→fulfilled; unauthorized `open_app` denied; campaign awaiting_payment→scheduled→active→servable `True cmp_now`; unpaid placement `servable False`.
 - Demo NervixPay adapter: `server/src/nervixpay.demo.mjs` (`DEMO_MODE = true`, labelled simulated).
 - Schema: `server/db/migrations/001_init.sql` (users, merchants, properties, agents, products, orders, payments, payment_events, entitlements, campaigns, quests, progress, audit).
 - Seed: `server/seed/demo-merchants.mjs` (emits idempotent SQL; no DB to apply it to).
@@ -53,8 +56,9 @@ Unblocked application work is complete and verified (below).
 2. Author `nervix_city_district_01.blend` (M0): modular street corner, door, sign surface, rigged character with idle + walk.
 3. Export GLB + manifest, copy into `app/public/`, load in the runtime, compare to the written visual direction.
 4. Apply the schema to Postgres and seed demo merchants.
-5. Add the agent endpoint (text, tool-calling, confirmation before actions) behind the demo provider.
+5. Add the agent HTTP route behind a replaceable provider (rules and demo API exist; model calls do not).
 6. Measure frame time on the desktop and mobile profiles; code-split the three.js bundle.
+7. Apply the schema to Postgres and replace the in-memory demo store.
 
 ## Conventions
 

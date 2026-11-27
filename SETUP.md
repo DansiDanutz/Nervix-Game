@@ -21,9 +21,19 @@ The app boots into an explicit **blockout** (ground, fountain, two placeholder b
 
 ```sh
 cd server
-node --test test/     # 14 tests, verified green
+node --test test/     # 31 tests, verified green
 node seed/demo-merchants.mjs | psql "$DATABASE_URL" -v ON_ERROR_STOP=1
+
+# runnable demo API (in-memory, zero dependencies)
+PORT=8787 node src/index.mjs
+curl -s localhost:8787/health
 ```
+
+Demo endpoints: `POST /session`, `POST /merchants/provision`, `GET /catalog`,
+`POST /orders`, `POST /orders/:id/events`, `POST /orders/:id/fulfil`,
+`POST /agent/:propertyId/message`, `POST /agent/:propertyId/confirm`,
+`POST /campaigns`, `POST /campaigns/:id/{request-payment,pay,tick,pause,resume,cancel}`,
+`GET /placements/:id/servable`.
 
 ## Database
 

@@ -14,10 +14,12 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | 3D world | **blockout only** | no `.blend`, no GLB; `CityScene` falls back to primitives |
 | Blender pipeline | **blocked** | Blender not installed |
 | Reference images | present, not visually inspected | `docs/references/` 4 PNG 1672×941, hashes + palette check |
-| Merchant AI employees | not started | needs provider + backend endpoints |
+| Merchant AI employees | rules + demo API working | `server/src/agent.mjs`, 31 tests; no model provider wired yet |
+| Paid advertising | state machine + API working (demo) | `server/src/campaigns.mjs`; unpaid campaigns never serve |
+| Demo API | working | `PORT=8787 node server/src/index.mjs`; curl smoke-tested |
 | Live NervixPay | **blocked** | endpoints/credentials undocumented here |
 | Multiplayer presence | not started | — |
-| Ads | schema only | `ad_placements`, `campaigns` tables |
+| Ads | schema + state machine | `ad_placements`, `campaigns` tables; `campaigns.mjs` |
 
 ## Blocked by an external dependency
 
