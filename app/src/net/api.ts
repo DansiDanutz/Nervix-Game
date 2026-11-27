@@ -10,6 +10,7 @@ export interface Session {
   displayName: string;
   role: string;
   demo: boolean;
+  verified?: boolean;
 }
 
 export interface Property {
@@ -64,6 +65,10 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
 
 export const api = {
   health: () => call<{ ok: boolean; demo: boolean }>("/health"),
+  authSignup: (email: string, displayName: string) =>
+    call<{ userId: string; devCode: string; verified: boolean }>("/auth/signup", { email, displayName }),
+  authLogin: (email: string) => call<{ userId: string; devCode: string }>("/auth/login", { email }),
+  authVerify: (email: string, code: string) => call<Session & { verified: boolean }>("/auth/verify", { email, code }),
   session: (userId?: string) => call<Session>("/session", { userId }),
   provision: (userId: string, businessType = "merchant") =>
     call<{ property: Property; created: boolean }>("/merchants/provision", { userId, businessType }),

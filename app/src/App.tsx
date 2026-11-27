@@ -4,6 +4,7 @@ import { CityScene, type Marker } from "./scene/CityScene";
 import { PlayerController } from "./player/PlayerController";
 import { Hud } from "./ui/Hud";
 import { AgentPanel } from "./ui/AgentPanel";
+import { AuthPanel } from "./ui/AuthPanel";
 import { RemotePlayers } from "./scene/RemotePlayers";
 import { usePresence } from "./net/presence";
 import { api, type Session, type QuestProgress } from "./net/api";
@@ -16,6 +17,7 @@ export function App() {
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [nearby, setNearby] = useState<Marker | null>(null);
   const [quest, setQuest] = useState<QuestProgress | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
   const onMarkers = useCallback((m: Marker[]) => setMarkers(m), []);
   const { players, status: presence, sendMove } = usePresence({
     userId: session?.userId ?? "guest",
@@ -82,6 +84,20 @@ export function App() {
           {" · presence "}
           {presence === "live" ? `live (${players.length})` : presence}
         </div>
+        {showAuth && (
+          <AuthPanel
+            onSignedIn={(s) => {
+              setSession(s);
+              setShowAuth(false);
+              void api.progress(s.userId).then((r) => setQuest(r.progress));
+            }}
+          />
+        )}
+        {!showAuth && session && (
+          <button type="button" className="app__account" onClick={() => setShowAuth(true)}>
+            {session.verified ? `Verified: ${session.displayName}` : "Sign in with email"}
+          </button>
+        )}
         {propertyId && <AgentPanel propertyId={propertyId} agentName="Mira" />}
       </div>
     </div>

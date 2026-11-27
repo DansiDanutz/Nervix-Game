@@ -36,6 +36,8 @@ Unblocked application work is complete and verified (below).
   - Sequential steps, unique seals, no purchase required; progress persists per user.
   - Live: skip → `out_of_order`; step1-3 → advance; seal before step → `seal_locked`; collect → 1 seal; replay → `already_collected`; **step 3 + seal survive restart**.
   - Client: HUD seal counter, **E** collects a nearby seal marker.
+- Account UI: `app/src/ui/AuthPanel.tsx` — email → demo code → verified session; updates HUD and quest.
+  - `pnpm build` green after adding `verified?: boolean` to the client Session type.
 - Verified email identity: `server/src/auth.mjs` (pure code logic) + `/auth/signup`, `/auth/login`, `/auth/verify`; migration `007_verification` applied.
   - Codes are 6 digits, hashed (SHA-256) at rest, single-use, 10-minute expiry.
   - Live: signup → `devCode`; wrong code → `mismatch`; correct → `verified true`; replay → `already_used`.

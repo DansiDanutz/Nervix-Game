@@ -17,7 +17,7 @@ pnpm build      # tsc --noEmit && vite build  (verified green)
 
 The app boots into an explicit **blockout** (ground, fountain, two placeholder blocks) until `public/manifest.json` and the exported GLBs exist. That blockout is temporary and has a replacement path: Milestone 1's Blender district.
 
-The client talks to the demo API at `http://localhost:8787` (override with `VITE_API_URL`). Start the API first; the HUD shows "demo API connected" or "API offline — blockout only". The side panel is the merchant's AI employee: ask a question, and a confirming action (checkout, support) requires an explicit **Confirm**.
+The client talks to the demo API at `http://localhost:8787` (override with `VITE_API_URL`). Start the API first; the HUD shows "demo API connected" or "API offline — blockout only". The side panel holds the account card (email → 6-digit code → verified) and the merchant's AI employee: ask a question, and a confirming action (checkout, support) requires an explicit **Confirm**.
 
 The Lost Seals quest: progress is sequential and persisted per user; walk up to a seal marker and press **E** to collect it. Three seals complete the quest — no purchase required.
 

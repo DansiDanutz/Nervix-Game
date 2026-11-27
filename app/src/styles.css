@@ -263,3 +263,44 @@ body,
     max-height: 140px;
   }
 }
+
+.panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.panel__field input {
+  padding: 8px 10px;
+  border: 1px solid #d8cdb8;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.panel__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel__link {
+  background: none !important;
+  color: var(--teal) !important;
+  padding: 0 !important;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+.app__account {
+  align-self: flex-end;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--sand);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
