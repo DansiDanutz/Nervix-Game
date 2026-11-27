@@ -44,7 +44,9 @@ export function validateAgentConfig(input) {
   if (languages.length === 0 || languages.some((l) => !LANGUAGES.includes(l))) throw new MerchantError("unsupported language");
   const allowed_actions = input.allowed_actions ?? [TOOLS.SEARCH_CATALOG, TOOLS.READ_PRODUCT];
   if (!Array.isArray(allowed_actions) || allowed_actions.some((a) => !ALL_TOOLS.includes(a))) throw new MerchantError("unknown tool");
-  return { name, tone, languages: [...new Set(languages)], allowed_actions: [...new Set(allowed_actions)] };
+  const cap = input.monthlyRequestCap ?? null;
+  if (cap !== null && (!Number.isSafeInteger(cap) || cap < 0)) throw new MerchantError("monthlyRequestCap must be a non-negative integer");
+  return { name, tone, languages: [...new Set(languages)], allowed_actions: [...new Set(allowed_actions)], monthlyRequestCap: cap };
 }
 
 export function validateAppearance(input) {

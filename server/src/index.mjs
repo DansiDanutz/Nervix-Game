@@ -19,6 +19,7 @@ import { createHash } from "node:crypto";
 import { newCodeRecord, verifyCode, normalizeEmail, isValidEmail } from "./auth.mjs";
 import { QUEST, newProgress, advance, collectSeal } from "./quests.mjs";
 import { validateProduct, validateAgentConfig, validateAppearance } from "./merchants.mjs";
+import { checkCap, monthKey } from "./usage.mjs";
 import { newState, say, confirmAndRun } from "./conversation.mjs";
 import {
   createCampaign, requestPayment, markPaid, activate, tick, pause, resume, cancel,
@@ -186,6 +187,29 @@ const routes = {
     return { appearance };
   },
 
+  "GET /merchants/:merchantId/knowledge": async (_b, params) => {
+    if (!db.store) return { items: db.agent.knowledge };
+    return { items: await db.store.listKnowledge(params.merchantId) };
+  },
+
+  "POST /merchants/:merchantId/knowledge": async (body, params) => {
+    const content = String(body.content ?? "").trim();
+    if (!content) return { error: "content_required" };
+    if (!db.store) return { error: "requires_database" };
+    const id = await db.store.addKnowledge(params.merchantId, {
+      kind: String(body.kind ?? "faq").slice(0, 20),
+      content: content.slice(0, 8000),
+      uri: body.uri ? String(body.uri).slice(0, 400) : null,
+    });
+    return { id, approved: false };
+  },
+
+  "POST /merchants/:merchantId/knowledge/:id/approve": async (_b, params) => {
+    if (!db.store) return { error: "requires_database" };
+    await db.store.approveKnowledge(params.id);
+    return { approved: true };
+  },
+
   "GET /quests/lost-seals": () => ({ quest: QUEST }),
 
   "GET /progress": async (_b, params) => {
@@ -254,18 +278,31 @@ const routes = {
     if (!state && db.store) state = await db.store.getConversation(params.propertyId);
     if (!state) state = newState();
     db.conversations.set(params.propertyId, state);
+    const merchantId = body.merchantId ?? "mer_1";
+    const knowledge = db.store ? await db.store.listKnowledge(merchantId, true) : db.agent.knowledge;
+    const agent = db.store ? await db.store.getAgent(params.propertyId) : null;
+    const config = agent
+      ? { ...db.agent.config, name: agent.name, tone: agent.tone, languages: agent.languages, allowed_actions: agent.allowed_actions }
+      : db.agent.config;
+    const month = monthKey();
+    const usage = db.store ? await db.store.getUsage(params.propertyId, month) : { requests: 0 };
+    const cap = agent?.monthly_request_cap ?? null;
+    const budget = checkCap({ cap, used: usage.requests ?? 0 });
+    if (!budget.allowed) return { error: "cap_reached", remaining: 0 };
+
     const ctx = {
-      config: db.agent.config,
-      knowledge: db.agent.knowledge,
+      config,
+      knowledge,
       catalog: db.catalog,
-      context: buildContext({ config: db.agent.config, knowledge: db.agent.knowledge, catalog: db.catalog }),
+      context: buildContext({ config, knowledge, catalog: db.catalog }),
       orders: db.orders,
       state,
       userId: body.userId ?? "demo_user",
-      merchantId: body.merchantId ?? "mer_1",
+      merchantId,
     };
     const out = await say({ state, message: body.message, tool: body.tool, args: body.args ?? {}, ctx, provider: db.provider });
     await db.store?.saveConversation(params.propertyId, state);
+    await db.store?.addUsage(params.propertyId, month, { requests: 1, tokens: 0 });
     return out;
   },
 

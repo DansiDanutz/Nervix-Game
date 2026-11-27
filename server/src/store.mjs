@@ -241,14 +241,15 @@ export class PostgresStore {
 
   async updateAgent(propertyId, config) {
     await this.pool.query(
-      `INSERT INTO agent_configs (property_id, name, tone, languages, allowed_actions)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO agent_configs (property_id, name, tone, languages, allowed_actions, monthly_request_cap)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (property_id) DO UPDATE
          SET name = excluded.name,
              tone = excluded.tone,
              languages = excluded.languages,
-             allowed_actions = excluded.allowed_actions`,
-      [propertyId, config.name, config.tone, config.languages, config.allowed_actions],
+             allowed_actions = excluded.allowed_actions,
+             monthly_request_cap = excluded.monthly_request_cap`,
+      [propertyId, config.name, config.tone, config.languages, config.allowed_actions, config.monthlyRequestCap ?? null],
     );
   }
 
@@ -271,6 +272,54 @@ export class PostgresStore {
       id: r.id, state: r.state, totalMinor: r.total_minor,
       currency: r.currency, fulfillment: r.fulfillment, createdAt: r.created_at,
     }));
+  }
+
+  async addKnowledge(merchantId, { kind, content, uri = null }) {
+    const { rows } = await this.pool.query(
+      `INSERT INTO knowledge_sources (merchant_id, kind, uri, content, approved)
+       VALUES ($1, $2, $3, $4, false) RETURNING id`,
+      [merchantId, kind, uri, content],
+    );
+    return rows[0].id;
+  }
+
+  async listKnowledge(merchantId, approvedOnly = false) {
+    const { rows } = await this.pool.query(
+      `SELECT id, kind, uri, content, approved FROM knowledge_sources
+       WHERE merchant_id = $1 AND ($2 = false OR approved = true) ORDER BY id`,
+      [merchantId, approvedOnly],
+    );
+    return rows.map((r) => ({ id: r.id, kind: r.kind, uri: r.uri, content: r.content, approved: r.approved }));
+  }
+
+  async approveKnowledge(id) {
+    await this.pool.query("UPDATE knowledge_sources SET approved = true WHERE id = $1", [id]);
+  }
+
+  async getAgent(propertyId) {
+    const { rows } = await this.pool.query(
+      "SELECT name, tone, languages, allowed_actions, monthly_request_cap FROM agent_configs WHERE property_id = $1",
+      [propertyId],
+    );
+    return rows[0] ?? null;
+  }
+
+  async addUsage(propertyId, month, { requests, tokens }) {
+    await this.pool.query(
+      `INSERT INTO agent_usage (property_id, month, requests, tokens) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (property_id, month) DO UPDATE
+         SET requests = agent_usage.requests + excluded.requests,
+             tokens = agent_usage.tokens + excluded.tokens`,
+      [propertyId, month, requests, tokens],
+    );
+  }
+
+  async getUsage(propertyId, month) {
+    const { rows } = await this.pool.query(
+      "SELECT requests, tokens FROM agent_usage WHERE property_id = $1 AND month = $2",
+      [propertyId, month],
+    );
+    return rows[0] ?? { requests: 0, tokens: 0 };
   }
 
   async close() {

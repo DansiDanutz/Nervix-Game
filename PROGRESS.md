@@ -36,6 +36,9 @@ Unblocked application work is complete and verified (below).
   - Sequential steps, unique seals, no purchase required; progress persists per user.
   - Live: skip → `out_of_order`; step1-3 → advance; seal before step → `seal_locked`; collect → 1 seal; replay → `already_collected`; **step 3 + seal survive restart**.
   - Client: HUD seal counter, **E** collects a nearby seal marker.
+- Agent knowledge + metering: `usage.mjs`, knowledge routes, migration `009_usage` (+ `monthly_request_cap`).
+  - Unapproved knowledge is never used; approved content grounds the answer; cap blocks further inference (`cap_reached`); usage recorded per month.
+  - Live: unapproved → "I don't have that information"; approved → "The rooftop is open on Fridays at 19:00."; cap 1 → `cap_reached`; usage row `2026-11 2`.
 - Checkout + order history: `CheckoutPanel.tsx`, `GET /orders?buyerId=`, demo pay/fulfil.
   - Fixed id generation (`ord_1` collided with persisted rows) → unique `ord_<time>_<seq>`.
   - Live: order 750 EUR → paid → fulfilled; list empty before, `[(ord_…, fulfilled)]` **after restart**.
