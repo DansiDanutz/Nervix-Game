@@ -13,7 +13,7 @@ Omit secrets. Record evidence, not intentions.
 | Node.js | v26.13.0 | `node --version` |
 | pnpm | 10.32.1 | `pnpm --version` (needs `--store-dir` inside the workspace; the global store is outside the sandbox) |
 | Blender | **missing** | `command -v blender` → guard shim; `/opt/homebrew/bin/blender` does not exist; no `Blender.app` |
-| Reference images (4) | **not supplied** | none under `~/Downloads`, `~/Documents`, `~/Desktop`, `~/Documents/ChatGPT` |
+| Reference images (4) | **present** | `docs/references/` — 4 PNG, 1672×941, SHA-256 recorded; mapped to ref1–ref4 |
 | Postgres | not reachable | schema authored, unapplied |
 | NervixPay | demo only | no documented endpoints or credentials |
 
@@ -38,13 +38,13 @@ Unblocked application work is complete and verified (below).
   - Third-person controller, camera follow, collision bounds, proximity interaction, HUD, quest shell.
   - Boots into a labelled **blockout** until the Blender export exists.
 - Docs: `SETUP.md`, `BLENDER_GUIDE.md`, `STATUS.md`, `.env.example`.
+- Four concept images filed: `docs/references/ref1..ref4`, with mapping, hashes and palette check (`docs/references/README.md`). **Not visually inspected** — no image input in this session.
 
 ## Blockers
 
 1. **Blender is not installed** — blocks Milestone 0 and every visual deliverable.
-2. **Four concept images are not on disk** — no visual verification claimed.
-3. **No Postgres** — schema and seed are authored but unapplied.
-4. **NervixPay live docs/credentials missing** — demo adapter only.
+2. **No Postgres** — schema and seed are authored but unapplied.
+3. **NervixPay live docs/credentials missing** — demo adapter only.
 
 ## Next actions
 

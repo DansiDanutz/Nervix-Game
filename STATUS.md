@@ -13,7 +13,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Browser runtime | builds | `pnpm build` → tsc + Vite, 593 modules |
 | 3D world | **blockout only** | no `.blend`, no GLB; `CityScene` falls back to primitives |
 | Blender pipeline | **blocked** | Blender not installed |
-| Reference images | **missing** | 4 concept images not on disk; not inspected |
+| Reference images | present, not visually inspected | `docs/references/` 4 PNG 1672×941, hashes + palette check |
 | Merchant AI employees | not started | needs provider + backend endpoints |
 | Live NervixPay | **blocked** | endpoints/credentials undocumented here |
 | Multiplayer presence | not started | — |

@@ -13,16 +13,16 @@ The AGPL covers code, not art. Without an explicit asset licence, art defaults t
 
 ## Reference images
 
-The master prompt supplies four concept images. **None were found on disk or in the ChatGPT project folder**, so none were inspected.
+The four concept images are now filed in [`references/`](references/README.md) with a reference-to-file mapping and SHA-256 hashes.
 
 | Ref | Subject | Status |
 |---|---|---|
-| 1 | City overview | not inspected |
-| 2 | Merchant building concepts | not inspected |
-| 3 | Character lineup | not inspected |
-| 4 | Café interior | not inspected |
+| 1 | City overview | present, mapped — **not visually inspected** (no image input in session) |
+| 2 | Merchant building concepts | present, mapped — not visually inspected |
+| 3 | Character lineup | present, mapped — not visually inspected |
+| 4 | Café interior | present, mapped — not visually inspected |
 
-Until they are supplied, build from the written descriptions in `MASTER_PROMPT.md` §2 and claim no visual verification.
+Palette was verified programmatically (warm sandstone/terracotta/cream in all four). No composition or material claim is made from looking at them. Build from the written descriptions in `MASTER_PROMPT.md` §2 plus these files, and claim no visual verification until a reviewer with image input signs off.
 
 ## Asset conventions
 
