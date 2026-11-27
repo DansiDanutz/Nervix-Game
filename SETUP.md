@@ -108,6 +108,7 @@ never returned; matching an email alone never grants access to an existing accou
 - Merchant data (seed only)
 
 A browser redirect or an agent statement is never treated as proof of payment.
+
 ### Live payment-link registration
 Set the server-only secret `WORLD_REGISTRY_URL` to the insert-only writer connection
 for the **receiver's existing database**. This is separate from the game's
@@ -117,3 +118,25 @@ for the **receiver's existing database**. This is separate from the game's
 do not put it in the client. Demo checkout needs no registry. If a registry write
 fails after the provider creates a link, the server withholds the URL; reconcile
 that unused provider link before manually retrying.
+
+
+
+## Live NervixPay (configured)
+
+Credentials live in `~/.config/nervixpay/nervix-world.env` (mode `live`, merchant `DansiDanutz`,
+agent token expires 2026-12-04). The server uses the live adapter automatically when
+`NERVIXPAY_AGENT_TOKEN` and `NERVIXPAY_BASE_URL` are set.
+
+Verified: a real payment link was created at `https://nervixpay.live/l/<id>`, and a signed
+`payment.paid` webhook (HMAC-SHA256 over `t.body`) returned `{"ok":true,"state":"paid"}` both
+locally and through a public `cloudflared` tunnel registered with `POST /api/v1/webhook`.
+
+The tunnel URL is ephemeral; re-register after a restart:
+
+```sh
+cloudflared tunnel --url http://localhost:8787
+curl -X POST "$NERVIXPAY_BASE_URL/api/v1/webhook" \
+  -H "Authorization: Bearer $NERVIXPAY_AGENT_TOKEN" -H 'content-type: application/json' \
+  -d '{"url":"<tunnel-url>"}'
+```
+

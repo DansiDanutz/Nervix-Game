@@ -63,11 +63,12 @@ export function createLiveAdapter({ baseUrl, agentToken, webhookSecret }) {
           backgroundColor: "#f7f1e3",
         },
       });
+      const id = link.paymentLink?.id ?? link.id ?? null;
       return {
         provider: "nervixpay",
         demo: false,
-        checkoutId: link.id ?? link.paymentLink?.id ?? null,
-        url: link.url ?? link.paymentLink?.url ?? null,
+        checkoutId: id,
+        url: id ? `${base}/l/${id}` : null,
         state: "awaiting_payment",
         amountMinor: order.totalMinor,
         currency: order.currency,
