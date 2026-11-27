@@ -36,13 +36,16 @@ Unblocked application work is complete and verified (below).
   - Sequential steps, unique seals, no purchase required; progress persists per user.
   - Live: skip → `out_of_order`; step1-3 → advance; seal before step → `seal_locked`; collect → 1 seal; replay → `already_collected`; **step 3 + seal survive restart**.
   - Client: HUD seal counter, **E** collects a nearby seal marker.
+- Merchant onboarding: `server/src/merchants.mjs` (validators) + product/agent/appearance routes; migration `008_property_palette`; `MerchantPanel.tsx` in the client.
+  - Prices are integer minor units; templates, tones, languages and tools are whitelisted; agent config upserts.
+  - Live: float money → `MerchantError`; unknown tool → `MerchantError`; appearance `cafe_shop/#123456` persisted; agent `Sana/warm/en+ro` persisted; `pnpm build` green.
 - Account UI: `app/src/ui/AuthPanel.tsx` — email → demo code → verified session; updates HUD and quest.
   - `pnpm build` green after adding `verified?: boolean` to the client Session type.
 - Verified email identity: `server/src/auth.mjs` (pure code logic) + `/auth/signup`, `/auth/login`, `/auth/verify`; migration `007_verification` applied.
   - Codes are 6 digits, hashed (SHA-256) at rest, single-use, 10-minute expiry.
   - Live: signup → `devCode`; wrong code → `mismatch`; correct → `verified true`; replay → `already_used`.
 - Shared presence: `server/src/presence.mjs` (ws) + `app/src/net/presence.ts`, `RemotePlayers`.
-  - `node --test test/` → **58 tests, 58 pass, 0 fail** (auth, presence, quests, ledger, provisioning, campaigns, agent).
+  - `node --test test/` → **64 tests, 64 pass, 0 fail** (auth, presence, quests, ledger, provisioning, campaigns, agent).
   - Live: two clients join → both see each other; move → `x=5 z=-2` broadcast; leave → removed. Public position only.
 - Runnable demo API: `server/src/index.mjs` (node:http, in-memory or Postgres, zero deps beyond pg/ws).
   - API smoke test: provision→created, retry→`created:false`; order total 750 EUR; `payment_created`→pending_payment; `payment_succeeded`→paid; replay→paid (no double fulfil); fulfil→fulfilled; unauthorized `open_app` denied; campaign awaiting_payment→scheduled→active→servable `True cmp_now`; unpaid placement `servable False`.

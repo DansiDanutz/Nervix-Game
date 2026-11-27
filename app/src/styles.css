@@ -304,3 +304,35 @@ body,
   font-size: 12px;
   cursor: pointer;
 }
+
+.panel__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.panel__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.panel__grid input,
+.panel__grid select {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #d8cdb8;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.panel__grid button {
+  grid-column: span 2;
+}

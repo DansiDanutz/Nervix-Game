@@ -18,6 +18,7 @@ import { attachPresence } from "./presence.mjs";
 import { createHash } from "node:crypto";
 import { newCodeRecord, verifyCode, normalizeEmail, isValidEmail } from "./auth.mjs";
 import { QUEST, newProgress, advance, collectSeal } from "./quests.mjs";
+import { validateProduct, validateAgentConfig, validateAppearance } from "./merchants.mjs";
 import { newState, say, confirmAndRun } from "./conversation.mjs";
 import {
   createCampaign, requestPayment, markPaid, activate, tick, pause, resume, cancel,
@@ -139,6 +140,44 @@ const routes = {
     if (!user) return { error: "no_such_user" };
     await db.store.markVerified(user.id);
     return { userId: user.id, displayName: user.display_name, role: "player", verified: true, demo: true };
+  },
+
+  "GET /merchants/:merchantId/products": async (_b, params) => {
+    const items = db.store
+      ? await db.store.listProducts(params.merchantId)
+      : db.catalog.filter((p) => p.merchantId === params.merchantId);
+    return { items };
+  },
+
+  "POST /merchants/:merchantId/products": async (body, params) => {
+    const product = validateProduct(body);
+    await db.store?.ensureMerchant(params.merchantId, body.ownerId ?? "demo_user");
+    await db.store?.upsertProduct(params.merchantId, product);
+    if (!db.store) {
+      const i = db.catalog.findIndex((p) => p.merchantId === params.merchantId && p.sku === product.sku);
+      if (i >= 0) db.catalog[i] = { ...product, merchantId: params.merchantId };
+      else db.catalog.push({ ...product, merchantId: params.merchantId });
+    }
+    return { product };
+  },
+
+  "PATCH /merchants/:merchantId/agent": async (body, params) => {
+    const config = validateAgentConfig(body);
+    if (!db.store) return { error: "requires_database" };
+    const property = await db.store.getProperty(body.propertyId);
+    if (!property) return { error: "unknown_property" };
+    await db.store.updateAgent(body.propertyId, config);
+    db.agent.config = { ...db.agent.config, ...config };
+    return { config };
+  },
+
+  "PATCH /merchants/:merchantId/appearance": async (body, params) => {
+    const appearance = validateAppearance(body);
+    if (!db.store) return { error: "requires_database" };
+    const property = await db.store.getProperty(body.propertyId);
+    if (!property) return { error: "unknown_property" };
+    await db.store.updateAppearance(body.propertyId, appearance);
+    return { appearance };
   },
 
   "GET /quests/lost-seals": () => ({ quest: QUEST }),
@@ -336,7 +375,7 @@ const server = http.createServer(async (req, res) => {
   params = { ...Object.fromEntries(url.searchParams.entries()), ...params };
   if (!handler) return send(res, 404, { error: "not_found", path });
   try {
-    const body = req.method === "POST" ? await readJson(req) : {};
+    const body = ["POST", "PATCH", "PUT"].includes(req.method) ? await readJson(req) : {};
     return send(res, 200, await handler(body, params));
   } catch (error) {
     return send(res, 400, { error: error.name ?? "error", message: error.message });

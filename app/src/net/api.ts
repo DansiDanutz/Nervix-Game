@@ -80,6 +80,13 @@ export const api = {
     call<{ progress: QuestProgress }>("/progress", { userId, seal }),
   advance: (userId: string, step: string) =>
     call<{ progress: QuestProgress }>("/progress", { userId, step }),
+  merchantProducts: (merchantId: string) => call<{ items: CatalogItem[] }>(`/merchants/${merchantId}/products`),
+  addProduct: (merchantId: string, product: Omit<CatalogItem, "active">) =>
+    call<{ product: CatalogItem }>(`/merchants/${merchantId}/products`, product),
+  updateAgent: (merchantId: string, propertyId: string, config: Record<string, unknown>) =>
+    call<{ config: Record<string, unknown> }>(`/merchants/${merchantId}/agent`, { propertyId, ...config }),
+  updateAppearance: (merchantId: string, propertyId: string, appearance: Record<string, string>) =>
+    call<{ appearance: Record<string, string> }>(`/merchants/${merchantId}/appearance`, { propertyId, ...appearance }),
   confirm: (propertyId: string, action: AgentAction) =>
     call<{ result: unknown }>(`/agent/${propertyId}/confirm`, { action }),
 };

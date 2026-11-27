@@ -5,10 +5,11 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Capability | State | Evidence |
 |---|---|---|
 | Repo + licence | working | `LICENSE` AGPL-3.0-only, commit `3c0fbca` |
-| Backend order/payment state machine | working (demo) | `node --test test/` → 58/58 pass |
+| Backend order/payment state machine | working (demo) | `node --test test/` → 64/64 pass |
 | Idempotent property provisioning | working (demo) | same test run |
 | Demo NervixPay adapter | demo | `server/src/nervixpay.demo.mjs`, `DEMO_MODE = true` |
 | Database schema | applied | `nervix_world` on PG 16.15; migrations 001–007 green |
+| Merchant onboarding | working | products, agent config, appearance; validated and persisted |
 | Account UI | working | `AuthPanel.tsx` email → code → verified session |
 | Identity | working (demo codes) | `auth.mjs` + 007; single-use hashed codes, verify/consume |
 | Seed demo merchants | applied | 3 users / 3 merchants / 3 properties / 3 agents |
