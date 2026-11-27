@@ -8,7 +8,7 @@
  */
 
 import http from "node:http";
-import { createOrder, applyPaymentEvent, fulfil, refund, ORDER_STATES } from "./ledger.mjs";
+import { createOrder, applyPaymentEvent, fulfil, refund, ORDER_STATES, EVENTS } from "./ledger.mjs";
 import { provisionProperty } from "./provision.mjs";
 import { createCheckout as demoCheckout, verifyWebhook as demoVerify, DEMO_MODE } from "./nervixpay.demo.mjs";
 import { createLiveAdapter } from "./nervixpay.live.mjs";
@@ -296,18 +296,34 @@ const routes = {
     }
   },
 
-  "POST /webhooks/nervixpay": async (req, res) => {
-    const raw = await readRaw(req);
+  "POST /webhooks/nervixpay": async (body) => {
     let event;
     try {
-      event = db.payments ? db.payments.verifyWebhook(raw, req.headers) : demoVerify(JSON.parse(raw.toString("utf8") || "{}"));
+      const parsed = JSON.parse(body.raw.toString("utf8") || "{}");
+      if (db.payments) {
+        event = db.payments.verifyWebhook(body.raw, body.headers);
+      } else if (parsed.event === "payment.paid" && parsed.orderId) {
+        // Demo mode accepts the documented shape without a signature.
+        event = { eventId: `demo_${parsed.orderId}_${parsed.transactionId ?? "tx"}`, type: "payment_succeeded", at: parsed.paidAt ?? new Date().toISOString(), orderId: parsed.orderId };
+      } else {
+        event = demoVerify(parsed);
+      }
     } catch (error) {
-      res.writeHead(400, { "content-type": "application/json" });
-      return res.end(JSON.stringify({ error: error.name, message: error.message }));
+      return { error: error.name ?? "error", message: error.message };
     }
-    const order = db.orders.get(event.raw?.orderId ?? "");
+    const orderId = event.raw?.orderId ?? event.orderId;
+    let order = db.orders.get(orderId) ?? (db.store ? await db.store.getOrder(orderId) : null);
     if (!order) return { error: "unknown_order" };
-    const next = applyPaymentEvent(order, event);
+    let next;
+    try {
+      // A real checkout opens a pending payment before the paid event arrives.
+      if (order.state === ORDER_STATES.CREATED) {
+        order = applyPaymentEvent(order, { eventId: `${event.eventId}_created`, type: EVENTS.PAYMENT_CREATED });
+      }
+      next = applyPaymentEvent(order, event);
+    } catch (error) {
+      return { error: error.name ?? "error", message: error.message, state: order.state };
+    }
     db.orders.set(next.id, next);
     await db.store?.saveOrder(next);
     return { ok: true, order: next.id, state: next.state };
@@ -360,7 +376,16 @@ const routes = {
     const order = db.orders.get(params.id);
     if (!order) return { error: "not_found" };
     const event = verifyWebhook(body);
-    const next = applyPaymentEvent(order, event);
+    let next;
+    try {
+      // A real checkout opens a pending payment before the paid event arrives.
+      if (order.state === ORDER_STATES.CREATED) {
+        order = applyPaymentEvent(order, { eventId: `${event.eventId}_created`, type: EVENTS.PAYMENT_CREATED });
+      }
+      next = applyPaymentEvent(order, event);
+    } catch (error) {
+      return { error: error.name ?? "error", message: error.message, state: order.state };
+    }
     db.orders.set(next.id, next);
     await db.store?.saveOrder(next);
     return { order: next };
@@ -529,10 +554,16 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  const rawBodyRoute = req.method === "POST" && path === "/webhooks/nervixpay";
   params = { ...Object.fromEntries(url.searchParams.entries()), ...params };
+  if (rawBodyRoute) {
+    const raw = await readRaw(req);
+    return send(res, 200, await handler({ raw, headers: req.headers }, params));
+  }
   if (!handler) return send(res, 404, { error: "not_found", path });
   try {
-    const body = ["POST", "PATCH", "PUT"].includes(req.method) ? await readJson(req) : {};
+    // The webhook route verifies the raw bytes, so its stream must stay unread.
+    const body = ["POST", "PATCH", "PUT"].includes(req.method) && !rawBodyRoute ? await readJson(req) : {};
     return send(res, 200, await handler(body, params));
   } catch (error) {
     return send(res, 400, { error: error.name ?? "error", message: error.message });
