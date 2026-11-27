@@ -8,6 +8,7 @@ Omit secrets. Record evidence, not intentions.
 | Capability | State | Evidence |
 |---|---|---|
 | Repo workspace | ready | `~/Sandbox/deepseek-harness-workspace/nervix-world` |
+| Remote | `origin` → github.com/DansiDanutz/Nervix-Game | pushed `4bce72a`, GitHub reports AGPL-3.0, 35 files |
 | Licence | AGPL-3.0-only | `LICENSE` (GNU AFFERO GPL v3, 34523 bytes) |
 | Node.js | v26.13.0 | `node --version` |
 | pnpm | 10.32.1 | `pnpm --version` (needs `--store-dir` inside the workspace; the global store is outside the sandbox) |
