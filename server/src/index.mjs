@@ -211,6 +211,30 @@ const routes = {
     return { approved: true };
   },
 
+  "GET /admin/merchants": async (_b, params) => {
+    if (!(await db.store?.isAdmin(params.userId))) return { error: "forbidden" };
+    return { merchants: await db.store.listMerchants() };
+  },
+
+  "POST /admin/merchants/:merchantId/suspend": async (body, params) => {
+    if (!(await db.store?.isAdmin(body.userId))) return { error: "forbidden" };
+    await db.store.setSuspended(params.merchantId, true);
+    await db.store.addAudit({ actorId: body.userId, action: "merchant.suspend", subject: params.merchantId });
+    return { merchant: params.merchantId, suspended: true };
+  },
+
+  "POST /admin/merchants/:merchantId/reinstate": async (body, params) => {
+    if (!(await db.store?.isAdmin(body.userId))) return { error: "forbidden" };
+    await db.store.setSuspended(params.merchantId, false);
+    await db.store.addAudit({ actorId: body.userId, action: "merchant.reinstate", subject: params.merchantId });
+    return { merchant: params.merchantId, suspended: false };
+  },
+
+  "GET /admin/audit": async (_b, params) => {
+    if (!(await db.store?.isAdmin(params.userId))) return { error: "forbidden" };
+    return { events: await db.store.listAudit() };
+  },
+
   "GET /apps": () => ({ apps: APPS.map(publicApp) }),
 
   "GET /merchants/:merchantId/apps": async (_b, params) => {

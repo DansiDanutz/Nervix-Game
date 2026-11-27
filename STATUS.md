@@ -10,6 +10,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Demo NervixPay adapter | demo | `server/src/nervixpay.demo.mjs`, `DEMO_MODE = true` |
 | Database schema | applied | `nervix_world` on PG 16.15; migrations 001–007 green |
 | Checkout + orders | working (demo) | `CheckoutPanel.tsx`, `GET /orders`; pay→fulfil, survives restart |
+| Admin + moderation | working | `/admin/*` role-gated, actions audited, suspension persisted |
 | App catalog | working (demo connectors) | `apps.mjs`; per-merchant connect, health `demo`, tenant isolated |
 | Agent knowledge + caps | working | approved-only grounding, per-month request cap, usage recorded |
 | Merchant onboarding | working | products, agent config, appearance; validated and persisted |

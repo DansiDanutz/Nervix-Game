@@ -36,6 +36,9 @@ Unblocked application work is complete and verified (below).
   - Sequential steps, unique seals, no purchase required; progress persists per user.
   - Live: skip → `out_of_order`; step1-3 → advance; seal before step → `seal_locked`; collect → 1 seal; replay → `already_collected`; **step 3 + seal survive restart**.
   - Client: HUD seal counter, **E** collects a nearby seal marker.
+- Admin + moderation: migration `010_moderation`, store admin/audit, `/admin/*` routes.
+  - Role checked server-side; every admin action writes `audit_events`.
+  - Live: non-admin → `forbidden`; admin lists 4 merchants; suspend mer_1 → `suspended true`; audit shows `('merchant.suspend','mer_1')`.
 - App integration catalog: `apps.mjs`, store connect/list/disconnect, seed 3 apps.
   - Config validated per app; demo connectors always report `demo`; credentials never returned.
   - Live: missing field → `AppError`; connect → `health demo`; only `booking` connected for mer_1; **mer_2 sees none** (tenant isolation); disconnect works.

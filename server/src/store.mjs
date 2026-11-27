@@ -356,6 +356,40 @@ export class PostgresStore {
     await this.pool.query("DELETE FROM merchant_app_connections WHERE merchant_id = $1 AND app_id = $2", [merchantId, appId]);
   }
 
+  async isAdmin(userId) {
+    const { rows } = await this.pool.query("SELECT role FROM users WHERE id = $1", [userId]);
+    return rows[0]?.role === "admin";
+  }
+
+  async listMerchants() {
+    const { rows } = await this.pool.query(
+      "SELECT id, name, business_type, suspended FROM merchants ORDER BY name",
+    );
+    return rows.map((r) => ({ id: r.id, name: r.name, businessType: r.business_type, suspended: r.suspended }));
+  }
+
+  async setSuspended(merchantId, suspended) {
+    await this.pool.query("UPDATE merchants SET suspended = $2 WHERE id = $1", [merchantId, suspended]);
+  }
+
+  async addAudit({ actorId, action, subject, detail = null }) {
+    await this.pool.query(
+      `INSERT INTO audit_events (actor_id, action, subject, detail) VALUES ($1, $2, $3, $4)`,
+      [actorId, action, subject, detail ? JSON.stringify(detail) : null],
+    );
+  }
+
+  async listAudit(limit = 50) {
+    const { rows } = await this.pool.query(
+      "SELECT id, actor_id, action, subject, detail, created_at FROM audit_events ORDER BY id DESC LIMIT $1",
+      [limit],
+    );
+    return rows.map((r) => ({
+      id: r.id, actorId: r.actor_id, action: r.action,
+      subject: r.subject, detail: r.detail, createdAt: r.created_at,
+    }));
+  }
+
   async close() {
     await this.pool.end();
   }
