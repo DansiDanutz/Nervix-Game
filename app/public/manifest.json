@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "district": "nervix_city_district_01",
+  "assets": [
+    {
+      "id": "nervix_city_district_01",
+      "file": "nervix_city_district_01.glb",
+      "bytes": 131472
+    }
+  ],
+  "markers": [
+    {
+      "id": "nervix_sign_surface",
+      "kind": "sign",
+      "slot": "slot-01",
+      "position": [
+        0.0,
+        3.85,
+        2.45
+      ]
+    }
+  ]
+}

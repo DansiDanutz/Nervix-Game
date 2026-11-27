@@ -22,8 +22,8 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Seed demo merchants | applied | 3 users / 3 merchants / 3 properties / 3 agents |
 | Persistence | working | `store.mjs`; orders, properties, campaigns, conversations survive restart |
 | Browser runtime | builds, wired to API | `pnpm build` → tsc + Vite, 595 modules; agent chat + confirm UI |
-| 3D world | **blockout only** | no `.blend`, no GLB; `CityScene` falls back to primitives |
-| Blender pipeline | **blocked** | Blender not installed |
+| 3D world | **Milestone 0 live** | `nervix_city_district_01.blend` + GLB 131 kB in `app/public`; blockout retired |
+| Blender pipeline | working | Blender 5.3.0; build + validate 7/7 + export verified |
 | Reference images | present, not visually inspected | `docs/references/` 4 PNG 1672×941, hashes + palette check |
 | Merchant AI employees | working (offline provider) | `agent.mjs` + `conversation.mjs`; grounded replies, authorized tools, confirmation gate |
 | Paid advertising | state machine + API working (demo) | `server/src/campaigns.mjs`; unpaid campaigns never serve |
@@ -35,8 +35,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 
 ## Blocked by an external dependency
 
-1. **Blender 4.x** — blocks every visual deliverable and Milestone 0.
-2. **Four concept images** — present but not visually inspected (no image input).
+1. **Four concept images** — present but not visually inspected (no image input).
 3. **NervixPay live docs/credentials** — blocks real payments; demo adapter covers the journey.
 
 ## Measured

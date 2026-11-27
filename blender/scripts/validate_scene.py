@@ -21,6 +21,7 @@ import json
 import sys
 
 import bpy
+from mathutils import Vector
 
 MANAGED = "NERVIX_MANAGED"
 CHARACTER = "nervix_ref_character"
@@ -35,7 +36,7 @@ def collection(name):
 
 def world_height(obj):
     """Bounding-box height in world space, in metres."""
-    corners = [obj.matrix_world @ v.co for v in obj.bound_box]
+    corners = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
     zs = [c.z for c in corners]
     return max(zs) - min(zs)
 

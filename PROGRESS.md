@@ -12,21 +12,25 @@ Omit secrets. Record evidence, not intentions.
 | Licence | AGPL-3.0-only | `LICENSE` (GNU AFFERO GPL v3, 34523 bytes) |
 | Node.js | v26.13.0 | `node --version` |
 | pnpm | 10.32.1 | `pnpm --version` (needs `--store-dir` inside the workspace; the global store is outside the sandbox) |
-| Blender | **missing** | `command -v blender` → guard shim; `/opt/homebrew/bin/blender` does not exist; no `Blender.app` |
+| Blender | **5.3.0 installed** | `blender --version` → 5.3.0; `bpy` 5.3.0; glTF export available |
 | Reference images (4) | **present** | `docs/references/` — 4 PNG, 1672×941, SHA-256 recorded; mapped to ref1–ref4 |
 | Postgres | **16.15 at /tmp:5432** | `nervix_world` created; migrations 001–004 applied; seed 3/3/3/3 |
 | NervixPay | demo only | no documented endpoints or credentials |
 
 ## Current milestone
 
-**Milestone 0 — prove the Blender pipeline.** Blocked on Blender installation.
-Unblocked application work is complete and verified (below).
+**Milestone 0 — COMPLETE.** `nervix_city_district_01.blend` built, validated 7/7, exported to GLB and loaded by the runtime (blockout retired).
 
 ## Done (with evidence)
 
 - Repo created; AGPL-3.0-only; asset policy in `docs/ASSETS.md`.
 - Master spec captured: `docs/MASTER_PROMPT.md`. Environment: `docs/ENVIRONMENT.md`.
-- `bpy` tooling authored: `blender/scripts/validate_scene.py`, `export_glb.py` (**unexecuted**).
+- `bpy` tooling: `build_m0.py` (scene builder), `validate_scene.py`, `export_glb.py`.
+- **Milestone 0 (executed):** `blender --background --python blender/scripts/build_m0.py` → `nervix_city_district_01.blend` (street corner, kerb, 2.1 m doorway, sign surface, 1.8 m rigged character with `idle`+`walk`).
+  - `validate_scene.py` → **7/7 PASS** (metric units, managed collection, 1.800 m character, 2.100 m doorway, materials, actions, collision marker).
+  - Export: `nervix_city_district_01.glb` **131,472 bytes**, header `glTF` v2, length matches; manifest with sign marker.
+  - Idempotent: rebuild → still 6 objects / 5 meshes / actions `[idle, walk]`, identical GLB size.
+  - Runtime: GLB + manifest copied to `app/public/`; blockout is no longer used.
 - Backend state machine + provisioning: `server/src/ledger.mjs`, `provision.mjs`.
 - Merchant AI employee rules: `server/src/agent.mjs` — approved-knowledge grounding, per-merchant tool authorization, confirmation before checkout/support, player text treated as untrusted data.
 - Conversational agent: `server/src/provider.mjs` (offline `localProvider` + replaceable OpenAI-compatible `remoteProvider`) and `server/src/conversation.mjs` (grounded replies, server-side tool execution, cart totals recomputed from the catalog, confirmation gate).
@@ -94,10 +98,9 @@ Unblocked application work is complete and verified (below).
 
 ## Next actions
 
-1. Install Blender 4.x, then:
-   `blender --background --python blender/scripts/validate_scene.py`
-2. Author `nervix_city_district_01.blend` (M0): modular street corner, door, sign surface, rigged character with idle + walk.
-3. Export GLB + manifest, copy into `app/public/`, load in the runtime, compare to the written visual direction.
+1. Milestone 1: expand the M0 corner into the full district (plaza, fountain, merchant house, café, casino exterior, one interior).
+2. Author three NPC variants from the shared rig.
+3. Compare Blender and runtime previews against the written visual direction (concept images still uninspected).
 4. Apply the schema to Postgres and seed demo merchants.
 5. Point `AGENT_MODEL_BASE_URL` / `AGENT_MODEL_KEY` at a provider to replace the offline `localProvider`; add voice when configured.
 6. Measure frame time on the desktop and mobile profiles; code-split the three.js bundle.

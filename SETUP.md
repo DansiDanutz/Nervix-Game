@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js 20+ (verified: v26.13.0) and pnpm 10 (verified: 10.32.1)
-- Blender 4.x — **not installed on this machine yet**
+- Blender 5.3.0 (verified)
 - PostgreSQL 14+ with `pgcrypto`
 
 ## App
