@@ -55,6 +55,8 @@ Unblocked application work is complete and verified (below).
 - Merchant onboarding: `server/src/merchants.mjs` (validators) + product/agent/appearance routes; migration `008_property_palette`; `MerchantPanel.tsx` in the client.
   - Prices are integer minor units; templates, tones, languages and tools are whitelisted; agent config upserts.
   - Live: float money → `MerchantError`; unknown tool → `MerchantError`; appearance `cafe_shop/#123456` persisted; agent `Sana/warm/en+ro` persisted; `pnpm build` green.
+- Refunds: ledger `refund()` (paid/fulfilled → refunded, once), `POST /orders/:id/refund`, Refund button in Orders; migration `011_refunds` allows the state.
+  - Live: paid → `refunded` with reason; double refund → `TransitionError`; **persists as `refunded` after restart**; tests **79/79**.
 - Performance: manualChunks (three/react) + lazy `SceneView` behind an **Enter the city** gate; `PerfMeter` reports measured FPS in the status pill.
   - Before: one 1188 kB chunk (331 kB gzip). After: shell **17.15 kB (5.63 gzip)**, SceneView 4.65 kB, three 1168 kB loaded only on entry.
   - FPS is measured, not claimed: the 60/30 profiles need the Blender district.

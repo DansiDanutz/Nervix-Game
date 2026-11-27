@@ -6,6 +6,7 @@ const LABEL: Record<string, string> = {
   pending_payment: "awaiting payment",
   paid: "paid",
   fulfilled: "fulfilled",
+  refunded: "refunded",
   failed: "failed",
   cancelled: "cancelled",
   expired: "expired",
@@ -25,6 +26,16 @@ export function CheckoutPanel({ userId }: { userId: string }) {
     setBusy(id);
     try {
       await api.payDemo(id);
+      refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function refund(id: string) {
+    setBusy(id);
+    try {
+      await api.refund(id, "requested by player");
       refresh();
     } finally {
       setBusy(null);
@@ -59,6 +70,11 @@ export function CheckoutPanel({ userId }: { userId: string }) {
             {o.state === "paid" && (
               <button type="button" onClick={() => fulfil(o.id)} disabled={busy === o.id}>
                 Fulfil
+              </button>
+            )}
+            {(o.state === "paid" || o.state === "fulfilled") && (
+              <button type="button" onClick={() => refund(o.id)} disabled={busy === o.id}>
+                Refund
               </button>
             )}
             {(o.state === "created" || o.state === "pending_payment") && (

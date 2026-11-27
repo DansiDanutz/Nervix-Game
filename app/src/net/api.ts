@@ -121,6 +121,7 @@ export const api = {
     });
   },
   fulfil: (orderId: string) => call<{ order: OrderSummary }>(`/orders/${orderId}/fulfil`, {}),
+  refund: (orderId: string, reason: string) => call<{ order: OrderSummary }>(`/orders/${orderId}/refund`, { reason }),
   merchantProducts: (merchantId: string) => call<{ items: CatalogItem[] }>(`/merchants/${merchantId}/products`),
   addProduct: (merchantId: string, product: Omit<CatalogItem, "active">) =>
     call<{ product: CatalogItem }>(`/merchants/${merchantId}/products`, product),

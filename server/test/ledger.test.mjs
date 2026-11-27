@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  ORDER_STATES, EVENTS, createOrder, applyPaymentEvent, fulfil, isTerminal, TransitionError,
+  ORDER_STATES, EVENTS, createOrder, applyPaymentEvent, fulfil, refund, isTerminal, TransitionError,
 } from "../src/ledger.mjs";
 
 const items = [{ sku: "coffee", name: "Coffee", unitAmountMinor: 450, quantity: 2 }];
@@ -26,7 +26,9 @@ test("happy path: pending -> paid -> fulfilled", () => {
   assert.equal(order.state, ORDER_STATES.PAID);
   order = fulfil(order);
   assert.equal(order.state, ORDER_STATES.FULFILLED);
-  assert.ok(isTerminal(order.state));
+  // A fulfilled order may still be refunded, so it is not terminal.
+  assert.ok(!isTerminal(order.state));
+  assert.ok(isTerminal(refund(order).state));
 });
 
 test("duplicate webhook does not fulfil twice", () => {
@@ -68,4 +70,25 @@ test("failed and cancelled are terminal", () => {
 test("unknown event type is rejected", () => {
   const order = createOrder(base);
   assert.throws(() => applyPaymentEvent(order, { eventId: "x", type: "nonsense" }), TransitionError);
+});
+test("a paid order can be refunded once", () => {
+  let order = createOrder(base);
+  order = applyPaymentEvent(order, { eventId: "r1", type: EVENTS.PAYMENT_CREATED });
+  order = applyPaymentEvent(order, { eventId: "r2", type: EVENTS.PAYMENT_SUCCEEDED });
+  const refunded = refund(order, { reason: "changed mind" });
+  assert.equal(refunded.state, ORDER_STATES.REFUNDED);
+  assert.equal(refunded.refundReason, "changed mind");
+  assert.throws(() => refund(refunded), TransitionError);
+});
+
+test("a fulfilled order can still be refunded", () => {
+  let order = createOrder(base);
+  order = applyPaymentEvent(order, { eventId: "f1", type: EVENTS.PAYMENT_CREATED });
+  order = applyPaymentEvent(order, { eventId: "f2", type: EVENTS.PAYMENT_SUCCEEDED });
+  order = fulfil(order);
+  assert.equal(refund(order).state, ORDER_STATES.REFUNDED);
+});
+
+test("an unpaid order cannot be refunded", () => {
+  assert.throws(() => refund(createOrder(base)), TransitionError);
 });

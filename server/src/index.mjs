@@ -8,7 +8,7 @@
  */
 
 import http from "node:http";
-import { createOrder, applyPaymentEvent, fulfil, ORDER_STATES } from "./ledger.mjs";
+import { createOrder, applyPaymentEvent, fulfil, refund, ORDER_STATES } from "./ledger.mjs";
 import { provisionProperty } from "./provision.mjs";
 import { createCheckout, verifyWebhook, DEMO_MODE } from "./nervixpay.demo.mjs";
 import { buildContext, TOOLS } from "./agent.mjs";
@@ -324,6 +324,15 @@ const routes = {
     const order = db.orders.get(params.id);
     if (!order) return { error: "not_found" };
     const next = fulfil(order);
+    db.orders.set(next.id, next);
+    await db.store?.saveOrder(next);
+    return { order: next };
+  },
+
+  "POST /orders/:id/refund": async (body, params) => {
+    const order = db.orders.get(params.id) ?? (db.store ? await db.store.getOrder(params.id) : null);
+    if (!order) return { error: "not_found" };
+    const next = refund(order, { reason: body.reason });
     db.orders.set(next.id, next);
     await db.store?.saveOrder(next);
     return { order: next };

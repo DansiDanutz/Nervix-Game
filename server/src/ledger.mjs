@@ -15,6 +15,7 @@ export const ORDER_STATES = Object.freeze({
   PENDING_PAYMENT: "pending_payment",
   PAID: "paid",
   FULFILLED: "fulfilled",
+  REFUNDED: "refunded",
   FAILED: "failed",
   CANCELLED: "cancelled",
   EXPIRED: "expired",
@@ -27,6 +28,7 @@ export const EVENTS = Object.freeze({
   PAYMENT_FAILED: "payment_failed",
   PAYMENT_CANCELLED: "payment_cancelled",
   PAYMENT_EXPIRED: "payment_expired",
+  PAYMENT_REFUNDED: "payment_refunded",
 });
 
 const TRANSITIONS = Object.freeze({
@@ -37,11 +39,12 @@ const TRANSITIONS = Object.freeze({
     ORDER_STATES.CANCELLED,
     ORDER_STATES.EXPIRED,
   ],
-  [ORDER_STATES.PAID]: [ORDER_STATES.FULFILLED],
-  [ORDER_STATES.FULFILLED]: [],
+  [ORDER_STATES.PAID]: [ORDER_STATES.FULFILLED, ORDER_STATES.REFUNDED],
+  [ORDER_STATES.FULFILLED]: [ORDER_STATES.REFUNDED],
   [ORDER_STATES.FAILED]: [],
   [ORDER_STATES.CANCELLED]: [],
   [ORDER_STATES.EXPIRED]: [],
+  [ORDER_STATES.REFUNDED]: [],
 });
 
 const EVENT_TO_STATE = Object.freeze({
@@ -51,6 +54,7 @@ const EVENT_TO_STATE = Object.freeze({
   [EVENTS.PAYMENT_FAILED]: ORDER_STATES.FAILED,
   [EVENTS.PAYMENT_CANCELLED]: ORDER_STATES.CANCELLED,
   [EVENTS.PAYMENT_EXPIRED]: ORDER_STATES.EXPIRED,
+  [EVENTS.PAYMENT_REFUNDED]: ORDER_STATES.REFUNDED,
 });
 
 export class TransitionError extends Error {
@@ -136,6 +140,20 @@ export function fulfil(order) {
   }
   assertTransition(order.state, ORDER_STATES.FULFILLED);
   return Object.freeze({ ...order, state: ORDER_STATES.FULFILLED });
+}
+
+/** Refund is supported only for a paid or fulfilled order, and only once. */
+export function refund(order, { reason = "requested" } = {}) {
+  if (![ORDER_STATES.PAID, ORDER_STATES.FULFILLED].includes(order.state)) {
+    throw new TransitionError(`cannot refund an order in state ${order.state}`);
+  }
+  assertTransition(order.state, ORDER_STATES.REFUNDED);
+  return Object.freeze({
+    ...order,
+    state: ORDER_STATES.REFUNDED,
+    refundReason: String(reason).slice(0, 200),
+    events: Object.freeze([...order.events, Object.freeze({ eventId: `refund_${order.id}`, type: EVENTS.PAYMENT_REFUNDED, at: null })]),
+  });
 }
 
 export function isTerminal(state) {
