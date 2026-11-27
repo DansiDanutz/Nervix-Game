@@ -1,0 +1,12 @@
+{
+  "name": "nervix-world-server",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "Nervix World backend: identity, merchants, properties, orders, payments, campaigns",
+  "scripts": {
+    "test": "node --test test/",
+    "seed": "node seed/demo-merchants.mjs"
+  }
+}

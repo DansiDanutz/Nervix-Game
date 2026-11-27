@@ -9,38 +9,56 @@ Omit secrets. Record evidence, not intentions.
 |---|---|---|
 | Repo workspace | ready | `~/Sandbox/deepseek-harness-workspace/nervix-world` |
 | Licence | AGPL-3.0-only | `LICENSE` (GNU AFFERO GPL v3, 34523 bytes) |
+| Node.js | v26.13.0 | `node --version` |
+| pnpm | 10.32.1 | `pnpm --version` (needs `--store-dir` inside the workspace; the global store is outside the sandbox) |
 | Blender | **missing** | `command -v blender` → guard shim; `/opt/homebrew/bin/blender` does not exist; no `Blender.app` |
-| Reference images (4) | **not supplied** | no matching files under `~/Downloads`, `~/Documents`, `~/Desktop` |
-| Node/pnpm | not checked yet | — |
-| NervixPay integration | not started | demo adapter required until docs/credentials exist |
+| Reference images (4) | **not supplied** | none under `~/Downloads`, `~/Documents`, `~/Desktop`, `~/Documents/ChatGPT` |
+| Postgres | not reachable | schema authored, unapplied |
+| NervixPay | demo only | no documented endpoints or credentials |
 
 ## Current milestone
 
 **Milestone 0 — prove the Blender pipeline.** Blocked on Blender installation.
+Unblocked application work is complete and verified (below).
 
-## Done
+## Done (with evidence)
 
-- Repo created, AGPL-3.0-only licence applied.
-- Master prompt captured as a structured spec: `docs/MASTER_PROMPT.md`.
-- Asset and reference policy recorded: `docs/ASSETS.md`.
-- Environment inspected and recorded: `docs/ENVIRONMENT.md`.
-- `bpy` scripts authored for scene validation and GLB export (unexecuted).
+- Repo created; AGPL-3.0-only; asset policy in `docs/ASSETS.md`.
+- Master spec captured: `docs/MASTER_PROMPT.md`. Environment: `docs/ENVIRONMENT.md`.
+- `bpy` tooling authored: `blender/scripts/validate_scene.py`, `export_glb.py` (**unexecuted**).
+- Backend state machine + provisioning: `server/src/ledger.mjs`, `provision.mjs`.
+  - `cd server && node --test test/` → **14 tests, 14 pass, 0 fail**.
+  - Covers integer minor units, illegal transitions, duplicate webhook (no double fulfilment), exhausted slots.
+- Demo NervixPay adapter: `server/src/nervixpay.demo.mjs` (`DEMO_MODE = true`, labelled simulated).
+- Schema: `server/db/migrations/001_init.sql` (users, merchants, properties, agents, products, orders, payments, payment_events, entitlements, campaigns, quests, progress, audit).
+- Seed: `server/seed/demo-merchants.mjs` (emits idempotent SQL; no DB to apply it to).
+- Browser runtime: `app/` React 19 + TypeScript + Three.js + R3F.
+  - `cd app && pnpm build` → `tsc --noEmit` clean, Vite build **593 modules**, 1173 kB / 327 kB gzip.
+  - Third-person controller, camera follow, collision bounds, proximity interaction, HUD, quest shell.
+  - Boots into a labelled **blockout** until the Blender export exists.
+- Docs: `SETUP.md`, `BLENDER_GUIDE.md`, `STATUS.md`, `.env.example`.
 
 ## Blockers
 
-1. **Blender is not installed.** Needed before any `.blend` can be produced or validated.
-2. **The four concept images are not on disk.** The prompt's reference table (city overview, merchant buildings, character lineup, café interior) cannot be inspected. Written descriptions are used instead; no visual verification is claimed.
+1. **Blender is not installed** — blocks Milestone 0 and every visual deliverable.
+2. **Four concept images are not on disk** — no visual verification claimed.
+3. **No Postgres** — schema and seed are authored but unapplied.
+4. **NervixPay live docs/credentials missing** — demo adapter only.
 
 ## Next actions
 
-1. Install Blender 4.x (or point `blender` at an existing build) and re-run `blender --background --python blender/scripts/validate_scene.py`.
-2. Author `nervix_city_district_01.blend`: modular room/street corner, door, merchant sign surface, one rigged character with idle + walk.
-3. Export GLB, write the scene manifest, load it in the runtime viewer, and compare against the written visual direction.
-4. Only then expand to the full district.
+1. Install Blender 4.x, then:
+   `blender --background --python blender/scripts/validate_scene.py`
+2. Author `nervix_city_district_01.blend` (M0): modular street corner, door, sign surface, rigged character with idle + walk.
+3. Export GLB + manifest, copy into `app/public/`, load in the runtime, compare to the written visual direction.
+4. Apply the schema to Postgres and seed demo merchants.
+5. Add the agent endpoint (text, tool-calling, confirmation before actions) behind the demo provider.
+6. Measure frame time on the desktop and mobile profiles; code-split the three.js bundle.
 
 ## Conventions
 
-- Scale in meters. Character height 1.8 m, doorway 2.1 m, street width 6 m, 1 m snapping grid.
-- Stable IDs for assets, slots, material slots, animation clips.
-- Hand-edited content is never deleted by automation; scripts touch managed collections only.
-- No secrets, credentials, or customer records in `.blend` files or exports.
+- Metres. Character 1.8 m, doorway 2.1 m, street 6 m, 1 m snap grid.
+- Stable IDs: `asset.<kind>.<name>`, `slot.<district>.<n>`, `mat.<name>`, `clip.<name>`.
+- Automation touches only `NERVIX_MANAGED`; hand-edited content is never deleted.
+- Money is integer minor units; authoritative order state is server-side.
+- No secrets or customer records in `.blend` files, exports or git.

@@ -1,0 +1,31 @@
+# Status
+
+Verified 2026-11-27. Nothing here is claimed without a command or a file behind it.
+
+| Capability | State | Evidence |
+|---|---|---|
+| Repo + licence | working | `LICENSE` AGPL-3.0-only, commit `3c0fbca` |
+| Backend order/payment state machine | working (demo) | `node --test test/` → 14/14 pass |
+| Idempotent property provisioning | working (demo) | same test run |
+| Demo NervixPay adapter | demo | `server/src/nervixpay.demo.mjs`, `DEMO_MODE = true` |
+| Database schema | authored, unapplied | `server/db/migrations/001_init.sql` (no Postgres reachable) |
+| Seed demo merchants | authored, unapplied | `server/seed/demo-merchants.mjs` emits SQL |
+| Browser runtime | builds | `pnpm build` → tsc + Vite, 593 modules |
+| 3D world | **blockout only** | no `.blend`, no GLB; `CityScene` falls back to primitives |
+| Blender pipeline | **blocked** | Blender not installed |
+| Reference images | **missing** | 4 concept images not on disk; not inspected |
+| Merchant AI employees | not started | needs provider + backend endpoints |
+| Live NervixPay | **blocked** | endpoints/credentials undocumented here |
+| Multiplayer presence | not started | — |
+| Ads | schema only | `ad_placements`, `campaigns` tables |
+
+## Blocked by an external dependency
+
+1. **Blender 4.x** — blocks every visual deliverable and Milestone 0.
+2. **Four concept images** — blocks visual verification against the intended direction.
+3. **NervixPay live docs/credentials** — blocks real payments; demo adapter covers the journey meanwhile.
+4. **Postgres instance** — blocks applying the schema and seed.
+
+## Measured
+
+- App bundle: 1,173 kB minified / 327 kB gzip (three.js dominates). Code-splitting is an open performance task against the 60 FPS desktop / 30 FPS mobile targets, which are **not yet measured**.

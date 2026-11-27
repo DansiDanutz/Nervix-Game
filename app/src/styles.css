@@ -1,0 +1,128 @@
+:root {
+  color-scheme: light;
+  --sand: #e8dcc0;
+  --ink: #2b2118;
+  --teal: #2f6f6a;
+  --plum: #5b3a5e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #bfe0ea;
+  color: var(--ink);
+  font: 15px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.app {
+  position: relative;
+  height: 100%;
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.hud__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.hud__top strong {
+  font-size: 18px;
+  letter-spacing: 0.01em;
+}
+
+.hud__tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--teal);
+  color: #fff;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hud__seals {
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 2px 10px rgba(43, 33, 24, 0.12);
+}
+
+.hud__quest {
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 2px 14px rgba(43, 33, 24, 0.14);
+}
+
+.hud__quest h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: var(--plum);
+}
+
+.hud__quest ol {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.hud__quest li.is-done {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+.hud__prompt {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--sand);
+  text-transform: capitalize;
+}
+
+.hud__prompt small {
+  opacity: 0.7;
+  font-size: 11px;
+}
+
+.hud__help {
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .hud__quest {
+    display: none;
+  }
+  .hud__help {
+    font-size: 11px;
+  }
+}
