@@ -12,6 +12,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Refunds | working (demo) | paid/fulfilled → refunded once, persisted; migration 011 |
 | Checkout + orders | working (demo) | `CheckoutPanel.tsx`, `GET /orders`; pay→fulfil, survives restart |
 | Advertising UI | working (demo) | `AdsPanel.tsx`, creative validated, unpaid never serves |
+| Admin UI | working | role-aware panel, suspend/reinstate, audit trail |
 | Admin + moderation | working | `/admin/*` role-gated, actions audited, suspension persisted |
 | App catalog | working (demo connectors) | `apps.mjs`; per-merchant connect, health `demo`, tenant isolated |
 | Agent knowledge + caps | working | approved-only grounding, per-month request cap, usage recorded |

@@ -38,6 +38,21 @@ export interface AgentAction {
   acknowledged: boolean;
 }
 
+export interface AdminMerchant {
+  id: string;
+  name: string;
+  businessType: string;
+  suspended: boolean;
+}
+
+export interface AuditEvent {
+  id: number;
+  actorId: string;
+  action: string;
+  subject: string;
+  createdAt: string;
+}
+
 export interface Placement {
   id: string;
   district: string;
@@ -108,6 +123,12 @@ export const api = {
     call<{ progress: QuestProgress }>("/progress", { userId, seal }),
   advance: (userId: string, step: string) =>
     call<{ progress: QuestProgress }>("/progress", { userId, step }),
+  adminMerchants: (userId: string) => call<{ merchants: AdminMerchant[] }>(`/admin/merchants?userId=${encodeURIComponent(userId)}`),
+  adminSuspend: (userId: string, merchantId: string) =>
+    call<{ suspended: boolean }>(`/admin/merchants/${merchantId}/suspend`, { userId }),
+  adminReinstate: (userId: string, merchantId: string) =>
+    call<{ suspended: boolean }>(`/admin/merchants/${merchantId}/reinstate`, { userId }),
+  adminAudit: (userId: string) => call<{ events: AuditEvent[] }>(`/admin/audit?userId=${encodeURIComponent(userId)}`),
   placements: () => call<{ placements: Placement[] }>("/placements"),
   campaigns: () => call<{ campaigns: Campaign[] }>("/campaigns"),
   createCampaign: (input: Record<string, unknown>) => call<{ campaign: Campaign }>("/campaigns", input),

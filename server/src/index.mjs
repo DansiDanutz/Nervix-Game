@@ -147,7 +147,7 @@ const routes = {
     const user = await db.store.findUserByEmail(email);
     if (!user) return { error: "no_such_user" };
     await db.store.markVerified(user.id);
-    return { userId: user.id, displayName: user.display_name, role: "player", verified: true, demo: true };
+    return { userId: user.id, displayName: user.displayName, role: user.role, verified: true, demo: true };
   },
 
   "GET /merchants/:merchantId/products": async (_b, params) => {

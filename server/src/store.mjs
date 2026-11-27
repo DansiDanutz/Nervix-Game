@@ -171,8 +171,8 @@ export class PostgresStore {
   }
 
   async findUserByEmail(email) {
-    const { rows } = await this.pool.query("SELECT id, display_name, email_verified FROM users WHERE email = $1", [email]);
-    return rows[0] ?? null;
+    const { rows } = await this.pool.query("SELECT id, display_name, email_verified, role FROM users WHERE email = $1", [email]);
+    return rows[0] ? { id: rows[0].id, displayName: rows[0].display_name, verified: rows[0].email_verified, role: rows[0].role } : null;
   }
 
   async markVerified(userId) {

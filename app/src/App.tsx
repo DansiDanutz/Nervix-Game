@@ -6,6 +6,7 @@ import { AuthPanel } from "./ui/AuthPanel";
 import { MerchantPanel } from "./ui/MerchantPanel";
 import { CheckoutPanel } from "./ui/CheckoutPanel";
 import { AdsPanel } from "./ui/AdsPanel";
+import { AdminPanel } from "./ui/AdminPanel";
 import { usePresence } from "./net/presence";
 
 const SceneView = lazy(() => import("./scene/SceneView"));
@@ -124,6 +125,7 @@ export function App() {
           </button>
         )}
         {showAds && session && <AdsPanel merchantId="mer_1" />}
+        {session?.role === "admin" && <AdminPanel userId={session.userId} />}
         {propertyId && <AgentPanel propertyId={propertyId} agentName="Mira" />}
       </div>
     </div>
