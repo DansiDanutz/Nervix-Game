@@ -108,3 +108,12 @@ never returned; matching an email alone never grants access to an existing accou
 - Merchant data (seed only)
 
 A browser redirect or an agent statement is never treated as proof of payment.
+### Live payment-link registration
+Set the server-only secret `WORLD_REGISTRY_URL` to the insert-only writer connection
+for the **receiver's existing database**. This is separate from the game's
+`DATABASE_URL`. The receiver owns the `world_payment_links` table: UUID
+`payment_link_id`, unique `game_order_id`, positive `expected_minor`, and
+`is_test`. The game writes live rows only. Preserve the secret across deployments;
+do not put it in the client. Demo checkout needs no registry. If a registry write
+fails after the provider creates a link, the server withholds the URL; reconcile
+that unused provider link before manually retrying.
