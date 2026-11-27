@@ -36,6 +36,10 @@ Unblocked application work is complete and verified (below).
   - Sequential steps, unique seals, no purchase required; progress persists per user.
   - Live: skip → `out_of_order`; step1-3 → advance; seal before step → `seal_locked`; collect → 1 seal; replay → `already_collected`; **step 3 + seal survive restart**.
   - Client: HUD seal counter, **E** collects a nearby seal marker.
+- Advertising UI + creative validation: `AdsPanel.tsx`, `GET /placements`, `GET /campaigns`.
+  - Creative text ≤120 chars, hex colour, https image; unpaid campaigns never serve.
+  - Live: create → `draft`; unpaid `servable False`; request-payment → pay → tick → `servable True cmp_live` with creative.
+  - `pnpm build` green; tests **76/76**.
 - Admin + moderation: migration `010_moderation`, store admin/audit, `/admin/*` routes.
   - Role checked server-side; every admin action writes `audit_events`.
   - Live: non-admin → `forbidden`; admin lists 4 merchants; suspend mer_1 → `suspended true`; audit shows `('merchant.suspend','mer_1')`.

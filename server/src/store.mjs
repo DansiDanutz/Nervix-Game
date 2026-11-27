@@ -116,6 +116,16 @@ export class PostgresStore {
     );
   }
 
+  async listPlacements() {
+    const { rows } = await this.pool.query(
+      "SELECT id, district, kind, slot_id, price_minor, currency FROM ad_placements ORDER BY id",
+    );
+    return rows.map((r) => ({
+      id: r.id, district: r.district, kind: r.kind,
+      slotId: r.slot_id, priceMinor: r.price_minor, currency: r.currency,
+    }));
+  }
+
   async listCampaigns() {
     const { rows } = await this.pool.query(
       "SELECT id, merchant_id, placement_id, creative, state, starts_at, ends_at, paid_at FROM campaigns ORDER BY id",

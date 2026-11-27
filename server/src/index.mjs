@@ -257,6 +257,16 @@ const routes = {
     return { app: params.appId, connected: false, health: "not_connected" };
   },
 
+  "GET /campaigns": async () => {
+    if (!db.store) return { campaigns: db.campaigns };
+    return { campaigns: await db.store.listCampaigns() };
+  },
+
+  "GET /placements": async () => {
+    if (!db.store) return { placements: [{ id: "plaza-1", kind: "noticeboard", priceMinor: 5000, currency: "EUR" }] };
+    return { placements: await db.store.listPlacements() };
+  },
+
   "GET /quests/lost-seals": () => ({ quest: QUEST }),
 
   "GET /progress": async (_b, params) => {

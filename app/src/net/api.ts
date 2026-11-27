@@ -38,6 +38,26 @@ export interface AgentAction {
   acknowledged: boolean;
 }
 
+export interface Placement {
+  id: string;
+  district: string;
+  kind: string;
+  priceMinor: number;
+  currency: string;
+}
+
+export interface Campaign {
+  id: string;
+  merchantId: string;
+  placementId: string;
+  priceMinor: number;
+  currency: string;
+  state: string;
+  startsAt: string;
+  endsAt: string;
+  creative?: { text?: string; colour?: string };
+}
+
 export interface OrderSummary {
   id: string;
   state: string;
@@ -88,6 +108,10 @@ export const api = {
     call<{ progress: QuestProgress }>("/progress", { userId, seal }),
   advance: (userId: string, step: string) =>
     call<{ progress: QuestProgress }>("/progress", { userId, step }),
+  placements: () => call<{ placements: Placement[] }>("/placements"),
+  campaigns: () => call<{ campaigns: Campaign[] }>("/campaigns"),
+  createCampaign: (input: Record<string, unknown>) => call<{ campaign: Campaign }>("/campaigns", input),
+  campaignAction: (id: string, action: string) => call<{ campaign: Campaign }>(`/campaigns/${id}/${action}`, {}),
   orders: (userId: string) => call<{ orders: OrderSummary[] }>(`/orders?buyerId=${encodeURIComponent(userId)}`),
   payDemo: async (orderId: string) => {
     await call(`/orders/${orderId}/events`, { eventId: `demo_${orderId}_created`, type: "payment_created" }).catch(() => null);

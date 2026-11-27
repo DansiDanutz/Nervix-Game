@@ -28,6 +28,8 @@ const ALLOWED = Object.freeze({
   [CAMPAIGN_STATES.CANCELLED]: [],
 });
 
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
 export class CampaignError extends Error {
   constructor(message) {
     super(message);
@@ -39,10 +41,18 @@ function assertTransition(from, to) {
   if (!ALLOWED[from].includes(to)) throw new CampaignError(`illegal transition ${from} -> ${to}`);
 }
 
-export function createCampaign({ id, merchantId, placementId, priceMinor, currency, startsAt, endsAt }) {
+export function createCampaign({ id, merchantId, placementId, priceMinor, currency, startsAt, endsAt, creative }) {
   if (!id || !merchantId || !placementId) throw new CampaignError("id, merchantId and placementId are required");
   if (!Number.isSafeInteger(priceMinor) || priceMinor < 0) throw new CampaignError("priceMinor must be a non-negative integer");
   if (typeof currency !== "string" || currency.length !== 3) throw new CampaignError("currency must be ISO-4217");
+  const draft = creative ?? {};
+  const text = String(draft.text ?? "").trim();
+  if (text.length > 120) throw new CampaignError("creative text too long");
+  const colour = String(draft.colour ?? "#e8dcc0");
+  if (!HEX.test(colour)) throw new CampaignError("creative colour must be hex");
+  const image = draft.image ? String(draft.image) : null;
+  if (image && !/^https:\/\//.test(image)) throw new CampaignError("creative image must be https");
+
   const start = Date.parse(startsAt);
   const end = Date.parse(endsAt);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) throw new CampaignError("invalid period");
@@ -51,6 +61,7 @@ export function createCampaign({ id, merchantId, placementId, priceMinor, curren
     startsAt: new Date(start).toISOString(),
     endsAt: new Date(end).toISOString(),
     state: CAMPAIGN_STATES.DRAFT,
+    creative: Object.freeze({ text, colour, image }),
     paidAt: null,
   });
 }

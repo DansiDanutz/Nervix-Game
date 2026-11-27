@@ -7,6 +7,7 @@ import { AgentPanel } from "./ui/AgentPanel";
 import { AuthPanel } from "./ui/AuthPanel";
 import { MerchantPanel } from "./ui/MerchantPanel";
 import { CheckoutPanel } from "./ui/CheckoutPanel";
+import { AdsPanel } from "./ui/AdsPanel";
 import { RemotePlayers } from "./scene/RemotePlayers";
 import { usePresence } from "./net/presence";
 import { api, type Session, type QuestProgress } from "./net/api";
@@ -22,6 +23,7 @@ export function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [showMerchant, setShowMerchant] = useState(false);
   const [showOrders, setShowOrders] = useState(false);
+  const [showAds, setShowAds] = useState(false);
   const onMarkers = useCallback((m: Marker[]) => setMarkers(m), []);
   const { players, status: presence, sendMove } = usePresence({
     userId: session?.userId ?? "guest",
@@ -116,6 +118,12 @@ export function App() {
           </button>
         )}
         {showOrders && session && <CheckoutPanel userId={session.userId} />}
+        {!showAds && session && (
+          <button type="button" className="app__account" onClick={() => setShowAds(true)}>
+            Advertising
+          </button>
+        )}
+        {showAds && session && <AdsPanel merchantId="mer_1" />}
         {propertyId && <AgentPanel propertyId={propertyId} agentName="Mira" />}
       </div>
     </div>

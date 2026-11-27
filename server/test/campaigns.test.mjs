@@ -74,3 +74,13 @@ test("an unpaid draft cannot be cancelled into a servable state", () => {
   assert.equal(c.state, S.CANCELLED);
   assert.equal(servableCampaign([c], base.placementId, "2026-12-02T00:00:00.000Z"), null);
 });
+test("creative text and colour are validated", () => {
+  const ok = createCampaign({ ...base, creative: { text: "Grand opening", colour: "#123456" } });
+  assert.equal(ok.creative.text, "Grand opening");
+  assert.throws(() => createCampaign({ ...base, creative: { text: "x".repeat(121) } }), CampaignError);
+  assert.throws(() => createCampaign({ ...base, creative: { colour: "red" } }), CampaignError);
+});
+
+test("creative images must be https", () => {
+  assert.throws(() => createCampaign({ ...base, creative: { image: "http://example.test/a.png" } }), CampaignError);
+});
