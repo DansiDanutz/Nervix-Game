@@ -19,13 +19,17 @@ Omit secrets. Record evidence, not intentions.
 
 ## Current milestone
 
-**Milestone 0 — COMPLETE.** `nervix_city_district_01.blend` built, validated 7/7, exported to GLB and loaded by the runtime (blockout retired).
+**Milestone 1 — COMPLETE** (district built and validated). **Milestone 0 — COMPLETE.** `nervix_city_district_01.blend` built, validated 7/7, exported to GLB and loaded by the runtime (blockout retired).
 
 ## Done (with evidence)
 
 - Repo created; AGPL-3.0-only; asset policy in `docs/ASSETS.md`.
 - Master spec captured: `docs/MASTER_PROMPT.md`. Environment: `docs/ENVIRONMENT.md`.
 - `bpy` tooling: `build_m0.py` (scene builder), `validate_scene.py`, `export_glb.py`.
+- **Milestone 1 (executed):** `blender --background --python blender/scripts/build_district.py` → `nervix_city_district_01.blend` with plaza + fountain (4 parts), streets, merchant house, café + working interior, casino with arches, 3 NPC variants, ad surface, 3 property slots.
+  - `validate_district.py` → **12/12 PASS** (metric, 31 meshes, 3 buildings, 3 slots, ad, interior, 3 NPCs, fountain, 1.800 m NPCs, 2.100 m door, materials, 6 actions).
+  - Export: **9 GLB chunks** (district 494,904 B; plaza 87,244; NPCs 366,348; house/cafe/casino/interior/props) + manifest with **12 markers**; copied to `app/public/`; `pnpm build` green.
+  - M0 preserved as `blender/scenes/m0_street_corner.blend`.
 - **Milestone 0 (executed):** `blender --background --python blender/scripts/build_m0.py` → `nervix_city_district_01.blend` (street corner, kerb, 2.1 m doorway, sign surface, 1.8 m rigged character with `idle`+`walk`).
   - `validate_scene.py` → **7/7 PASS** (metric units, managed collection, 1.800 m character, 2.100 m doorway, materials, actions, collision marker).
   - Export: `nervix_city_district_01.glb` **131,472 bytes**, header `glTF` v2, length matches; manifest with sign marker.
@@ -98,9 +102,9 @@ Omit secrets. Record evidence, not intentions.
 
 ## Next actions
 
-1. Milestone 1: expand the M0 corner into the full district (plaza, fountain, merchant house, café, casino exterior, one interior).
-2. Author three NPC variants from the shared rig.
-3. Compare Blender and runtime previews against the written visual direction (concept images still uninspected).
+1. Milestone 2: wire live NervixPay + real merchant catalogs; voice when a provider exists.
+2. Compare Blender and runtime previews against the written visual direction (concept images still uninspected).
+3. Measure FPS on the desktop and mobile profiles now that the district loads.
 4. Apply the schema to Postgres and seed demo merchants.
 5. Point `AGENT_MODEL_BASE_URL` / `AGENT_MODEL_KEY` at a provider to replace the offline `localProvider`; add voice when configured.
 6. Measure frame time on the desktop and mobile profiles; code-split the three.js bundle.
