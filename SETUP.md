@@ -45,6 +45,8 @@ psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/001_init
 psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/002_text_ids.sql
 psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/003_users_text.sql
 psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/004_merchants_text.sql
+psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/005_conversations.sql
+psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1 -f server/db/migrations/006_campaigns_text.sql
 node server/seed/demo-merchants.mjs | psql -h /tmp -d nervix_world -v ON_ERROR_STOP=1
 ```
 

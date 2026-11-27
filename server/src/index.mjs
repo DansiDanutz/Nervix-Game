@@ -76,6 +76,7 @@ const routes = {
   },
 
   "POST /merchants/provision": async (body) => {
+    await db.store?.ensureUser(body.userId);
     const result = provisionProperty({ userId: body.userId, businessType: body.businessType ?? "merchant", slots, existing: db.properties });
     if (result.created) {
       db.properties.push(result.property);
@@ -129,7 +130,9 @@ const routes = {
 
   "POST /agent/:propertyId/message": async (body, params) => {
     if (!db.properties.some((p) => p.id === params.propertyId)) return { error: "unknown_property" };
-    const state = db.conversations.get(params.propertyId) ?? newState();
+    let state = db.conversations.get(params.propertyId);
+    if (!state && db.store) state = await db.store.getConversation(params.propertyId);
+    if (!state) state = newState();
     db.conversations.set(params.propertyId, state);
     const ctx = {
       config: db.agent.config,
@@ -141,12 +144,17 @@ const routes = {
       userId: body.userId ?? "demo_user",
       merchantId: body.merchantId ?? "mer_1",
     };
-    return say({ state, message: body.message, tool: body.tool, args: body.args ?? {}, ctx, provider: db.provider });
+    const out = await say({ state, message: body.message, tool: body.tool, args: body.args ?? {}, ctx, provider: db.provider });
+    await db.store?.saveConversation(params.propertyId, state);
+    return out;
   },
 
   "POST /agent/:propertyId/confirm": async (body, params) => {
     if (!db.properties.some((p) => p.id === params.propertyId)) return { error: "unknown_property" };
-    const state = db.conversations.get(params.propertyId) ?? newState();
+    let state = db.conversations.get(params.propertyId);
+    if (!state && db.store) state = await db.store.getConversation(params.propertyId);
+    if (!state) state = newState();
+    db.conversations.set(params.propertyId, state);
     const ctx = {
       config: db.agent.config,
       knowledge: db.agent.knowledge,
@@ -157,56 +165,58 @@ const routes = {
       userId: body.userId ?? "demo_user",
       merchantId: body.merchantId ?? "mer_1",
     };
-    return { result: confirmAndRun({ action: body.action, ctx }) };
+    const result = confirmAndRun({ action: body.action, ctx });
+    await db.store?.saveConversation(params.propertyId, state);
+    return { result };
   },
 
   "POST /campaigns": async (body) => {
     const campaign = createCampaign(body);
     const conflict = findConflict(campaign, db.campaigns);
     if (conflict) return { error: "placement_conflict", conflictWith: conflict.id };
-    db.campaigns.push(campaign);
+    db.campaigns.push(campaign); await db.store?.saveCampaign(campaign);
     return { campaign };
   },
 
   "POST /campaigns/:id/request-payment": async (_b, p) => {
     const i = db.campaigns.findIndex((c) => c.id === p.id);
     if (i < 0) return { error: "not_found" };
-    db.campaigns[i] = requestPayment(db.campaigns[i]);
+    db.campaigns[i] = requestPayment(db.campaigns[i]); await db.store?.saveCampaign(db.campaigns[i]);
     return { campaign: db.campaigns[i] };
   },
 
   "POST /campaigns/:id/pay": async (body, p) => {
     const i = db.campaigns.findIndex((c) => c.id === p.id);
     if (i < 0) return { error: "not_found" };
-    db.campaigns[i] = markPaid(db.campaigns[i], { verified: body.verified === true });
+    db.campaigns[i] = markPaid(db.campaigns[i], { verified: body.verified === true }); await db.store?.saveCampaign(db.campaigns[i]);
     return { campaign: db.campaigns[i] };
   },
 
   "POST /campaigns/:id/tick": async (body, p) => {
     const i = db.campaigns.findIndex((c) => c.id === p.id);
     if (i < 0) return { error: "not_found" };
-    db.campaigns[i] = tick(db.campaigns[i], body.now);
+    db.campaigns[i] = tick(db.campaigns[i], body.now); await db.store?.saveCampaign(db.campaigns[i]);
     return { campaign: db.campaigns[i] };
   },
 
   "POST /campaigns/:id/pause": async (_b, p) => {
     const i = db.campaigns.findIndex((c) => c.id === p.id);
     if (i < 0) return { error: "not_found" };
-    db.campaigns[i] = pause(db.campaigns[i]);
+    db.campaigns[i] = pause(db.campaigns[i]); await db.store?.saveCampaign(db.campaigns[i]);
     return { campaign: db.campaigns[i] };
   },
 
   "POST /campaigns/:id/resume": async (_b, p) => {
     const i = db.campaigns.findIndex((c) => c.id === p.id);
     if (i < 0) return { error: "not_found" };
-    db.campaigns[i] = resume(db.campaigns[i]);
+    db.campaigns[i] = resume(db.campaigns[i]); await db.store?.saveCampaign(db.campaigns[i]);
     return { campaign: db.campaigns[i] };
   },
 
   "POST /campaigns/:id/cancel": async (_b, p) => {
     const i = db.campaigns.findIndex((c) => c.id === p.id);
     if (i < 0) return { error: "not_found" };
-    db.campaigns[i] = cancel(db.campaigns[i]);
+    db.campaigns[i] = cancel(db.campaigns[i]); await db.store?.saveCampaign(db.campaigns[i]);
     return { campaign: db.campaigns[i] };
   },
 
@@ -247,4 +257,13 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`nervix-world demo API on :${PORT} (demo=${DEMO_MODE})`));
+async function boot() {
+  if (db.store) {
+    db.properties = await db.store.listProperties();
+    db.campaigns = await db.store.listCampaigns();
+    console.log(`loaded ${db.properties.length} properties, ${db.campaigns.length} campaigns from Postgres`);
+  }
+  server.listen(PORT, () => console.log(`nervix-world demo API on :${PORT} (demo=${DEMO_MODE})`));
+}
+
+boot();

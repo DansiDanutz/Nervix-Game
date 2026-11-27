@@ -10,7 +10,7 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Demo NervixPay adapter | demo | `server/src/nervixpay.demo.mjs`, `DEMO_MODE = true` |
 | Database schema | applied | `nervix_world` on PG 16.15; migrations 001–004 green |
 | Seed demo merchants | applied | 3 users / 3 merchants / 3 properties / 3 agents |
-| Persistence | working | `store.mjs`; order survives process restart |
+| Persistence | working | `store.mjs`; orders, properties, campaigns, conversations survive restart |
 | Browser runtime | builds | `pnpm build` → tsc + Vite, 593 modules |
 | 3D world | **blockout only** | no `.blend`, no GLB; `CityScene` falls back to primitives |
 | Blender pipeline | **blocked** | Blender not installed |

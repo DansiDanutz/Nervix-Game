@@ -100,6 +100,57 @@ export class PostgresStore {
     }));
   }
 
+  async saveCampaign(campaign) {
+    await this.pool.query(
+      `INSERT INTO campaigns (id, merchant_id, placement_id, creative, state, starts_at, ends_at, paid_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (id) DO UPDATE
+         SET state = excluded.state,
+             paid_at = excluded.paid_at,
+             creative = excluded.creative`,
+      [
+        campaign.id, campaign.merchantId, campaign.placementId,
+        JSON.stringify({ priceMinor: campaign.priceMinor, currency: campaign.currency }),
+        campaign.state, campaign.startsAt, campaign.endsAt, campaign.paidAt,
+      ],
+    );
+  }
+
+  async listCampaigns() {
+    const { rows } = await this.pool.query(
+      "SELECT id, merchant_id, placement_id, creative, state, starts_at, ends_at, paid_at FROM campaigns ORDER BY id",
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      merchantId: r.merchant_id,
+      placementId: r.placement_id,
+      priceMinor: r.creative?.priceMinor ?? 0,
+      currency: r.creative?.currency ?? "EUR",
+      state: r.state,
+      startsAt: new Date(r.starts_at).toISOString(),
+      endsAt: new Date(r.ends_at).toISOString(),
+      paidAt: r.paid_at ? new Date(r.paid_at).toISOString() : null,
+    }));
+  }
+
+  async saveConversation(propertyId, state) {
+    await this.pool.query(
+      `INSERT INTO conversations (property_id, history, support, updated_at)
+       VALUES ($1, $2, $3, now())
+       ON CONFLICT (property_id) DO UPDATE
+         SET history = excluded.history,
+             support = excluded.support,
+             updated_at = now()`,
+      [propertyId, JSON.stringify(state.history ?? []), JSON.stringify(state.support ?? [])],
+    );
+  }
+
+  async getConversation(propertyId) {
+    const { rows } = await this.pool.query("SELECT history, support FROM conversations WHERE property_id = $1", [propertyId]);
+    if (rows.length === 0) return null;
+    return { history: rows[0].history ?? [], support: rows[0].support ?? [] };
+  }
+
   async close() {
     await this.pool.end();
   }

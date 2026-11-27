@@ -37,8 +37,9 @@ Unblocked application work is complete and verified (below).
   - API smoke test (curl, port 8787/8788): provision→created, retry→`created:false`; order total 750 EUR; `payment_created`→pending_payment; `payment_succeeded`→paid; replay→paid (no double fulfil); fulfil→fulfilled; unauthorized `open_app` denied; campaign awaiting_payment→scheduled→active→servable `True cmp_now`; unpaid placement `servable False`.
 - Demo NervixPay adapter: `server/src/nervixpay.demo.mjs` (`DEMO_MODE = true`, labelled simulated).
 - Schema: `server/db/migrations/001_init.sql` plus `002_text_ids`, `003_users_text`, `004_merchants_text` (stable text ids), all **applied** to `nervix_world`.
-- Persistence: `server/src/store.mjs` (pg). With `DATABASE_URL` set, orders/properties/users/merchants persist.
-  - Verified: create → `payment_created` → `payment_succeeded` → DB row `ord_1 paid 900`; **read back after restart** with items.
+- Persistence: `server/src/store.mjs` (pg). With `DATABASE_URL` set, orders, properties, users, merchants, **campaigns and conversations** persist.
+  - Verified: order → `paid` in DB, read back after restart; campaign `cmp_pg` servable after restart; conversation history 1 → 2 turns after restart.
+  - Migrations `005_conversations`, `006_campaigns_text` applied.
 - Seed: `server/seed/demo-merchants.mjs` → 3 users, 3 merchants, 3 properties, 3 agents (apostrophe-safe, idempotent).
 - Browser runtime: `app/` React 19 + TypeScript + Three.js + R3F.
   - `cd app && pnpm build` → `tsc --noEmit` clean, Vite build **593 modules**, 1173 kB / 327 kB gzip.
@@ -62,7 +63,7 @@ Unblocked application work is complete and verified (below).
 4. Apply the schema to Postgres and seed demo merchants.
 5. Point `AGENT_MODEL_BASE_URL` / `AGENT_MODEL_KEY` at a provider to replace the offline `localProvider`; add voice when configured.
 6. Measure frame time on the desktop and mobile profiles; code-split the three.js bundle.
-7. Replace the in-memory conversation/campaign state with the Postgres store.
+7. Add indexes/backups and move the remaining demo-only bits (session) behind real identity.
 
 ## Conventions
 
