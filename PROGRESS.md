@@ -29,9 +29,11 @@ Unblocked application work is complete and verified (below).
 - `bpy` tooling authored: `blender/scripts/validate_scene.py`, `export_glb.py` (**unexecuted**).
 - Backend state machine + provisioning: `server/src/ledger.mjs`, `provision.mjs`.
 - Merchant AI employee rules: `server/src/agent.mjs` — approved-knowledge grounding, per-merchant tool authorization, confirmation before checkout/support, player text treated as untrusted data.
+- Conversational agent: `server/src/provider.mjs` (offline `localProvider` + replaceable OpenAI-compatible `remoteProvider`) and `server/src/conversation.mjs` (grounded replies, server-side tool execution, cart totals recomputed from the catalog, confirmation gate).
+  - API smoke test: "what time do you open?" → "We open at 08:00 and close at 20:00." (1 citation); unknown question → offers support, invents nothing; `open_app` denied; confirmed checkout → order `ord_1` 900 EUR `created`, checkout `awaiting_payment`.
 - Paid campaigns: `server/src/campaigns.mjs` — draft→awaiting_payment→scheduled→active, pause/resume, expiry, exclusive-placement conflict detection, servable only when paid and in period.
 - Runnable demo API: `server/src/index.mjs` (node:http, in-memory, zero deps).
-  - `cd server && node --test test/` → **31 tests, 31 pass, 0 fail**.
+  - `cd server && node --test test/` → **41 tests, 41 pass, 0 fail**.
   - API smoke test (curl, port 8787/8788): provision→created, retry→`created:false`; order total 750 EUR; `payment_created`→pending_payment; `payment_succeeded`→paid; replay→paid (no double fulfil); fulfil→fulfilled; unauthorized `open_app` denied; campaign awaiting_payment→scheduled→active→servable `True cmp_now`; unpaid placement `servable False`.
 - Demo NervixPay adapter: `server/src/nervixpay.demo.mjs` (`DEMO_MODE = true`, labelled simulated).
 - Schema: `server/db/migrations/001_init.sql` (users, merchants, properties, agents, products, orders, payments, payment_events, entitlements, campaigns, quests, progress, audit).
@@ -56,7 +58,7 @@ Unblocked application work is complete and verified (below).
 2. Author `nervix_city_district_01.blend` (M0): modular street corner, door, sign surface, rigged character with idle + walk.
 3. Export GLB + manifest, copy into `app/public/`, load in the runtime, compare to the written visual direction.
 4. Apply the schema to Postgres and seed demo merchants.
-5. Add the agent HTTP route behind a replaceable provider (rules and demo API exist; model calls do not).
+5. Point `AGENT_MODEL_BASE_URL` / `AGENT_MODEL_KEY` at a provider to replace the offline `localProvider`; add voice when configured.
 6. Measure frame time on the desktop and mobile profiles; code-split the three.js bundle.
 7. Apply the schema to Postgres and replace the in-memory demo store.
 

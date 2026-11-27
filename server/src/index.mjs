@@ -11,7 +11,9 @@ import http from "node:http";
 import { createOrder, applyPaymentEvent, fulfil, ORDER_STATES } from "./ledger.mjs";
 import { provisionProperty } from "./provision.mjs";
 import { createCheckout, verifyWebhook, DEMO_MODE } from "./nervixpay.demo.mjs";
-import { buildContext, plan, confirm, TOOLS } from "./agent.mjs";
+import { buildContext, TOOLS } from "./agent.mjs";
+import { createProvider } from "./provider.mjs";
+import { newState, say, confirmAndRun } from "./conversation.mjs";
 import {
   createCampaign, requestPayment, markPaid, activate, tick, pause, resume, cancel,
   servableCampaign, findConflict,
@@ -30,6 +32,8 @@ const db = {
   orders: new Map(),
   properties: [],
   campaigns: [],
+  conversations: new Map(),
+  provider: createProvider(),
   catalog: [
     { sku: "coffee", name: "Coffee", unitAmountMinor: 450, currency: "EUR", fulfillment: "pickup", active: true, merchantId: "mer_1" },
     { sku: "pastry", name: "Pastry", unitAmountMinor: 300, currency: "EUR", fulfillment: "pickup", active: true, merchantId: "mer_1" },
@@ -106,13 +110,35 @@ const routes = {
 
   "POST /agent/:propertyId/message": async (body, params) => {
     if (!db.properties.some((p) => p.id === params.propertyId)) return { error: "unknown_property" };
-    const context = buildContext({ config: db.agent.config, knowledge: db.agent.knowledge, catalog: db.catalog });
-    return plan({ message: body.message, context, config: db.agent.config, tool: body.tool });
+    const state = db.conversations.get(params.propertyId) ?? newState();
+    db.conversations.set(params.propertyId, state);
+    const ctx = {
+      config: db.agent.config,
+      knowledge: db.agent.knowledge,
+      catalog: db.catalog,
+      context: buildContext({ config: db.agent.config, knowledge: db.agent.knowledge, catalog: db.catalog }),
+      orders: db.orders,
+      state,
+      userId: body.userId ?? "demo_user",
+      merchantId: body.merchantId ?? "mer_1",
+    };
+    return say({ state, message: body.message, tool: body.tool, args: body.args ?? {}, ctx, provider: db.provider });
   },
 
   "POST /agent/:propertyId/confirm": async (body, params) => {
     if (!db.properties.some((p) => p.id === params.propertyId)) return { error: "unknown_property" };
-    return { action: confirm(body.action) };
+    const state = db.conversations.get(params.propertyId) ?? newState();
+    const ctx = {
+      config: db.agent.config,
+      knowledge: db.agent.knowledge,
+      catalog: db.catalog,
+      context: buildContext({ config: db.agent.config, knowledge: db.agent.knowledge, catalog: db.catalog }),
+      orders: db.orders,
+      state,
+      userId: body.userId ?? "demo_user",
+      merchantId: body.merchantId ?? "mer_1",
+    };
+    return { result: confirmAndRun({ action: body.action, ctx }) };
   },
 
   "POST /campaigns": async (body) => {
