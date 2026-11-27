@@ -89,6 +89,8 @@ Copy `.env.example` to `.env` and fill in. **No key is committed.** The NervixPa
 | `NERVIXPAY_WEBHOOK_SECRET` | live only, server-side |
 | `AGENT_MODEL_BASE_URL`, `AGENT_MODEL_KEY` | merchant AI employee provider |
 | `SPEECH_BASE_URL`, `SPEECH_KEY` | optional voice |
+| `RESEND_API_KEY`, `EMAIL_FROM` | optional email delivery |
+| `NERVIXPAY_AGENT_TOKEN` | live NervixPay agent credential |
 
 ## Identity
 

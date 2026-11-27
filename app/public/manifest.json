@@ -3,48 +3,43 @@
   "district": "nervix_city_district_01",
   "assets": [
     {
-      "id": "nervix_city_district_01",
-      "file": "nervix_city_district_01.glb",
-      "bytes": 494904
-    },
-    {
-      "id": "nervix_plaza",
-      "file": "nervix_plaza.glb",
+      "id": "Plaza",
+      "file": "Plaza.glb",
       "bytes": 87244
     },
     {
-      "id": "nervix_street",
-      "file": "nervix_street.glb",
+      "id": "Street",
+      "file": "Street.glb",
       "bytes": 3484
     },
     {
-      "id": "nervix_merchanthouse",
-      "file": "nervix_merchanthouse.glb",
+      "id": "MerchantHouse",
+      "file": "MerchantHouse.glb",
       "bytes": 10180
     },
     {
-      "id": "nervix_cafe",
-      "file": "nervix_cafe.glb",
+      "id": "Cafe",
+      "file": "Cafe.glb",
       "bytes": 6984
     },
     {
-      "id": "nervix_casino",
-      "file": "nervix_casino.glb",
+      "id": "Casino",
+      "file": "Casino.glb",
       "bytes": 17408
     },
     {
-      "id": "nervix_cafeinterior",
-      "file": "nervix_cafeinterior.glb",
+      "id": "CafeInterior",
+      "file": "CafeInterior.glb",
       "bytes": 6660
     },
     {
-      "id": "nervix_npcs",
-      "file": "nervix_npcs.glb",
+      "id": "NPCs",
+      "file": "NPCs.glb",
       "bytes": 366348
     },
     {
-      "id": "nervix_props",
-      "file": "nervix_props.glb",
+      "id": "Props",
+      "file": "Props.glb",
       "bytes": 2184
     }
   ],
@@ -76,7 +71,7 @@
       "position": [
         -8.0,
         3.1,
-        3.2
+        3.7
       ]
     },
     {

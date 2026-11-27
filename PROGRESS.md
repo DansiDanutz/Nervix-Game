@@ -51,6 +51,9 @@ Omit secrets. Record evidence, not intentions.
 - Admin + moderation: migration `010_moderation`, store admin/audit, `/admin/*` routes.
   - Role checked server-side; every admin action writes `audit_events`.
   - Live: non-admin → `forbidden`; admin lists 4 merchants; suspend mer_1 → `suspended true`; audit shows `('merchant.suspend','mer_1')`.
+- Blockers unblocked: **live NervixPay adapter** (`nervixpay.live.mjs`) built from the authoritative repo — payment links, signed `payment.paid` (HMAC-SHA256 over `t.body`, 5-min tolerance), `/api/v1/payments/:id`; **email delivery** (`email.mjs`, Resend when `RESEND_API_KEY` set, else labelled `devCode`); **criterion 16** demonstrated (edit → re-export → DB unchanged).
+  - Live adapter tests: valid signature accepted, wrong secret/stale/tampered/malformed rejected (7 tests, total 86/86).
+  - Criterion 16: house colour + sign edited in Blender, re-exported (8 assets, 12 markers); merchants 4 / orders 3 / campaigns 3 unchanged.
 - Milestone 2 (unblocked parts): agent grounds on the merchant's **real Postgres catalog** (product name/price/fulfilment) with the static list only as fallback; replaceable speech provider + `/agent/:id/speak` with browser text-to-speech fallback; `ACCEPTANCE.md` maps all 17 criteria.
   - Live: cheesecake 600 EUR answered from DB; unknown product → support offer; no provider → `available:false` and client falls back; `pnpm build` green.
 - App integration catalog: `apps.mjs`, store connect/list/disconnect, seed 3 apps.

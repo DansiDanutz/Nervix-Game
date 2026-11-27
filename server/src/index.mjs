@@ -10,7 +10,9 @@
 import http from "node:http";
 import { createOrder, applyPaymentEvent, fulfil, refund, ORDER_STATES } from "./ledger.mjs";
 import { provisionProperty } from "./provision.mjs";
-import { createCheckout, verifyWebhook, DEMO_MODE } from "./nervixpay.demo.mjs";
+import { createCheckout as demoCheckout, verifyWebhook as demoVerify, DEMO_MODE } from "./nervixpay.demo.mjs";
+import { createLiveAdapter } from "./nervixpay.live.mjs";
+import { createEmailer, verificationEmail } from "./email.mjs";
 import { buildContext, TOOLS } from "./agent.mjs";
 import { createProvider, createSpeechProvider } from "./provider.mjs";
 import { PostgresStore } from "./store.mjs";
@@ -55,7 +57,11 @@ const db = {
   conversations: new Map(),
   provider: createProvider(),
   speech: createSpeechProvider(),
+  email: createEmailer(),
   store: process.env.DATABASE_URL ? new PostgresStore(process.env.DATABASE_URL) : null,
+  payments: process.env.NERVIXPAY_AGENT_TOKEN && process.env.NERVIXPAY_BASE_URL
+    ? createLiveAdapter({ baseUrl: process.env.NERVIXPAY_BASE_URL, agentToken: process.env.NERVIXPAY_AGENT_TOKEN, webhookSecret: process.env.NERVIXPAY_WEBHOOK_SECRET })
+    : null,
   catalog: [
     { sku: "coffee", name: "Coffee", unitAmountMinor: 450, currency: "EUR", fulfillment: "pickup", active: true, merchantId: "mer_1" },
     { sku: "pastry", name: "Pastry", unitAmountMinor: 300, currency: "EUR", fulfillment: "pickup", active: true, merchantId: "mer_1" },
@@ -79,6 +85,15 @@ async function readJson(req) {
   for await (const chunk of req) chunks.push(chunk);
   if (chunks.length === 0) return {};
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
+function readRaw(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (c) => chunks.push(c));
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
 }
 
 const routes = {
@@ -124,8 +139,9 @@ const routes = {
     await db.store.createUser({ id: userId, email, displayName, verified: false });
     const record = newCodeRecord(email);
     await db.store.createCode(record);
-    // The code is returned only because this is the demo; production emails it.
-    return { userId, email, displayName, verified: false, devCode: record.code };
+    const sent = db.email.available ? await db.email.send({ to: email, ...verificationEmail(record.code) }) : false;
+    // The code is returned only when no email provider is configured.
+    return { userId, email, displayName, verified: false, devCode: sent ? null : record.code, emailed: sent };
   },
 
   "POST /auth/login": async (body) => {
@@ -135,7 +151,8 @@ const routes = {
     if (!user) return { error: "no_such_user" };
     const record = newCodeRecord(email);
     await db.store.createCode(record);
-    return { userId: user.id, email, devCode: record.code };
+    const sent = db.email.available ? await db.email.send({ to: email, ...verificationEmail(record.code) }) : false;
+    return { userId: user.id, email, devCode: sent ? null : record.code, emailed: sent };
   },
 
   "POST /auth/verify": async (body) => {
@@ -279,6 +296,23 @@ const routes = {
     }
   },
 
+  "POST /webhooks/nervixpay": async (req, res) => {
+    const raw = await readRaw(req);
+    let event;
+    try {
+      event = db.payments ? db.payments.verifyWebhook(raw, req.headers) : demoVerify(JSON.parse(raw.toString("utf8") || "{}"));
+    } catch (error) {
+      res.writeHead(400, { "content-type": "application/json" });
+      return res.end(JSON.stringify({ error: error.name, message: error.message }));
+    }
+    const order = db.orders.get(event.raw?.orderId ?? "");
+    if (!order) return { error: "unknown_order" };
+    const next = applyPaymentEvent(order, event);
+    db.orders.set(next.id, next);
+    await db.store?.saveOrder(next);
+    return { ok: true, order: next.id, state: next.state };
+  },
+
   "GET /quests/lost-seals": () => ({ quest: QUEST }),
 
   "GET /progress": async (_b, params) => {
@@ -319,7 +353,7 @@ const routes = {
     });
     db.orders.set(order.id, order);
     await db.store?.saveOrder(order);
-    return { order, checkout: createCheckout(order) };
+    return { order, checkout: db.payments ? await db.payments.createCheckout(order) : demoCheckout(order) };
   },
 
   "POST /orders/:id/events": async (body, params) => {

@@ -29,7 +29,8 @@ Verified 2026-11-27. Nothing here is claimed without a command or a file behind 
 | Merchant AI employees | working (offline provider) | `agent.mjs` + `conversation.mjs`; grounded replies, authorized tools, confirmation gate |
 | Paid advertising | state machine + API working (demo) | `server/src/campaigns.mjs`; unpaid campaigns never serve |
 | Demo API | working | `PORT=8787 node server/src/index.mjs`; curl smoke-tested |
-| Live NervixPay | **blocked** | endpoints/credentials undocumented here |
+| Live NervixPay | adapter ready, **needs credentials** | `nervixpay.live.mjs` (links + signed webhook); set `NERVIXPAY_AGENT_TOKEN`/`NERVIXPAY_WEBHOOK_SECRET` |
+| Email delivery | provider ready, **needs key** | `email.mjs` (Resend); falls back to labelled `devCode` |
 | Lost Seals quest | working (persisted) | `quests.mjs` + `/progress`; sequential steps, 3 seals, survives restart |
 | Multiplayer presence | working (demo) | `presence.mjs` + `usePresence`; 2 clients see each other, leave removes them |
 | Ads | schema + state machine | `ad_placements`, `campaigns` tables; `campaigns.mjs` |
