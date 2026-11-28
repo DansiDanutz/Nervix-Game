@@ -103,6 +103,13 @@ Server-only milestones (F0 and S1–S4) do not wait for G0. `server/` is clean a
 | **B5** | **Second street or district** (slice token). Migration 020 adds district plots. Chunks load and unload per district. A keyboard and mouse E2E walks to a new-street door and back to the right threshold. | slice `.blend` (new district collection), `arrival_street.py`, `export_arrival_slice.py`, `migrations/020_district_plots.sql`, `app/src/scene/districtChunks.ts`, `app/e2e/district2.spec.ts` | V4, B4 | Chunk budget holds per district. Desktop and mobile frame times recorded. District sha256 unchanged. | L |
 | **V5** | **Final judged A01 sign-off with the city populated** (crowd, NPCs, houses, signboards in frame). | `docs/evidence/slice/compare-A01-final.png`, `docs/art-direction/a01-scorecard.md` | all of the above | Every rubric element scores at least the agreed threshold (D11) from 3 independent judges, with the strip reference \| Blender `CAM_A01` \| game. David gives final approval. | M |
 
+#### F1 handoff notes (binding for later milestones)
+
+- **Two place ids, on purpose.** `placeKey()` in `app/src/world/place.ts` keeps the legacy DOM/test values (`plaza`, `venue`, `house:<doorId>` with `bld_*` door ids) only for `data-place` and `__nervixPlace`, so the existing specs do not change. `placeId()` returns the shared contract ids (`plaza`, `openpoker`, `prop_*`) from `shared/contracts/place-ids.json`. C3, P3 and any server-facing code use `placeId()`, never `placeKey()`.
+- **playerState and the typing filter are not wired yet.** `PlayerController.tsx` still has its own `typing` check (without SELECT) and does not call `playerState.publish`, so `playerState.ref.current` stays at `INITIAL_PLAYER` at runtime. CT1 owns that hookup: publish position, yaw and speed in the frame loop and use `isTypingTarget` from `app/src/input/keys.ts`. C3 does not read yaw from `playerState` until CT1 lands.
+- **E2E ports.** `app/e2e/ports.ts` (`e2ePorts()`) reads `E2E_API_PORT`, `E2E_WEB_PORT` and `E2E_DB`. `prepare-db.mjs` uses it through `app/e2e/helpers/` (database, schema and fixtures steps). `playwright.config.ts` still hardcodes the ports and database, and the lead applies that hookup (the fidelity workflow owns the file). Until then, a per-run port override is not in effect and E2E stays serialized under one lock.
+- **The F1 gate is still open** until the `arrival` and `route` specs are green on the GPU and the first frame pixel-diffs against V0's handoff frame, run under the E2E lock.
+
 ### What DONE means per area
 
 1. **Characters**: S4, C3, C4, C5, C6, C7, C8, C9.

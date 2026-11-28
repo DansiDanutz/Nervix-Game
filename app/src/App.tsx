@@ -1,101 +1,48 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { Marker } from "./scene/CityScene";
 import { Hud } from "./ui/Hud";
-import { AgentPanel } from "./ui/AgentPanel";
-import { AuthPanel } from "./ui/AuthPanel";
-import { MerchantPanel } from "./ui/MerchantPanel";
-import { CheckoutPanel } from "./ui/CheckoutPanel";
-import { AdsPanel } from "./ui/AdsPanel";
-import { AdminPanel } from "./ui/AdminPanel";
 import { GuidePanel } from "./ui/GuidePanel";
 import { AccessGate } from "./ui/AccessGate";
 import { InteriorCatalog } from "./ui/InteriorCatalog";
 import { TouchControls } from "./ui/TouchControls";
-import { SideMenu } from "./ui/SideMenu";
-import type { HouseDoor } from "./scene/HouseDoors";
-import { arrival, danggDoor, loadSliceLayout, near, STREET_SPAWN, streetSpawn, testBuilderDoor, type Anchor, type Place, type SliceLayout } from "./scene/slice";
+import { PanelHost } from "./ui/PanelHost";
+import { arrival, loadSliceLayout, STREET_SPAWN, streetSpawn, type Anchor, type SliceLayout } from "./scene/slice";
 import { usePresence } from "./net/presence";
+import { api, type Session } from "./net/api";
+import { PLAZA, placeKey, placeStore, resetPlace, type Place } from "./world/place";
+import { usePlace } from "./world/usePlace";
+import { destinationOf, targetAt, type Target } from "./world/targets";
+import { sidePanels } from "./features/sidePanels";
+import type { ShellContext } from "./features/panelContext";
+import { useHintsSettled } from "./shell/useHintsSettled";
+import { useWorldSession } from "./shell/useWorldSession";
+import { useWorldKeys } from "./shell/useWorldKeys";
+import { HintStack } from "./shell/HintStack";
 
 const SceneView = lazy(() => import("./scene/SceneView"));
-import { api, type Session, type QuestProgress } from "./net/api";
-import { loadSession } from "./net/session";
-
-type Target =
-  | { kind: "venue"; label: string }
-  | { kind: "house"; door: HouseDoor; label: string }
-  | { kind: "exit"; label: string };
-
-const ROOM_EXIT: Anchor = { x: 0, z: 4.3 };
-
-function targetAt(place: Place, layout: SliceLayout | null, x: number, z: number): Target | null {
-  if (place.kind === "house") {
-    return near(ROOM_EXIT, x, z, 2.2) || near({ x: 0, z: -4.0 }, x, z, 2.2) ? { kind: "exit", label: "Plaza" } : null;
-  }
-  if (!layout) return null;
-  if (place.kind === "venue") {
-    const dangg = danggDoor(layout);
-    if (near(layout.salon.danggDoor, x, z)) return { kind: "house", door: dangg, label: "DanGG" };
-    if (near(layout.salon.exit, x, z)) return { kind: "exit", label: "Plaza" };
-    return null;
-  }
-  if (near(layout.facadeDoor, x, z, 3.0)) return { kind: "venue", label: "OpenPoker" };
-  const builder = testBuilderDoor(layout);
-  const t = builder.position;
-  if (near({ x: t[0], z: t[2] }, x, z, 2.8)) return { kind: "house", door: builder, label: builder.label };
-  return null;
-}
 
 /** Walking this far from the arrival spawn ends the arrival shot (quest card opens). */
 const EXPLORE_DISTANCE = 1.0;
-/** Idle bottom hints fade after this long on arrival (ms). */
-const HINT_FADE_MS = 6000;
-
-function placeLabel(place: Place) {
-  if (place.kind === "plaza") return "Plaza · WASD to walk · Shift to run · drag to look · Q/R turn";
-  if (place.kind === "venue") return "OpenPoker salon · DanGG's house is in the right alcove · Esc returns to the plaza";
-  return `${place.door.label} · Esc returns to the plaza`;
-}
+const PROFILE_REQUIRED = "A completed profile is required to enter a business.";
+const NO_SESSION: Session = { userId: "", displayName: "", role: "player", demo: true };
 
 export function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [propertyId, setPropertyId] = useState<string | null>(null);
-  const [status, setStatus] = useState("connecting");
+  const [entered, setEntered] = useState(false);
+  const { session, setSession, propertyId, status, quest, setQuest } = useWorldSession(() => setEntered(true));
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [nearby, setNearby] = useState<Marker | null>(null);
-  const [quest, setQuest] = useState<QuestProgress | null>(null);
   const [fps, setFps] = useState(0);
   const params = new URLSearchParams(window.location.search);
   // FPS and presence diagnostics are for developers only: ?debug=1.
   const debug = params.get("debug") === "1";
+  const sceneMode = params.get("scene") === "full" ? "full" : "chunks";
   const [exploring, setExploring] = useState(false);
   const [questPinned, setQuestPinned] = useState<boolean | null>(null);
   const questOpen = questPinned ?? exploring;
-  const [entered, setEntered] = useState(false);
-  // The bottom hints sit over the foreground compass-rose medallion: fade them after the first
-  // input or a few seconds, whichever comes first. Door prompts ("E / Enter ...") always show.
-  const [hintsSettled, setHintsSettled] = useState(false);
-  useEffect(() => {
-    if (!entered || hintsSettled) return;
-    const settle = () => setHintsSettled(true);
-    const timer = window.setTimeout(settle, HINT_FADE_MS);
-    window.addEventListener("keydown", settle);
-    window.addEventListener("pointerdown", settle);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener("keydown", settle);
-      window.removeEventListener("pointerdown", settle);
-    };
-  }, [entered, hintsSettled]);
-  const sceneMode = params.get("scene") === "full" ? "full" : "chunks";
-  const [showAuth, setShowAuth] = useState(false);
-  const [showMerchant, setShowMerchant] = useState(false);
-  const [showOrders, setShowOrders] = useState(false);
-  const [showAds, setShowAds] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
-  const [place, setPlace] = useState<Place>({ kind: "plaza" });
-  // A new place shows its name again; it fades on the next input or after HINT_FADE_MS.
-  const placeKey = place.kind === "house" ? `house:${place.door.id}` : place.kind;
-  useEffect(() => setHintsSettled(false), [placeKey]);
+  useState(resetPlace); // once per mount, before the first read of the place
+  const place = usePlace();
+  const hintsSettled = useHintsSettled(entered, placeKey(place));
   const [layout, setLayout] = useState<SliceLayout | null>(null);
   const [layoutError, setLayoutError] = useState<string | null>(null);
   const [spawn, setSpawn] = useState<Anchor>(STREET_SPAWN);
@@ -134,7 +81,7 @@ export function App() {
         // Entering any business needs a completed profile; the server re-checks every read.
         const me = await api.me().catch(() => null);
         if (!me || (me.level !== "browse" && me.level !== "build")) {
-          setAuthError("A completed profile is required to enter a business.");
+          setAuthError(PROFILE_REQUIRED);
           return;
         }
       }
@@ -144,23 +91,20 @@ export function App() {
       setTarget(null);
       // Interaction prompts belong to the place being left.
       setNearby(null);
-      setPlace(next);
+      placeStore.set(next);
     },
     [layout, place],
   );
 
-  const activate = useCallback(
-    (t: Target | null) => {
-      if (!t) return;
-      if (t.kind === "venue") void go({ kind: "venue", id: "openpoker" });
-      else if (t.kind === "house") void go({ kind: "house", door: t.door, from: place.kind === "venue" ? "openpoker" : "plaza" });
-      else void go({ kind: "plaza" });
-    },
-    [go, place],
-  );
+  const activate = useCallback((t: Target | null) => {
+    if (t) void go(destinationOf(t, place));
+  }, [go, place]);
+  const goPlaza = useCallback(() => void go(PLAZA), [go]);
+  const toggleGuide = useCallback(() => setShowGuide((v) => !v), []);
+  const closeGuide = useCallback(() => setShowGuide(false), []);
 
   useEffect(() => {
-    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__nervixPlace = place.kind === "house" ? `house:${place.door.id}` : place.kind;
+    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__nervixPlace = placeKey(place);
   }, [place]);
   const { players, status: presence, sendMove } = usePresence({
     userId: session?.userId ?? "guest",
@@ -168,59 +112,16 @@ export function App() {
     district: "central-plaza",
   });
 
-  useEffect(() => {
-    // Resume an existing verified session; never enter on a client flag.
-    void api
-      .me()
-      .then((me) => {
-        if (me.level === "signed_out") return;
-        setSession({ userId: me.userId ?? "", displayName: me.displayName ?? "Traveler", role: me.level === "build" ? "merchant_owner" : "player", demo: true });
-        setEntered(true);
-      })
-      .catch(() => {});
+  useWorldKeys({ session, nearby, quest, place, target, goPlaza, activate, toggleGuide, closeGuide, onQuest: setQuest });
 
-    let alive = true;
-    (async () => {
-      try {
-        const s = await api.session(loadSession().userId);
-        if (!alive) return;
-        setSession(s);
-        // Only eligible builders reserve a property; visitors just explore.
-        const property = await api.provision(s.userId, "merchant").then((r) => r.property).catch(() => null);
-        if (!alive) return;
-        if (property) setPropertyId(property.id);
-        setQuest((await api.progress(s.userId)).progress);
-        setStatus("connected");
-      } catch {
-        if (alive) setStatus("offline");
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLElement && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT")) return;
-      if (e.key.toLowerCase() === "g") setShowGuide((v) => !v);
-      if (e.key === "Escape") {
-        setShowGuide(false);
-        if (place.kind !== "plaza") void go({ kind: "plaza" });
-        return;
-      }
-      if ((e.key.toLowerCase() === "e" || e.key === "Enter") && target) {
-        activate(target);
-        return;
-      }
-      if (e.key.toLowerCase() !== "e") return;
-      if (!session || !nearby) return;
-      if (!nearby.id.toLowerCase().includes("seal") || quest?.seals.includes(nearby.id)) return;
-      void api.collectSeal(session.userId, nearby.id).then((r) => setQuest(r.progress));
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [session, nearby, quest, place, target, go, activate]);
+  const shellCtx = useMemo<ShellContext>(() => ({
+    session, propertyId, entered, showGuide,
+    openGuide: () => setShowGuide(true),
+    onSignedIn: (s) => {
+      setSession(s);
+      void api.progress(s.userId).then((r) => setQuest(r.progress));
+    },
+  }), [session, propertyId, entered, showGuide, setSession, setQuest]);
 
   return (
     <div className="app">
@@ -247,17 +148,8 @@ export function App() {
         />
       </Suspense>}
 
-
       {interior && <InteriorCatalog door={interior} />}
-      {entered && (
-        // One stacked hint region: the place/controls hint and the privacy note never overlap.
-        <div className="hint-stack" data-testid="hint-stack">
-          <div className={`place-hint${hintsSettled && !target ? " is-faded" : ""}`} data-testid="place-hint" data-place={place.kind === "house" ? `house:${place.door.id}` : place.kind}>
-            {target ? `E / Enter or click · ${target.kind === "exit" ? "Return to the plaza" : `Enter ${target.label}`}` : placeLabel(place)}
-          </div>
-          {!interior && <div className={`controls-hint${hintsSettled ? " is-faded" : ""}`} data-testid="controls-hint">Merchant conversations are private</div>}
-        </div>
-      )}
+      {entered && <HintStack place={place} target={target} settled={hintsSettled} />}
       {entered && layoutError && <div className="app__notice" role="alert">{layoutError}</div>}
       {entered && arrivalError && place.kind === "plaza" && <div className="app__notice" role="alert">{arrivalError}</div>}
       {entered && layout && !layout.plaza && place.kind === "plaza" && (
@@ -269,7 +161,7 @@ export function App() {
         <TouchControls interior={target.kind === "exit"} canEnter={target.kind !== "exit"} onEnter={() => activate(target)} onExit={() => activate(target)} />
       )}
       {entered && !interior && <Hud
-          session={session ?? { userId: "", displayName: "", role: "player", demo: true }}
+          session={session ?? NO_SESSION}
           nearby={place.kind === "plaza" ? nearby : null}
           seals={quest?.seals.length ?? 0}
           questOpen={questOpen}
@@ -288,49 +180,7 @@ export function App() {
           status === "offline" && <div className="app__status" role="status">API offline — blockout only</div>
         )}
         {authError && <div className="app__notice">{authError}</div>}
-        <SideMenu>
-        {showAuth && (
-          <AuthPanel
-            onSignedIn={(s) => {
-              setSession(s);
-              setShowAuth(false);
-              void api.progress(s.userId).then((r) => setQuest(r.progress));
-            }}
-          />
-        )}
-        {!showAuth && session && (
-          <button type="button" className="app__account" onClick={() => setShowAuth(true)}>
-            {session.verified ? `Verified: ${session.displayName}` : "Sign in with email"}
-          </button>
-        )}
-        {!showMerchant && propertyId && session && (
-          <button type="button" className="app__account" onClick={() => setShowMerchant(true)}>
-            Merchant workspace
-          </button>
-        )}
-        {showMerchant && propertyId && session && (
-          <MerchantPanel merchantId="mer_1" propertyId={propertyId} />
-        )}
-        {session && !showOrders && (
-          <button type="button" className="app__account" onClick={() => setShowOrders(true)}>
-            Orders
-          </button>
-        )}
-        {showOrders && session && <CheckoutPanel userId={session.userId} />}
-        {entered && !showGuide && (
-          <button type="button" className="app__account" onClick={() => setShowGuide(true)}>
-            District guide (G)
-          </button>
-        )}
-        {!showAds && session && (
-          <button type="button" className="app__account" onClick={() => setShowAds(true)}>
-            Advertising
-          </button>
-        )}
-        {showAds && session && <AdsPanel merchantId="mer_1" />}
-        {session?.role === "admin" && <AdminPanel userId={session.userId} />}
-        {propertyId && <AgentPanel propertyId={propertyId} agentName="Mira" />}
-        </SideMenu>
+        <PanelHost registry={sidePanels} ctx={shellCtx} />
         {/* G toggles the guide even while the menu is closed. */}
         {entered && showGuide && <GuidePanel markers={districtMarkers} onClose={() => setShowGuide(false)} />}
       </div>
