@@ -1,0 +1,93 @@
+✔ databaseUrl points at the throwaway database over the local socket (0.355125ms)
+✔ recreateCommands drops then creates only the named throwaway database (0.308291ms)
+✔ recreateCommands refuses a database that is not a throwaway *_e2e* name (0.188959ms)
+✔ migrationFiles lists only .sql files in lexical order (0.927042ms)
+✔ migrationCommands runs each file with ON_ERROR_STOP against the database (0.104042ms)
+✔ fixtureCommand runs the server slice seeder with the throwaway DATABASE_URL (0.12725ms)
+✔ preparePlan orders database, schema, then fixtures and reads E2E_DB (0.1825ms)
+✔ preparePlan defaults to the shared slice database (0.071084ms)
+✔ defaults are the shared slice ports and database (0.2035ms)
+✔ env overrides give a run its own ports and database (0.096666ms)
+✔ empty strings fall back to the defaults (0.034708ms)
+✔ peer service ports are refused (0.06975ms)
+✔ malformed or out-of-range ports are refused (0.07325ms)
+✔ the API and web ports must differ (0.037125ms)
+✔ database names are restricted to safe identifiers (0.047917ms)
+✔ isThrowawayDb accepts only *_e2e* names (0.07775ms)
+
+Running 66 tests using 1 worker
+
+[1/66] e2e/a01-camera.spec.ts:49:1 › A01 camera: the game frame matches CAM_A01 within 1 cm and 0.5 degrees
+[2/66] e2e/a11y.spec.ts:47:1 › the live region is a polite atomic status, present before anything is announced
+[3/66] e2e/a11y.spec.ts:55:1 › reaching the OpenPoker doors announces Enter OpenPoker, then the salon on entry
+[4/66] e2e/a11y.spec.ts:69:1 › every visible control has a role name and ids are unique (manual check, no axe)
+[5/66] e2e/a11y.spec.ts:81:1 › the settings panel takes focus on open and Esc hands it back to the opener
+[6/66] e2e/a11y.spec.ts:91:1 › settings persist in this browser across a reload
+[7/66] e2e/a11y.spec.ts:103:1 › storage that throws falls back to defaults and the world still loads
+[8/66] e2e/a11y.spec.ts:118:1 › reduced motion follows the OS under 'system' and the setting overrides it
+[9/66] e2e/arrival.spec.ts:81:1 › first view is pedestrian eye level on the street, facing Fountain Square
+[10/66] e2e/avatar.spec.ts:32:1 › two fixture sessions show distinct presets in the API and the picker
+[11/66] e2e/avatar.spec.ts:49:1 › choosing and saving a preset persists across a reload
+[12/66] e2e/avatar.spec.ts:66:1 › an invalid preset and a cross-user write are refused
+[13/66] e2e/avatar.spec.ts:78:1 › arrow keys move the appearance choice inside the radio group
+[14/66] e2e/controls.spec.ts:31:1 › Shift+W covers 1.6-1.8 times the distance of W
+[15/66] e2e/controls.spec.ts:44:1 › holding Q or R for 1 s turns about ±1.8 rad
+[16/66] e2e/controls.spec.ts:56:1 › dragging on the canvas orbits the camera; a click without travel does not
+[17/66] e2e/controls.spec.ts:67:1 › Meta, window blur and a hidden tab clear held movement keys
+[18/66] e2e/controls.spec.ts:90:1 › typing in a field never moves the player
+[19/66] e2e/controls.spec.ts:104:1 › Enter on a focused menu button does not enter the door; E still does
+[20/66] e2e/controls.spec.ts:120:1 › Esc while typing in the house editor does not leave the house
+[21/66] e2e/controls.spec.ts:139:1 › Esc closes the open side menu before it leaves OpenPoker
+[22/66] e2e/crowd.spec.ts:101:3 › crowd: desktop › 100 bots stay inside the LOD caps; FPS and draw calls recorded
+e2e/crowd.spec.ts:101:3 › crowd: desktop › 100 bots stay inside the LOD caps; FPS and draw calls recorded
+[crowd] {"label":"desktop","bots":100,"fps":60.4,"total":100,"full":30,"impostor":70,"labels":12,"shadows":8,"calls":1,"triangles":1}
+
+[23/66] e2e/crowd.spec.ts:109:3 › crowd: mobile emulation › 100 bots on a phone-sized view; FPS and draw calls recorded
+e2e/crowd.spec.ts:109:3 › crowd: mobile emulation › 100 bots on a phone-sized view; FPS and draw calls recorded
+[crowd] {"label":"mobile","bots":100,"fps":60.2,"total":100,"full":30,"impostor":70,"labels":12,"shadows":8,"calls":1,"triangles":1}
+
+[24/66] e2e/house-catalogue.spec.ts:35:1 › each house's merchant agent answers from its own visible listings only
+[25/66] e2e/merchant-houses.spec.ts:23:1 › each listed merchant house is drawn once with exactly one painted sign mesh
+[26/66] e2e/npcs.spec.ts:35:1 › one AI representative per directory house, named from the API, never for the unverified merchant
+[27/66] e2e/npcs.spec.ts:54:1 › every street house with a manifest plot has its NPC in the scene at the station
+[28/66] e2e/npcs.spec.ts:66:1 › suspend, reload: the merchant's NPC is gone; reinstate brings it back
+[29/66] e2e/player-chat.spec.ts:28:1 › B hears A's line in the same place, in the log and as a bubble
+[30/66] e2e/player-chat.spec.ts:50:1 › typing w into the chat does not move the avatar, and Esc gives the keys back
+[31/66] e2e/player-chat.spec.ts:78:1 › a moderated line is refused with a notice and reaches nobody
+[32/66] e2e/player-chat.spec.ts:94:1 › a line said inside DanGG's house never reaches the plaza
+[33/66] e2e/presence-place.spec.ts:40:1 › a player in DanGG's house leaves plaza presence and comes back on exit
+[34/66] e2e/presence-place.spec.ts:71:1 › no self ghost while the session is still resolving
+[35/66] e2e/presence-place.spec.ts:95:1 › a move into a prop_demo_ house the server may refuse never leaves a plaza ghost
+[36/66] e2e/presence-transport.spec.ts:38:1 › deltas keep a two-player room in sync and a closed tab leaves it
+[37/66] e2e/privacy-settings.spec.ts:46:1 › hide my name persists and other players see Anonymous
+[38/66] e2e/privacy-settings.spec.ts:70:1 › a malformed privacy write is refused with 400
+[39/66] e2e/product-edit.spec.ts:46:1 › the owner adds a categorised listing and it appears as a product only in their room
+[40/66] e2e/product-edit.spec.ts:74:1 › the owner deactivates a listing and visitors no longer see it
+[41/66] e2e/product-edit.spec.ts:93:1 › a visitor sees no edit controls; clicking a product opens a read-only card
+[42/66] e2e/product-edit.spec.ts:127:1 › cross-owner and subscription-only listing edits through the API are 403
+[43/66] e2e/product-edit.spec.ts:144:1 › the owner's invalid listing input is a 400 and adds nothing
+[44/66] e2e/products.spec.ts:34:1 › DanGG's room shows only DanGG's listings as product objects
+[45/66] e2e/products.spec.ts:42:1 › Test Builder's room shows only Test Builder's listings as product objects
+[46/66] e2e/products.spec.ts:55:1 › the K3 kit and its manifest are served
+[47/66] e2e/route.spec.ts:176:1 › street → Fountain Square → OpenPoker → DanGG → plaza with keyboard and mouse
+[48/66] e2e/route.spec.ts:204:1 › Test Builder house stays independent on the plaza
+[49/66] e2e/route.spec.ts:226:1 › owner edits their own house in the UI; the edit is visible to visitors
+[50/66] e2e/route.spec.ts:256:1 › cross-owner edit is denied from the browser
+[51/66] e2e/talk-merchant.spec.ts:58:1 › a visitor walks into Test Builder, talks, and gets a grounded, private reply
+[52/66] e2e/talk-merchant.spec.ts:88:1 › only the verified owner sees the merchant workspace inside their house
+[53/66] e2e/talk-merchant.spec.ts:102:1 › Esc closes the chat first and the player stays in the house; a second Esc leaves
+[54/66] e2e/talk-merchant.spec.ts:116:1 › a support request is proposed, then confirmed by proposal id, with no payment link
+[55/66] e2e/talk-merchant.spec.ts:138:1 › no speech: the merchant panel renders captions only
+[56/66] e2e/world-houses.spec.ts:40:1 › the directory lists at least 6 verified houses, never the unverified one, with public fields only
+[57/66] e2e/world-houses.spec.ts:51:1 › suspend, reload: the house leaves the directory and its door is gone; reinstate brings it back
+[58/66] e2e/world-houses.spec.ts:78:1 › no fixture merchant name is baked into app/src (identity loads at runtime)
+[59/66] e2e/touch.spec.ts:20:1 › the pad is mounted in the world with no door in reach
+[60/66] e2e/touch.spec.ts:28:1 › holding the forward pad moves more than 1 m
+[61/66] e2e/touch.spec.ts:37:1 › pointercancel stops movement
+[62/66] e2e/touch.spec.ts:50:1 › the run toggle covers 1.6-1.8 times the walking distance
+[63/66] e2e/touch.spec.ts:69:1 › holding a turn button for 1 s turns about +-1.8 rad
+[64/66] e2e/touch.spec.ts:78:1 › a touch drag on the canvas changes yaw without scrolling the page
+[65/66] e2e/touch.spec.ts:95:1 › the OpenPoker route can be finished by touch only
+[66/66] e2e/touch.spec.ts:103:1 › holding Forward while dragging the canvas turns smoothly and the pad lift keeps the drag
+  3 skipped
+  63 passed (3.8m)

@@ -1,0 +1,93 @@
+/* CT3: place chat overlay, bottom-left above the touch controls. Uses the shared tokens from styles.css. */
+.player-chat {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 20;
+  width: min(360px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none; /* the world stays clickable around the log */
+  font-size: 0.9rem;
+  color: var(--sand, #e8dcc0);
+}
+
+.player-chat__log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 9.5em;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: auto;
+}
+
+.player-chat__log:empty {
+  display: none;
+}
+
+.player-chat__line {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgb(43 33 24 / 0.72);
+  overflow-wrap: anywhere;
+}
+
+.player-chat__line--self {
+  background: rgb(47 111 106 / 0.78);
+}
+
+.player-chat__name {
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.player-chat__notice {
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgb(91 58 94 / 0.85);
+}
+
+.player-chat__input {
+  pointer-events: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  border: 1px solid rgb(232 220 192 / 0.4);
+  border-radius: 8px;
+  background: rgb(43 33 24 / 0.55);
+  color: inherit;
+  font: inherit;
+}
+
+.player-chat__input:focus {
+  outline: 2px solid var(--teal, #2f6f6a);
+  background: rgb(43 33 24 / 0.85);
+}
+
+.player-chat__input::placeholder {
+  color: rgb(232 220 192 / 0.7);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .player-chat__line {
+    animation: player-chat-in 160ms ease-out;
+  }
+}
+
+@keyframes player-chat-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Touch: the always-mounted pad (TouchControls.css) owns the bottom band, so the chat sits above it.
+   Pad height: three 48px rows with 6px gaps, plus its bottom inset and an 8px gap. */
+@media not ((hover: hover) and (pointer: fine)) {
+  .player-chat {
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 3 * 48px + 2 * 6px + 8px);
+  }
+}

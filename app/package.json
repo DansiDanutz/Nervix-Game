@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'src/**/*.test.ts' 'e2e/*.test.ts' 'e2e/helpers/*.test.mjs'",
+    "e2e": "node e2e/prepare-db.mjs && playwright test"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.0",
@@ -18,6 +20,7 @@
     "three": "^0.170.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/three": "^0.170.0",

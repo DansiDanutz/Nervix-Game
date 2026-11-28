@@ -1,0 +1,2125 @@
+{
+  "kit": "k2_house_kit",
+  "version": 1,
+  "units": "metres",
+  "source_blend": "blender/scenes/nervix_house_kit_01.blend",
+  "coordinate_system": "glTF/runtime: +Y up; origin on the ground at the centre of the front facade; the facade faces +Z and the house extends to -Z. Blender (x, y, z) -> (x, z, -y).",
+  "categories": {
+    "size_class": [
+      "small",
+      "medium",
+      "large"
+    ],
+    "facade": [
+      "shutters",
+      "awning",
+      "loggia"
+    ]
+  },
+  "anchor_conventions": {
+    "anchor_door": "door threshold centre on the facade plane; extras.outward is the unit vector out of the house",
+    "anchor_sign": "centre of the blank sign surface (sign_board); paint a runtime texture facing anchors.sign.normal",
+    "anchor_station": "where a merchant NPC stands behind the counter; faces anchors.station.facing",
+    "slot_N": "product display slot resting on a shelf or table; max_extent is [x, y, z] in metres",
+    "opt_awning": "optional awning node; hide or show at runtime"
+  },
+  "houses": [
+    {
+      "id": "house_small_shutters",
+      "file": "house_small_shutters.glb",
+      "size_class": "small",
+      "facade": "shutters",
+      "roof": "gable",
+      "footprint": {
+        "width": 5.0,
+        "depth": 5.0
+      },
+      "storeys": 2,
+      "wall_height": 6.6,
+      "anchors": {
+        "door": {
+          "node": "anchor_door",
+          "position": [
+            1.25,
+            0.12,
+            0.0
+          ],
+          "outward": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "width": 1.2,
+          "height": 2.4
+        },
+        "sign": {
+          "node": "anchor_sign",
+          "position": [
+            0.3,
+            3.0,
+            0.42
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "size": [
+            1.4,
+            0.55
+          ],
+          "style": "hanging",
+          "surface_node": "sign_board"
+        },
+        "station": {
+          "node": "anchor_station",
+          "position": [
+            1.15,
+            0.12,
+            -4.25
+          ],
+          "facing": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "slots": [
+        {
+          "node": "slot_1",
+          "position": [
+            -1.525,
+            0.95,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_2",
+          "position": [
+            -0.475,
+            0.95,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_3",
+          "position": [
+            -1.525,
+            1.6,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_4",
+          "position": [
+            -0.475,
+            1.6,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_5",
+          "position": [
+            -0.95,
+            0.97,
+            -2.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_6",
+          "position": [
+            -0.35,
+            0.97,
+            -2.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        }
+      ],
+      "interior": {
+        "bounds": {
+          "min": [
+            -2.15,
+            0.12,
+            -4.65
+          ],
+          "max": [
+            2.15,
+            3.4,
+            -0.35
+          ]
+        },
+        "floor_y": 0.12,
+        "ceiling_node": "interior_ceiling"
+      },
+      "options": [
+        {
+          "node": "opt_awning",
+          "default_visible": false
+        }
+      ],
+      "parts": [
+        "exterior_walls",
+        "exterior_trim",
+        "roof_tiles",
+        "roof_structure",
+        "windows",
+        "door_frame",
+        "door_leaf",
+        "sign_board",
+        "sign_bracket",
+        "lanterns",
+        "planters",
+        "facade_details",
+        "interior_floor",
+        "interior_walls",
+        "interior_ceiling",
+        "interior_furniture",
+        "interior_lights"
+      ],
+      "triangles": 13752,
+      "bytes": 1434228
+    },
+    {
+      "id": "house_small_awning",
+      "file": "house_small_awning.glb",
+      "size_class": "small",
+      "facade": "awning",
+      "roof": "hip",
+      "footprint": {
+        "width": 5.0,
+        "depth": 5.0
+      },
+      "storeys": 2,
+      "wall_height": 6.6,
+      "anchors": {
+        "door": {
+          "node": "anchor_door",
+          "position": [
+            -1.25,
+            0.12,
+            0.0
+          ],
+          "outward": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "width": 1.2,
+          "height": 2.4
+        },
+        "sign": {
+          "node": "anchor_sign",
+          "position": [
+            0.875,
+            3.24,
+            0.08
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "size": [
+            1.8499999999999999,
+            0.42
+          ],
+          "style": "wall",
+          "surface_node": "sign_board"
+        },
+        "station": {
+          "node": "anchor_station",
+          "position": [
+            -1.15,
+            0.12,
+            -4.25
+          ],
+          "facing": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "slots": [
+        {
+          "node": "slot_1",
+          "position": [
+            0.475,
+            0.95,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_2",
+          "position": [
+            1.525,
+            0.95,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_3",
+          "position": [
+            0.475,
+            1.6,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_4",
+          "position": [
+            1.525,
+            1.6,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_5",
+          "position": [
+            0.35,
+            0.97,
+            -2.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_6",
+          "position": [
+            0.95,
+            0.97,
+            -2.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        }
+      ],
+      "interior": {
+        "bounds": {
+          "min": [
+            -2.15,
+            0.12,
+            -4.65
+          ],
+          "max": [
+            2.15,
+            3.4,
+            -0.35
+          ]
+        },
+        "floor_y": 0.12,
+        "ceiling_node": "interior_ceiling"
+      },
+      "options": [
+        {
+          "node": "opt_awning",
+          "default_visible": true
+        }
+      ],
+      "parts": [
+        "exterior_walls",
+        "exterior_trim",
+        "roof_tiles",
+        "roof_structure",
+        "windows",
+        "door_frame",
+        "door_leaf",
+        "sign_board",
+        "sign_bracket",
+        "lanterns",
+        "planters",
+        "facade_details",
+        "interior_floor",
+        "interior_walls",
+        "interior_ceiling",
+        "interior_furniture",
+        "interior_lights"
+      ],
+      "triangles": 11804,
+      "bytes": 1324780
+    },
+    {
+      "id": "house_small_loggia",
+      "file": "house_small_loggia.glb",
+      "size_class": "small",
+      "facade": "loggia",
+      "roof": "hip",
+      "footprint": {
+        "width": 5.0,
+        "depth": 5.0
+      },
+      "storeys": 2,
+      "wall_height": 6.6,
+      "anchors": {
+        "door": {
+          "node": "anchor_door",
+          "position": [
+            0.0,
+            0.12,
+            0.0
+          ],
+          "outward": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "width": 1.2,
+          "height": 2.4
+        },
+        "sign": {
+          "node": "anchor_sign",
+          "position": [
+            0.0,
+            3.1,
+            0.1
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "size": [
+            2.0,
+            0.5
+          ],
+          "style": "plaque",
+          "surface_node": "sign_board"
+        },
+        "station": {
+          "node": "anchor_station",
+          "position": [
+            1.15,
+            0.12,
+            -4.25
+          ],
+          "facing": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "slots": [
+        {
+          "node": "slot_1",
+          "position": [
+            -1.525,
+            0.95,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_2",
+          "position": [
+            -0.475,
+            0.95,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_3",
+          "position": [
+            -1.525,
+            1.6,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_4",
+          "position": [
+            -0.475,
+            1.6,
+            -4.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_5",
+          "position": [
+            -1.8,
+            0.97,
+            -2.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_6",
+          "position": [
+            -1.2,
+            0.97,
+            -2.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        }
+      ],
+      "interior": {
+        "bounds": {
+          "min": [
+            -2.15,
+            0.12,
+            -4.65
+          ],
+          "max": [
+            2.15,
+            3.4,
+            -0.35
+          ]
+        },
+        "floor_y": 0.12,
+        "ceiling_node": "interior_ceiling"
+      },
+      "options": [
+        {
+          "node": "opt_awning",
+          "default_visible": false
+        }
+      ],
+      "parts": [
+        "exterior_walls",
+        "exterior_trim",
+        "roof_tiles",
+        "roof_structure",
+        "windows",
+        "door_frame",
+        "door_leaf",
+        "sign_board",
+        "sign_bracket",
+        "lanterns",
+        "planters",
+        "facade_details",
+        "interior_floor",
+        "interior_walls",
+        "interior_ceiling",
+        "interior_furniture",
+        "interior_lights"
+      ],
+      "triangles": 12528,
+      "bytes": 1372372
+    },
+    {
+      "id": "house_medium_shutters",
+      "file": "house_medium_shutters.glb",
+      "size_class": "medium",
+      "facade": "shutters",
+      "roof": "gable",
+      "footprint": {
+        "width": 7.0,
+        "depth": 6.0
+      },
+      "storeys": 2,
+      "wall_height": 6.6,
+      "anchors": {
+        "door": {
+          "node": "anchor_door",
+          "position": [
+            2.2,
+            0.12,
+            0.0
+          ],
+          "outward": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "width": 1.3,
+          "height": 2.5
+        },
+        "sign": {
+          "node": "anchor_sign",
+          "position": [
+            1.25,
+            3.0,
+            0.42
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "size": [
+            1.4,
+            0.55
+          ],
+          "style": "hanging",
+          "surface_node": "sign_board"
+        },
+        "station": {
+          "node": "anchor_station",
+          "position": [
+            2.05,
+            0.12,
+            -5.25
+          ],
+          "facing": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "slots": [
+        {
+          "node": "slot_1",
+          "position": [
+            -2.4,
+            0.95,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_2",
+          "position": [
+            -1.1,
+            0.95,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_3",
+          "position": [
+            0.2,
+            0.95,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_4",
+          "position": [
+            -2.4,
+            1.6,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_5",
+          "position": [
+            -1.1,
+            1.6,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_6",
+          "position": [
+            0.2,
+            1.6,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_7",
+          "position": [
+            -1.55,
+            0.97,
+            -3.0
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_8",
+          "position": [
+            -0.95,
+            0.97,
+            -3.0
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_9",
+          "position": [
+            -0.35,
+            0.97,
+            -3.0
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        }
+      ],
+      "interior": {
+        "bounds": {
+          "min": [
+            -3.15,
+            0.12,
+            -5.65
+          ],
+          "max": [
+            3.15,
+            3.4,
+            -0.35
+          ]
+        },
+        "floor_y": 0.12,
+        "ceiling_node": "interior_ceiling"
+      },
+      "options": [
+        {
+          "node": "opt_awning",
+          "default_visible": false
+        }
+      ],
+      "parts": [
+        "exterior_walls",
+        "exterior_trim",
+        "roof_tiles",
+        "roof_structure",
+        "windows",
+        "door_frame",
+        "door_leaf",
+        "sign_board",
+        "sign_bracket",
+        "lanterns",
+        "planters",
+        "facade_details",
+        "interior_floor",
+        "interior_walls",
+        "interior_ceiling",
+        "interior_furniture",
+        "interior_lights"
+      ],
+      "triangles": 18874,
+      "bytes": 1726964
+    },
+    {
+      "id": "house_medium_awning",
+      "file": "house_medium_awning.glb",
+      "size_class": "medium",
+      "facade": "awning",
+      "roof": "hip",
+      "footprint": {
+        "width": 7.0,
+        "depth": 6.0
+      },
+      "storeys": 2,
+      "wall_height": 6.6,
+      "anchors": {
+        "door": {
+          "node": "anchor_door",
+          "position": [
+            -2.2,
+            0.12,
+            0.0
+          ],
+          "outward": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "width": 1.3,
+          "height": 2.5
+        },
+        "sign": {
+          "node": "anchor_sign",
+          "position": [
+            0.925,
+            3.24,
+            0.08
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "size": [
+            2.0,
+            0.42
+          ],
+          "style": "wall",
+          "surface_node": "sign_board"
+        },
+        "station": {
+          "node": "anchor_station",
+          "position": [
+            -2.05,
+            0.12,
+            -5.25
+          ],
+          "facing": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "slots": [
+        {
+          "node": "slot_1",
+          "position": [
+            -0.2,
+            0.95,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_2",
+          "position": [
+            1.1,
+            0.95,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_3",
+          "position": [
+            2.4,
+            0.95,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_4",
+          "position": [
+            -0.2,
+            1.6,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_5",
+          "position": [
+            1.1,
+            1.6,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_6",
+          "position": [
+            2.4,
+            1.6,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_7",
+          "position": [
+            0.35,
+            0.97,
+            -3.0
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_8",
+          "position": [
+            0.95,
+            0.97,
+            -3.0
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_9",
+          "position": [
+            1.55,
+            0.97,
+            -3.0
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        }
+      ],
+      "interior": {
+        "bounds": {
+          "min": [
+            -3.15,
+            0.12,
+            -5.65
+          ],
+          "max": [
+            3.15,
+            3.4,
+            -0.35
+          ]
+        },
+        "floor_y": 0.12,
+        "ceiling_node": "interior_ceiling"
+      },
+      "options": [
+        {
+          "node": "opt_awning",
+          "default_visible": true
+        }
+      ],
+      "parts": [
+        "exterior_walls",
+        "exterior_trim",
+        "roof_tiles",
+        "roof_structure",
+        "windows",
+        "door_frame",
+        "door_leaf",
+        "sign_board",
+        "sign_bracket",
+        "lanterns",
+        "planters",
+        "facade_details",
+        "interior_floor",
+        "interior_walls",
+        "interior_ceiling",
+        "interior_furniture",
+        "interior_lights"
+      ],
+      "triangles": 17246,
+      "bytes": 1628668
+    },
+    {
+      "id": "house_medium_loggia",
+      "file": "house_medium_loggia.glb",
+      "size_class": "medium",
+      "facade": "loggia",
+      "roof": "hip",
+      "footprint": {
+        "width": 7.0,
+        "depth": 6.0
+      },
+      "storeys": 2,
+      "wall_height": 6.6,
+      "anchors": {
+        "door": {
+          "node": "anchor_door",
+          "position": [
+            0.0,
+            0.12,
+            0.0
+          ],
+          "outward": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "width": 1.3,
+          "height": 2.5
+        },
+        "sign": {
+          "node": "anchor_sign",
+          "position": [
+            0.0,
+            3.1,
+            0.1
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "size": [
+            2.0,
+            0.5
+          ],
+          "style": "plaque",
+          "surface_node": "sign_board"
+        },
+        "station": {
+          "node": "anchor_station",
+          "position": [
+            2.05,
+            0.12,
+            -5.25
+          ],
+          "facing": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "slots": [
+        {
+          "node": "slot_1",
+          "position": [
+            -2.4,
+            0.95,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_2",
+          "position": [
+            -1.1,
+            0.95,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_3",
+          "position": [
+            0.2,
+            0.95,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_4",
+          "position": [
+            -2.4,
+            1.6,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_5",
+          "position": [
+            -1.1,
+            1.6,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_6",
+          "position": [
+            0.2,
+            1.6,
+            -5.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_7",
+          "position": [
+            -2.4,
+            0.97,
+            -3.0
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_8",
+          "position": [
+            -1.8,
+            0.97,
+            -3.0
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_9",
+          "position": [
+            -1.2,
+            0.97,
+            -3.0
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        }
+      ],
+      "interior": {
+        "bounds": {
+          "min": [
+            -3.15,
+            0.12,
+            -5.65
+          ],
+          "max": [
+            3.15,
+            3.4,
+            -0.35
+          ]
+        },
+        "floor_y": 0.12,
+        "ceiling_node": "interior_ceiling"
+      },
+      "options": [
+        {
+          "node": "opt_awning",
+          "default_visible": false
+        }
+      ],
+      "parts": [
+        "exterior_walls",
+        "exterior_trim",
+        "roof_tiles",
+        "roof_structure",
+        "windows",
+        "door_frame",
+        "door_leaf",
+        "sign_board",
+        "sign_bracket",
+        "lanterns",
+        "planters",
+        "facade_details",
+        "interior_floor",
+        "interior_walls",
+        "interior_ceiling",
+        "interior_furniture",
+        "interior_lights"
+      ],
+      "triangles": 17490,
+      "bytes": 1646988
+    },
+    {
+      "id": "house_large_shutters",
+      "file": "house_large_shutters.glb",
+      "size_class": "large",
+      "facade": "shutters",
+      "roof": "gable",
+      "footprint": {
+        "width": 9.0,
+        "depth": 7.0
+      },
+      "storeys": 3,
+      "wall_height": 9.8,
+      "anchors": {
+        "door": {
+          "node": "anchor_door",
+          "position": [
+            3.15,
+            0.12,
+            0.0
+          ],
+          "outward": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "width": 1.4,
+          "height": 2.7
+        },
+        "sign": {
+          "node": "anchor_sign",
+          "position": [
+            2.2,
+            3.0,
+            0.42
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "size": [
+            1.4,
+            0.55
+          ],
+          "style": "hanging",
+          "surface_node": "sign_board"
+        },
+        "station": {
+          "node": "anchor_station",
+          "position": [
+            2.95,
+            0.12,
+            -6.25
+          ],
+          "facing": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "slots": [
+        {
+          "node": "slot_1",
+          "position": [
+            -3.1,
+            0.95,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_2",
+          "position": [
+            -1.2,
+            0.95,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_3",
+          "position": [
+            0.7,
+            0.95,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_4",
+          "position": [
+            -3.1,
+            1.6,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_5",
+          "position": [
+            -1.2,
+            1.6,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_6",
+          "position": [
+            0.7,
+            1.6,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_7",
+          "position": [
+            -3.93,
+            0.95,
+            -2.85
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_8",
+          "position": [
+            -3.93,
+            0.95,
+            -4.05
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_9",
+          "position": [
+            -3.93,
+            1.6,
+            -2.85
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_10",
+          "position": [
+            -3.93,
+            1.6,
+            -4.05
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_11",
+          "position": [
+            -0.95,
+            0.97,
+            -3.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_12",
+          "position": [
+            -0.35,
+            0.97,
+            -3.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        }
+      ],
+      "interior": {
+        "bounds": {
+          "min": [
+            -4.15,
+            0.12,
+            -6.65
+          ],
+          "max": [
+            4.15,
+            3.4,
+            -0.35
+          ]
+        },
+        "floor_y": 0.12,
+        "ceiling_node": "interior_ceiling"
+      },
+      "options": [
+        {
+          "node": "opt_awning",
+          "default_visible": false
+        }
+      ],
+      "parts": [
+        "exterior_walls",
+        "exterior_trim",
+        "roof_tiles",
+        "roof_structure",
+        "windows",
+        "door_frame",
+        "door_leaf",
+        "sign_board",
+        "sign_bracket",
+        "lanterns",
+        "planters",
+        "facade_details",
+        "interior_floor",
+        "interior_walls",
+        "interior_ceiling",
+        "interior_furniture",
+        "interior_lights"
+      ],
+      "triangles": 26720,
+      "bytes": 2184692
+    },
+    {
+      "id": "house_large_awning",
+      "file": "house_large_awning.glb",
+      "size_class": "large",
+      "facade": "awning",
+      "roof": "hip",
+      "footprint": {
+        "width": 9.0,
+        "depth": 7.0
+      },
+      "storeys": 3,
+      "wall_height": 9.8,
+      "anchors": {
+        "door": {
+          "node": "anchor_door",
+          "position": [
+            -3.15,
+            0.12,
+            0.0
+          ],
+          "outward": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "width": 1.4,
+          "height": 2.7
+        },
+        "sign": {
+          "node": "anchor_sign",
+          "position": [
+            0.975,
+            3.44,
+            0.08
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "size": [
+            2.0,
+            0.42
+          ],
+          "style": "wall",
+          "surface_node": "sign_board"
+        },
+        "station": {
+          "node": "anchor_station",
+          "position": [
+            -2.95,
+            0.12,
+            -6.25
+          ],
+          "facing": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "slots": [
+        {
+          "node": "slot_1",
+          "position": [
+            -0.7,
+            0.95,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_2",
+          "position": [
+            1.2,
+            0.95,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_3",
+          "position": [
+            3.1,
+            0.95,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_4",
+          "position": [
+            -0.7,
+            1.6,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_5",
+          "position": [
+            1.2,
+            1.6,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_6",
+          "position": [
+            3.1,
+            1.6,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_7",
+          "position": [
+            3.93,
+            0.95,
+            -2.85
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_8",
+          "position": [
+            3.93,
+            0.95,
+            -4.05
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_9",
+          "position": [
+            3.93,
+            1.6,
+            -2.85
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_10",
+          "position": [
+            3.93,
+            1.6,
+            -4.05
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_11",
+          "position": [
+            0.35,
+            0.97,
+            -3.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_12",
+          "position": [
+            0.95,
+            0.97,
+            -3.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        }
+      ],
+      "interior": {
+        "bounds": {
+          "min": [
+            -4.15,
+            0.12,
+            -6.65
+          ],
+          "max": [
+            4.15,
+            3.4,
+            -0.35
+          ]
+        },
+        "floor_y": 0.12,
+        "ceiling_node": "interior_ceiling"
+      },
+      "options": [
+        {
+          "node": "opt_awning",
+          "default_visible": true
+        }
+      ],
+      "parts": [
+        "exterior_walls",
+        "exterior_trim",
+        "roof_tiles",
+        "roof_structure",
+        "windows",
+        "door_frame",
+        "door_leaf",
+        "sign_board",
+        "sign_bracket",
+        "lanterns",
+        "planters",
+        "facade_details",
+        "interior_floor",
+        "interior_walls",
+        "interior_ceiling",
+        "interior_furniture",
+        "interior_lights"
+      ],
+      "triangles": 25118,
+      "bytes": 2087080
+    },
+    {
+      "id": "house_large_loggia",
+      "file": "house_large_loggia.glb",
+      "size_class": "large",
+      "facade": "loggia",
+      "roof": "hip",
+      "footprint": {
+        "width": 9.0,
+        "depth": 7.0
+      },
+      "storeys": 3,
+      "wall_height": 9.8,
+      "anchors": {
+        "door": {
+          "node": "anchor_door",
+          "position": [
+            0.0,
+            0.12,
+            0.0
+          ],
+          "outward": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "width": 1.4,
+          "height": 2.7
+        },
+        "sign": {
+          "node": "anchor_sign",
+          "position": [
+            0.0,
+            3.3,
+            0.1
+          ],
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "size": [
+            2.0,
+            0.5
+          ],
+          "style": "plaque",
+          "surface_node": "sign_board"
+        },
+        "station": {
+          "node": "anchor_station",
+          "position": [
+            2.95,
+            0.12,
+            -6.25
+          ],
+          "facing": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "slots": [
+        {
+          "node": "slot_1",
+          "position": [
+            -3.1,
+            0.95,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_2",
+          "position": [
+            -1.2,
+            0.95,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_3",
+          "position": [
+            0.7,
+            0.95,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_4",
+          "position": [
+            -3.1,
+            1.6,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_5",
+          "position": [
+            -1.2,
+            1.6,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_6",
+          "position": [
+            0.7,
+            1.6,
+            -6.43
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_7",
+          "position": [
+            -3.93,
+            0.95,
+            -2.85
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_8",
+          "position": [
+            -3.93,
+            0.95,
+            -4.05
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_9",
+          "position": [
+            -3.93,
+            1.6,
+            -2.85
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_10",
+          "position": [
+            -3.93,
+            1.6,
+            -4.05
+          ],
+          "surface": "shelf",
+          "max_extent": [
+            0.55,
+            0.5,
+            0.32
+          ]
+        },
+        {
+          "node": "slot_11",
+          "position": [
+            -1.8,
+            0.97,
+            -3.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        },
+        {
+          "node": "slot_12",
+          "position": [
+            -1.2,
+            0.97,
+            -3.5
+          ],
+          "surface": "table",
+          "max_extent": [
+            0.5,
+            0.6,
+            0.5
+          ]
+        }
+      ],
+      "interior": {
+        "bounds": {
+          "min": [
+            -4.15,
+            0.12,
+            -6.65
+          ],
+          "max": [
+            4.15,
+            3.4,
+            -0.35
+          ]
+        },
+        "floor_y": 0.12,
+        "ceiling_node": "interior_ceiling"
+      },
+      "options": [
+        {
+          "node": "opt_awning",
+          "default_visible": false
+        }
+      ],
+      "parts": [
+        "exterior_walls",
+        "exterior_trim",
+        "roof_tiles",
+        "roof_structure",
+        "windows",
+        "door_frame",
+        "door_leaf",
+        "sign_board",
+        "sign_bracket",
+        "lanterns",
+        "planters",
+        "facade_details",
+        "interior_floor",
+        "interior_walls",
+        "interior_ceiling",
+        "interior_furniture",
+        "interior_lights"
+      ],
+      "triangles": 25236,
+      "bytes": 2095728
+    }
+  ]
+}

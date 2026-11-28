@@ -1,0 +1,366 @@
+{
+  "kit": "k3-product-display",
+  "version": 1,
+  "generator": "blender/scripts/k3_build_product_kit.py",
+  "glb": "product_kit.glb",
+  "units": "m",
+  "axes": {
+    "blender_to_runtime": "(x, y, z) -> (x, z, -y)",
+    "front": "runtime +z",
+    "product_origin": "base centre",
+    "fixture_origin": "floor centre"
+  },
+  "slot_envelope_m": [
+    1.0,
+    0.7,
+    2.0
+  ],
+  "slot_note": "Assumed K2 display slot (width, depth, height). Reconcile with house_kit.json.",
+  "identity": "generic; no names, text or logos. Labels and prices are painted at runtime.",
+  "price_tag": {
+    "mesh": "asset.fixture.price_tag",
+    "size_m": [
+      0.13,
+      0.012,
+      0.08
+    ],
+    "faces": "runtime +z",
+    "origin": "back centre"
+  },
+  "fixtures": [
+    {
+      "id": "counter",
+      "mesh": "asset.fixture.counter",
+      "size_m": [
+        0.98,
+        0.58,
+        0.95
+      ],
+      "product_offset": [
+        0.0,
+        0.95,
+        0.0
+      ]
+    },
+    {
+      "id": "dais",
+      "mesh": "asset.fixture.dais",
+      "size_m": [
+        0.82,
+        0.62,
+        0.62
+      ],
+      "product_offset": [
+        0.0,
+        0.1,
+        0.0
+      ]
+    },
+    {
+      "id": "plinth",
+      "mesh": "asset.fixture.plinth",
+      "size_m": [
+        0.5,
+        0.5,
+        0.92
+      ],
+      "product_offset": [
+        0.0,
+        0.92,
+        0.0
+      ]
+    },
+    {
+      "id": "rack",
+      "mesh": "asset.fixture.rack",
+      "size_m": [
+        0.84,
+        0.58,
+        0.62
+      ],
+      "product_offset": [
+        0.0,
+        0.22,
+        0.0
+      ]
+    },
+    {
+      "id": "shelf",
+      "mesh": "asset.fixture.shelf",
+      "size_m": [
+        0.94,
+        0.42,
+        1.8
+      ],
+      "product_offset": [
+        0.0,
+        0.86,
+        0.0
+      ]
+    },
+    {
+      "id": "vitrine",
+      "mesh": "asset.fixture.vitrine",
+      "size_m": [
+        0.52,
+        0.52,
+        1.42
+      ],
+      "product_offset": [
+        0.0,
+        0.92,
+        0.0
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "id": "seat",
+      "label": "Table seat",
+      "display_kind": "chair",
+      "display": "display.seat",
+      "product": "asset.product.seat",
+      "fixture": "asset.fixture.dais",
+      "product_offset": [
+        0.0,
+        0.1,
+        0.0
+      ],
+      "product_size_m": [
+        0.56,
+        0.54,
+        0.86
+      ],
+      "price_tag_anchor": {
+        "node": "anchor.price_tag.seat",
+        "runtime_offset": [
+          0.3,
+          0.6,
+          0.312
+        ]
+      },
+      "layout_position": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "bundle",
+      "label": "Bundle",
+      "display_kind": "crate",
+      "display": "display.bundle",
+      "product": "asset.product.bundle",
+      "fixture": "asset.fixture.rack",
+      "product_offset": [
+        0.0,
+        0.22,
+        0.0
+      ],
+      "product_size_m": [
+        0.6,
+        0.44,
+        0.44
+      ],
+      "price_tag_anchor": {
+        "node": "anchor.price_tag.bundle",
+        "runtime_offset": [
+          0.32,
+          0.6,
+          0.292
+        ]
+      },
+      "layout_position": [
+        1.5,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "digital",
+      "label": "Digital item",
+      "display_kind": "plinth",
+      "display": "display.digital",
+      "product": "asset.product.digital",
+      "fixture": "asset.fixture.vitrine",
+      "product_offset": [
+        0.0,
+        0.92,
+        0.0
+      ],
+      "product_size_m": [
+        0.22,
+        0.22,
+        0.34
+      ],
+      "price_tag_anchor": {
+        "node": "anchor.price_tag.digital",
+        "runtime_offset": [
+          0.0,
+          0.84,
+          0.262
+        ]
+      },
+      "layout_position": [
+        3.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "drink",
+      "label": "Drink",
+      "display_kind": "counter",
+      "display": "display.drink",
+      "product": "asset.product.drink",
+      "fixture": "asset.fixture.counter",
+      "product_offset": [
+        0.0,
+        0.95,
+        0.0
+      ],
+      "product_size_m": [
+        0.48,
+        0.28,
+        0.34
+      ],
+      "price_tag_anchor": {
+        "node": "anchor.price_tag.drink",
+        "runtime_offset": [
+          0.3,
+          0.88,
+          0.292
+        ]
+      },
+      "layout_position": [
+        4.5,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "food",
+      "label": "Food",
+      "display_kind": "counter",
+      "display": "display.food",
+      "product": "asset.product.food",
+      "fixture": "asset.fixture.counter",
+      "product_offset": [
+        0.0,
+        0.95,
+        0.0
+      ],
+      "product_size_m": [
+        0.52,
+        0.34,
+        0.2
+      ],
+      "price_tag_anchor": {
+        "node": "anchor.price_tag.food",
+        "runtime_offset": [
+          0.3,
+          0.88,
+          0.292
+        ]
+      },
+      "layout_position": [
+        6.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "merch",
+      "label": "Merchandise",
+      "display_kind": "shelf",
+      "display": "display.merch",
+      "product": "asset.product.merch",
+      "fixture": "asset.fixture.shelf",
+      "product_offset": [
+        0.0,
+        0.86,
+        0.0
+      ],
+      "product_size_m": [
+        0.72,
+        0.3,
+        0.38
+      ],
+      "price_tag_anchor": {
+        "node": "anchor.price_tag.merch",
+        "runtime_offset": [
+          0.0,
+          0.83,
+          0.212
+        ]
+      },
+      "layout_position": [
+        7.5,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "service",
+      "label": "Service",
+      "display_kind": "sign",
+      "display": "display.service",
+      "product": "asset.product.service",
+      "fixture": "asset.fixture.plinth",
+      "product_offset": [
+        0.0,
+        0.92,
+        0.0
+      ],
+      "product_size_m": [
+        0.38,
+        0.28,
+        0.42
+      ],
+      "price_tag_anchor": {
+        "node": "anchor.price_tag.service",
+        "runtime_offset": [
+          0.0,
+          0.84,
+          0.252
+        ]
+      },
+      "layout_position": [
+        9.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "fallback": {
+    "id": "generic",
+    "label": "Generic item",
+    "display_kind": "fallback",
+    "display": "display.generic",
+    "product": "asset.product.generic",
+    "fixture": "asset.fixture.plinth",
+    "product_offset": [
+      0.0,
+      0.92,
+      0.0
+    ],
+    "product_size_m": [
+      0.32,
+      0.32,
+      0.3
+    ],
+    "price_tag_anchor": {
+      "node": "anchor.price_tag.generic",
+      "runtime_offset": [
+        0.0,
+        0.84,
+        0.252
+      ]
+    },
+    "layout_position": [
+      10.5,
+      0.0,
+      0.0
+    ]
+  }
+}

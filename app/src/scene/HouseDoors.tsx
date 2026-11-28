@@ -1,6 +1,6 @@
-import { useEffect } from "react";
 import { Html } from "@react-three/drei";
-import * as THREE from "three";
+import { useNearFade } from "./useNearFade";
+import { isDeliberateClick } from "./clickGuard";
 
 export interface HouseDoor {
   id: string;
@@ -10,23 +10,71 @@ export interface HouseDoor {
   position: [number, number, number];
   colour: string;
   trim: string;
+  /** Facing of a Blender-built door (stepping back = +sin(yaw), +cos(yaw)). */
+  yaw?: number;
 }
 
-export const HOUSE_DOORS: HouseDoor[] = [
-  { id: "bld_dangg", propertyId: "prop_dangg", owner: "usr_dangg", label: "OpenPoker", position: [9, 0, -8.4], colour: "#5b3a5e", trim: "#c9a441" },
-  { id: "bld_test", propertyId: "prop_test", owner: "usr_test", label: "Test Builder House", position: [6, 0, 4], colour: "#2f6f6a", trim: "#b5486b" },
-];
+/** Invisible click target for a door that Blender already built; draws nothing over it. */
+function DoorTarget({ door, onDoorClick }: { door: HouseDoor; onDoorClick: (door: HouseDoor) => void }) {
+  const label = useNearFade<HTMLDivElement>(door.position[0], door.position[2]);
+  return (
+    <group position={door.position} rotation={[0, door.yaw ?? 0, 0]} name={`door_target_${door.id}`}>
+      <mesh
+        position={[0, 1.4, 0]}
+        userData-house={door.id}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!isDeliberateClick(e.delta)) return;
+          onDoorClick(door);
+        }}>
+        <boxGeometry args={[2.0, 2.8, 0.6]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      <Html position={[0, 3.6, 0]} center distanceFactor={10}>
+        <div ref={label} className="door-label" data-testid={`label-${door.id}`}>
+          <strong>{door.label}</strong>
+          <small>merchant house · E or click</small>
+        </div>
+      </Html>
+    </group>
+  );
+}
 
-export function HouseDoors({ onNear }: { onNear: (door: HouseDoor | null) => void }) {
-  useEffect(() => {
-    onNear(null);
-  }, [onNear]);
-
+/**
+ * Merchant doors. Labels show only the stable door label; owner identity loads inside.
+ * blockout=false is for doors Blender already built (arrival square): only the
+ * click target and label, never a runtime building over the Blender house.
+ */
+export function HouseDoors({
+  doors,
+  onDoorClick,
+  blockout = true,
+}: {
+  doors: HouseDoor[];
+  onDoorClick: (door: HouseDoor) => void;
+  blockout?: boolean;
+}) {
+  if (!blockout) {
+    return (
+      <group>
+        {doors.map((d) => (
+          <DoorTarget key={d.id} door={d} onDoorClick={onDoorClick} />
+        ))}
+      </group>
+    );
+  }
   return (
     <group>
-      {HOUSE_DOORS.map((d) => (
+      {doors.map((d) => (
         <group key={d.id} position={d.position}>
-          <mesh position={[0, 1.4, 0]} castShadow>
+          <mesh
+            position={[0, 1.4, 0]}
+            castShadow
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isDeliberateClick(e.delta)) return;
+              onDoorClick(d);
+            }}>
             <boxGeometry args={[2.0, 2.8, 0.2]} />
             <meshStandardMaterial color={d.colour} roughness={0.7} />
           </mesh>
@@ -43,7 +91,7 @@ export function HouseDoors({ onNear }: { onNear: (door: HouseDoor | null) => voi
           <Html position={[0, 3.9, 0]} center distanceFactor={10}>
             <div className="door-label">
               <strong>{d.label}</strong>
-              <small>owner {d.owner}</small>
+              <small>merchant house · E or click</small>
             </div>
           </Html>
           <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} userData-house={d.id}>
@@ -54,13 +102,4 @@ export function HouseDoors({ onNear }: { onNear: (door: HouseDoor | null) => voi
       ))}
     </group>
   );
-}
-
-export const HOUSE_INTERIORS: Record<string, { colour: string; accent: string; blurb: string }> = {
-  bld_dangg: { colour: "#2a1f2e", accent: "#c9a441", blurb: "A plum-and-gold salon with a single spade over the counter." },
-  bld_test: { colour: "#1f2a33", accent: "#b5486b", blurb: "A bright teal workshop with a long test bench." },
-};
-
-export function interiorFor(id: string) {
-  return HOUSE_INTERIORS[id] ?? { colour: "#26333d", accent: THREE.Color.NAMES.gold, blurb: "A merchant interior." };
 }

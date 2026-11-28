@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { provisionProperty, ProvisioningError } from "../src/provision.mjs";
+import { provisionProperty, planProperty, allocationFor, ALLOCATION, ProvisioningError } from "../src/provision.mjs";
 
 const slots = [
   { id: "slot-01", template: "merchant_house", district: "merchant-quarter" },
@@ -55,4 +55,38 @@ test("exhausted slots raise instead of overbooking", () => {
     () => provisionProperty({ userId: "u3", businessType: "merchant", slots: full, existing: [a, b] }),
     ProvisioningError,
   );
+});
+const PLOT = Object.freeze({ id: "cafe-2", district: "coffee-courtyard", template: "cafe_shop" });
+
+test("planProperty: plotId equals slotId, the house starts unpublished, the agent is tied to it", () => {
+  const a = planProperty({ userId: "usr_p", merchantId: "mer_p", allocation: ALLOCATION.cafe, plot: PLOT });
+  assert.equal(a.plotId, "cafe-2");
+  assert.equal(a.slotId, a.plotId);
+  assert.equal(a.published, false);
+  assert.equal(a.district, "coffee-courtyard");
+  assert.equal(a.template, "cafe_shop");
+  assert.match(a.agent.id, /^agent_[0-9a-f]{12}$/);
+  assert.equal(a.agent.ownerId, "usr_p");
+  assert.equal(a.agent.propertyId, a.id);
+  assert.ok(Object.isFrozen(a) && Object.isFrozen(a.agent));
+});
+
+test("planProperty ids are stable per user and differ between users", () => {
+  const plan = (userId) => planProperty({ userId, allocation: ALLOCATION.merchant, plot: PLOT });
+  assert.equal(plan("usr_x").id, plan("usr_x").id);
+  assert.equal(plan("usr_x").agent.id, plan("usr_x").agent.id);
+  assert.notEqual(plan("usr_x").id, plan("usr_y").id);
+  assert.equal(plan("usr_x").merchantId, null);
+});
+
+test("planProperty gives no agent when the allocation has none", () => {
+  const plain = planProperty({ userId: "usr_n", allocation: { property: "merchant_house", agent: false }, plot: PLOT });
+  assert.equal(plain.agent, null);
+});
+
+test("allocationFor returns the allocation for a known type and throws for an unknown one", () => {
+  assert.equal(allocationFor("gaming"), ALLOCATION.gaming);
+  assert.equal(allocationFor("user").property, null);
+  assert.throws(() => allocationFor("nope"), ProvisioningError);
+  assert.throws(() => allocationFor(undefined), /unknown businessType/);
 });

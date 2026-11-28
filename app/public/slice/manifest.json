@@ -1,0 +1,1955 @@
+{
+  "schema_version": 1,
+  "district": "nervix_city_district_01",
+  "slice": "openpoker",
+  "convention": {
+    "blender_to_runtime": "runtime = (bx, bz, -by); Blender Z-up, glTF Y-up (export_yup=True)",
+    "units": "metres",
+    "runtime_forward": "-Z (Blender +Y)",
+    "runtime_right": "+X",
+    "runtime_up": "+Y (Blender +Z)",
+    "salon_frame": "salon GLB is authored around its own origin; place it at salon_placement"
+  },
+  "assets": [
+    {
+      "id": "nervix_openpoker_facade",
+      "file": "nervix_openpoker_facade.glb",
+      "bytes": 250068,
+      "frame": "district",
+      "placement_runtime": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "nervix_openpoker_salon",
+      "file": "nervix_openpoker_salon.glb",
+      "bytes": 1498484,
+      "frame": "salon_local",
+      "placement_blender": [
+        0.0,
+        16.7,
+        0.6
+      ],
+      "placement_runtime": [
+        0.0,
+        0.6,
+        -16.7
+      ]
+    },
+    {
+      "id": "nervix_arrival_square",
+      "file": "nervix_arrival_square.glb",
+      "bytes": 12538372,
+      "triangles": 166703,
+      "frame": "district",
+      "placement_runtime": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "draco": false,
+      "baked_lighting": {
+        "mode": "lightmap",
+        "texcoord": 1,
+        "texture": 43,
+        "scale": 2.02896,
+        "encoding": "srgb",
+        "size": 2048,
+        "samples": 48,
+        "materials": 35,
+        "primitives": 509,
+        "semantics": "final = albedo * srgb_decode(texel) * scale; occlusionTexture carries the same atlas for clients without lightmap support"
+      }
+    }
+  ],
+  "facade": {
+    "door_threshold": {
+      "blender_district": [
+        0.0,
+        9.7,
+        0.6
+      ],
+      "runtime_district": [
+        0.0,
+        0.6,
+        -9.7
+      ],
+      "runtime_xz": [
+        0.0,
+        -9.7
+      ],
+      "floor_height_runtime_y": 0.6
+    },
+    "facing": {
+      "blender_outward": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "runtime_outward": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "note": "outward = toward the plaza; the player enters moving along runtime -Z"
+    },
+    "markers": [
+      {
+        "id": "openpoker_facade_threshold",
+        "kind": "threshold",
+        "slot": "openpoker-threshold",
+        "asset": "nervix_openpoker_facade",
+        "position_blender_asset": [
+          0.0,
+          9.7,
+          0.6
+        ],
+        "position_runtime_asset": [
+          0.0,
+          0.6,
+          -9.7
+        ],
+        "position_blender_district": [
+          0.0,
+          9.7,
+          0.6
+        ],
+        "position_runtime_district": [
+          0.0,
+          0.6,
+          -9.7
+        ]
+      },
+      {
+        "id": "openpoker_facade_sign",
+        "kind": "sign",
+        "slot": "openpoker-facade",
+        "asset": "nervix_openpoker_facade",
+        "position_blender_asset": [
+          0.0,
+          7.94,
+          8.4
+        ],
+        "position_runtime_asset": [
+          0.0,
+          8.4,
+          -7.94
+        ],
+        "position_blender_district": [
+          0.0,
+          7.94,
+          8.4
+        ],
+        "position_runtime_district": [
+          0.0,
+          8.4,
+          -7.94
+        ]
+      }
+    ]
+  },
+  "salon": {
+    "entrance_local": [
+      0.0,
+      -7.0,
+      0.0
+    ],
+    "entrance_runtime_local": [
+      0.0,
+      0.0,
+      7.0
+    ],
+    "entrance_runtime_district": [
+      0.0,
+      0.6,
+      -9.7
+    ],
+    "walkable_note": "walkable x/z in runtime; WALK_BOUNDS z is Blender y (runtime z = -y)",
+    "walkable_local_runtime": {
+      "x": [
+        -6.9,
+        6.9
+      ],
+      "z": [
+        -8.9,
+        6.9
+      ]
+    },
+    "walkable_runtime_district": {
+      "x": [
+        -6.9,
+        6.9
+      ],
+      "z": [
+        -25.6,
+        -9.8
+      ]
+    },
+    "collision": [
+      {
+        "id": "alcove_plate_pier_back",
+        "blender_asset": {
+          "x": [
+            4.2,
+            4.8
+          ],
+          "y": [
+            0.5,
+            1.0
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            4.2,
+            4.8
+          ],
+          "z": [
+            -1.0,
+            -0.5
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            4.2,
+            4.8
+          ],
+          "z": [
+            -17.7,
+            -17.2
+          ]
+        }
+      },
+      {
+        "id": "alcove_plate_pier_front",
+        "blender_asset": {
+          "x": [
+            4.2,
+            4.8
+          ],
+          "y": [
+            -5.0,
+            -4.5
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            4.2,
+            4.8
+          ],
+          "z": [
+            4.5,
+            5.0
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            4.2,
+            4.8
+          ],
+          "z": [
+            -12.2,
+            -11.7
+          ]
+        }
+      },
+      {
+        "id": "card_chair_270",
+        "blender_asset": {
+          "x": [
+            5.05,
+            5.55
+          ],
+          "y": [
+            -3.1,
+            -2.6
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            5.05,
+            5.55
+          ],
+          "z": [
+            2.6,
+            3.1
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            5.05,
+            5.55
+          ],
+          "z": [
+            -14.1,
+            -13.6
+          ]
+        }
+      },
+      {
+        "id": "card_chair_30",
+        "blender_asset": {
+          "x": [
+            6.1325317547305485,
+            6.6325317547305485
+          ],
+          "y": [
+            -1.225,
+            -0.7250000000000002
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            6.1325317547305485,
+            6.6325317547305485
+          ],
+          "z": [
+            0.725,
+            1.225
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            6.1325317547305485,
+            6.6325317547305485
+          ],
+          "z": [
+            -15.975,
+            -15.475
+          ]
+        }
+      },
+      {
+        "id": "card_chair_330",
+        "blender_asset": {
+          "x": [
+            6.132531754730548,
+            6.632531754730548
+          ],
+          "y": [
+            -2.4750000000000005,
+            -1.9750000000000005
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            6.132531754730548,
+            6.632531754730548
+          ],
+          "z": [
+            1.975,
+            2.475
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            6.132531754730548,
+            6.632531754730548
+          ],
+          "z": [
+            -14.725,
+            -14.225
+          ]
+        }
+      },
+      {
+        "id": "card_chair_90",
+        "blender_asset": {
+          "x": [
+            5.05,
+            5.55
+          ],
+          "y": [
+            -0.6000000000000001,
+            -0.10000000000000009
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            5.05,
+            5.55
+          ],
+          "z": [
+            0.1,
+            0.6
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            5.05,
+            5.55
+          ],
+          "z": [
+            -16.6,
+            -16.1
+          ]
+        }
+      },
+      {
+        "id": "card_table_pedestal",
+        "blender_asset": {
+          "x": [
+            4.3999999999999995,
+            6.2
+          ],
+          "y": [
+            -2.5,
+            -0.7000000000000001
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            4.3999999999999995,
+            6.2
+          ],
+          "z": [
+            0.7,
+            2.5
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            4.3999999999999995,
+            6.2
+          ],
+          "z": [
+            -16.0,
+            -14.2
+          ]
+        }
+      },
+      {
+        "id": "gallery_stair",
+        "blender_asset": {
+          "x": [
+            2.4,
+            4.4
+          ],
+          "y": [
+            -0.5,
+            5.5
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            2.4,
+            4.4
+          ],
+          "z": [
+            -5.5,
+            0.5
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            2.4,
+            4.4
+          ],
+          "z": [
+            -22.2,
+            -16.2
+          ]
+        }
+      },
+      {
+        "id": "pier_left_y+6.5",
+        "blender_asset": {
+          "x": [
+            -7.0,
+            -6.1
+          ],
+          "y": [
+            6.05,
+            6.95
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -7.0,
+            -6.1
+          ],
+          "z": [
+            -6.95,
+            -6.05
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -7.0,
+            -6.1
+          ],
+          "z": [
+            -23.65,
+            -22.75
+          ]
+        }
+      },
+      {
+        "id": "pier_left_y-2.0",
+        "blender_asset": {
+          "x": [
+            -7.0,
+            -6.1
+          ],
+          "y": [
+            -2.45,
+            -1.55
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -7.0,
+            -6.1
+          ],
+          "z": [
+            1.55,
+            2.45
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -7.0,
+            -6.1
+          ],
+          "z": [
+            -15.15,
+            -14.25
+          ]
+        }
+      },
+      {
+        "id": "pier_right_y+5.0",
+        "blender_asset": {
+          "x": [
+            6.1,
+            7.0
+          ],
+          "y": [
+            4.55,
+            5.45
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            6.1,
+            7.0
+          ],
+          "z": [
+            -5.45,
+            -4.55
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            6.1,
+            7.0
+          ],
+          "z": [
+            -22.15,
+            -21.25
+          ]
+        }
+      },
+      {
+        "id": "pier_right_y-0.3",
+        "blender_asset": {
+          "x": [
+            6.1,
+            7.0
+          ],
+          "y": [
+            -0.75,
+            0.15000000000000002
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            6.1,
+            7.0
+          ],
+          "z": [
+            -0.15,
+            0.75
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            6.1,
+            7.0
+          ],
+          "z": [
+            -16.85,
+            -15.95
+          ]
+        }
+      },
+      {
+        "id": "pot_1",
+        "blender_asset": {
+          "x": [
+            -6.7,
+            -5.8999999999999995
+          ],
+          "y": [
+            -6.300000000000001,
+            -5.5
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -6.7,
+            -5.8999999999999995
+          ],
+          "z": [
+            5.5,
+            6.3
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -6.7,
+            -5.8999999999999995
+          ],
+          "z": [
+            -11.2,
+            -10.4
+          ]
+        }
+      },
+      {
+        "id": "pot_2",
+        "blender_asset": {
+          "x": [
+            5.8999999999999995,
+            6.7
+          ],
+          "y": [
+            -6.300000000000001,
+            -5.5
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            5.8999999999999995,
+            6.7
+          ],
+          "z": [
+            5.5,
+            6.3
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            5.8999999999999995,
+            6.7
+          ],
+          "z": [
+            -11.2,
+            -10.4
+          ]
+        }
+      },
+      {
+        "id": "pot_3",
+        "blender_asset": {
+          "x": [
+            -6.7,
+            -5.8999999999999995
+          ],
+          "y": [
+            7.0,
+            7.800000000000001
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -6.7,
+            -5.8999999999999995
+          ],
+          "z": [
+            -7.8,
+            -7.0
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -6.7,
+            -5.8999999999999995
+          ],
+          "z": [
+            -24.5,
+            -23.7
+          ]
+        }
+      },
+      {
+        "id": "pot_4",
+        "blender_asset": {
+          "x": [
+            5.8999999999999995,
+            6.7
+          ],
+          "y": [
+            7.0,
+            7.800000000000001
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            5.8999999999999995,
+            6.7
+          ],
+          "z": [
+            -7.8,
+            -7.0
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            5.8999999999999995,
+            6.7
+          ],
+          "z": [
+            -24.5,
+            -23.7
+          ]
+        }
+      },
+      {
+        "id": "reception_counter",
+        "blender_asset": {
+          "x": [
+            -5.65,
+            -4.3
+          ],
+          "y": [
+            -2.9,
+            0.1
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -5.65,
+            -4.3
+          ],
+          "z": [
+            -0.1,
+            2.9
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -5.65,
+            -4.3
+          ],
+          "z": [
+            -16.8,
+            -13.8
+          ]
+        }
+      },
+      {
+        "id": "roulette_pedestal",
+        "blender_asset": {
+          "x": [
+            -4.05,
+            -1.5499999999999998
+          ],
+          "y": [
+            1.25,
+            3.75
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -4.05,
+            -1.5499999999999998
+          ],
+          "z": [
+            -3.75,
+            -1.25
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -4.05,
+            -1.5499999999999998
+          ],
+          "z": [
+            -20.45,
+            -17.95
+          ]
+        }
+      },
+      {
+        "id": "roulette_stool_1",
+        "blender_asset": {
+          "x": [
+            -1.3882990642116129,
+            -0.8882990642116129
+          ],
+          "y": [
+            3.911700935788387,
+            4.411700935788387
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -1.3882990642116129,
+            -0.8882990642116129
+          ],
+          "z": [
+            -4.412,
+            -3.912
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -1.3882990642116129,
+            -0.8882990642116129
+          ],
+          "z": [
+            -21.112,
+            -20.612
+          ]
+        }
+      },
+      {
+        "id": "roulette_stool_2",
+        "blender_asset": {
+          "x": [
+            -4.711700935788386,
+            -4.211700935788386
+          ],
+          "y": [
+            3.911700935788387,
+            4.411700935788387
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -4.711700935788386,
+            -4.211700935788386
+          ],
+          "z": [
+            -4.412,
+            -3.912
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -4.711700935788386,
+            -4.211700935788386
+          ],
+          "z": [
+            -21.112,
+            -20.612
+          ]
+        }
+      },
+      {
+        "id": "roulette_stool_3",
+        "blender_asset": {
+          "x": [
+            -4.711700935788387,
+            -4.211700935788387
+          ],
+          "y": [
+            0.5882990642116135,
+            1.0882990642116135
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -4.711700935788387,
+            -4.211700935788387
+          ],
+          "z": [
+            -1.088,
+            -0.588
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -4.711700935788387,
+            -4.211700935788387
+          ],
+          "z": [
+            -17.788,
+            -17.288
+          ]
+        }
+      },
+      {
+        "id": "roulette_stool_4",
+        "blender_asset": {
+          "x": [
+            -1.3882990642116135,
+            -0.8882990642116135
+          ],
+          "y": [
+            0.5882990642116128,
+            1.0882990642116128
+          ]
+        },
+        "runtime_asset": {
+          "x": [
+            -1.3882990642116135,
+            -0.8882990642116135
+          ],
+          "z": [
+            -1.088,
+            -0.588
+          ]
+        },
+        "runtime_district": {
+          "x": [
+            -1.3882990642116135,
+            -0.8882990642116135
+          ],
+          "z": [
+            -17.788,
+            -17.288
+          ]
+        }
+      }
+    ],
+    "markers": [
+      {
+        "id": "openpoker_salon_spawn",
+        "kind": "spawn",
+        "slot": "openpoker-salon",
+        "asset": "nervix_openpoker_salon",
+        "position_blender_asset": [
+          0.0,
+          -6.0,
+          0.0
+        ],
+        "position_runtime_asset": [
+          0.0,
+          0.0,
+          6.0
+        ],
+        "position_blender_district": [
+          0.0,
+          10.7,
+          0.6
+        ],
+        "position_runtime_district": [
+          0.0,
+          0.6,
+          -10.7
+        ]
+      },
+      {
+        "id": "openpoker_salon_exit",
+        "kind": "exit",
+        "slot": "openpoker-salon",
+        "asset": "nervix_openpoker_salon",
+        "position_blender_asset": [
+          0.0,
+          -7.6,
+          0.0
+        ],
+        "position_runtime_asset": [
+          0.0,
+          0.0,
+          7.6
+        ],
+        "position_blender_district": [
+          0.0,
+          9.1,
+          0.6
+        ],
+        "position_runtime_district": [
+          0.0,
+          0.6,
+          -9.1
+        ]
+      },
+      {
+        "id": "openpoker_reception",
+        "kind": "reception",
+        "slot": "openpoker-host",
+        "asset": "nervix_openpoker_salon",
+        "position_blender_asset": [
+          -5.6,
+          -1.2,
+          0.0
+        ],
+        "position_runtime_asset": [
+          -5.6,
+          0.0,
+          1.2
+        ],
+        "position_blender_district": [
+          -5.6,
+          15.5,
+          0.6
+        ],
+        "position_runtime_district": [
+          -5.6,
+          0.6,
+          -15.5
+        ]
+      },
+      {
+        "id": "openpoker_roulette",
+        "kind": "roulette",
+        "slot": "openpoker-roulette",
+        "asset": "nervix_openpoker_salon",
+        "position_blender_asset": [
+          -2.8,
+          2.5,
+          0.0
+        ],
+        "position_runtime_asset": [
+          -2.8,
+          0.0,
+          -2.5
+        ],
+        "position_blender_district": [
+          -2.8,
+          19.2,
+          0.6
+        ],
+        "position_runtime_district": [
+          -2.8,
+          0.6,
+          -19.2
+        ]
+      },
+      {
+        "id": "openpoker_card_table",
+        "kind": "card_table",
+        "slot": "openpoker-cards",
+        "asset": "nervix_openpoker_salon",
+        "position_blender_asset": [
+          5.3,
+          -1.6,
+          0.0
+        ],
+        "position_runtime_asset": [
+          5.3,
+          0.0,
+          1.6
+        ],
+        "position_blender_district": [
+          5.3,
+          15.1,
+          0.6
+        ],
+        "position_runtime_district": [
+          5.3,
+          0.6,
+          -15.1
+        ]
+      },
+      {
+        "id": "openpoker_dangg_door",
+        "kind": "door",
+        "slot": "dangg-house",
+        "asset": "nervix_openpoker_salon",
+        "position_blender_asset": [
+          6.95,
+          -3.0,
+          0.0
+        ],
+        "position_runtime_asset": [
+          6.95,
+          0.0,
+          3.0
+        ],
+        "position_blender_district": [
+          6.95,
+          13.7,
+          0.6
+        ],
+        "position_runtime_district": [
+          6.95,
+          0.6,
+          -13.7
+        ]
+      },
+      {
+        "id": "openpoker_dangg_sign",
+        "kind": "sign",
+        "slot": "dangg-house",
+        "asset": "nervix_openpoker_salon",
+        "position_blender_asset": [
+          6.94,
+          -3.0,
+          3.25
+        ],
+        "position_runtime_asset": [
+          6.94,
+          3.25,
+          3.0
+        ],
+        "position_blender_district": [
+          6.94,
+          13.7,
+          3.85
+        ],
+        "position_runtime_district": [
+          6.94,
+          3.85,
+          -13.7
+        ]
+      }
+    ]
+  },
+  "runtime_layout": {
+    "facade_door": {
+      "x": 0.0,
+      "z": -9.7,
+      "yaw": 0.0
+    },
+    "salon": {
+      "spawn": {
+        "x": 0.0,
+        "z": 6.0,
+        "yaw": 0.0
+      },
+      "exit": {
+        "x": 0.0,
+        "z": 7.6
+      },
+      "dangg_door": {
+        "x": 6.95,
+        "z": 3.0
+      },
+      "bounds": {
+        "minX": -6.9,
+        "maxX": 6.9,
+        "minZ": -8.9,
+        "maxZ": 6.9
+      },
+      "obstacles": [
+        {
+          "minX": 4.2,
+          "maxX": 4.8,
+          "minZ": -1.0,
+          "maxZ": -0.5
+        },
+        {
+          "minX": 4.2,
+          "maxX": 4.8,
+          "minZ": 4.5,
+          "maxZ": 5.0
+        },
+        {
+          "minX": 5.05,
+          "maxX": 5.55,
+          "minZ": 2.6,
+          "maxZ": 3.1
+        },
+        {
+          "minX": 6.1325317547305485,
+          "maxX": 6.6325317547305485,
+          "minZ": 0.725,
+          "maxZ": 1.225
+        },
+        {
+          "minX": 6.132531754730548,
+          "maxX": 6.632531754730548,
+          "minZ": 1.975,
+          "maxZ": 2.475
+        },
+        {
+          "minX": 5.05,
+          "maxX": 5.55,
+          "minZ": 0.1,
+          "maxZ": 0.6
+        },
+        {
+          "minX": 4.3999999999999995,
+          "maxX": 6.2,
+          "minZ": 0.7,
+          "maxZ": 2.5
+        },
+        {
+          "minX": -7.0,
+          "maxX": -6.1,
+          "minZ": -6.95,
+          "maxZ": -6.05
+        },
+        {
+          "minX": -7.0,
+          "maxX": -6.1,
+          "minZ": 1.55,
+          "maxZ": 2.45
+        },
+        {
+          "minX": 6.1,
+          "maxX": 7.0,
+          "minZ": -5.45,
+          "maxZ": -4.55
+        },
+        {
+          "minX": 6.1,
+          "maxX": 7.0,
+          "minZ": -0.15,
+          "maxZ": 0.75
+        },
+        {
+          "minX": -6.7,
+          "maxX": -5.8999999999999995,
+          "minZ": 5.5,
+          "maxZ": 6.3
+        },
+        {
+          "minX": 5.8999999999999995,
+          "maxX": 6.7,
+          "minZ": 5.5,
+          "maxZ": 6.3
+        },
+        {
+          "minX": -6.7,
+          "maxX": -5.8999999999999995,
+          "minZ": -7.8,
+          "maxZ": -7.0
+        },
+        {
+          "minX": 5.8999999999999995,
+          "maxX": 6.7,
+          "minZ": -7.8,
+          "maxZ": -7.0
+        },
+        {
+          "minX": -5.65,
+          "maxX": -4.3,
+          "minZ": -0.1,
+          "maxZ": 2.9
+        },
+        {
+          "minX": -4.05,
+          "maxX": -1.5499999999999998,
+          "minZ": -3.75,
+          "maxZ": -1.25
+        },
+        {
+          "minX": -1.3882990642116129,
+          "maxX": -0.8882990642116129,
+          "minZ": -4.412,
+          "maxZ": -3.912
+        },
+        {
+          "minX": -4.711700935788386,
+          "maxX": -4.211700935788386,
+          "minZ": -4.412,
+          "maxZ": -3.912
+        },
+        {
+          "minX": -4.711700935788387,
+          "maxX": -4.211700935788387,
+          "minZ": -1.088,
+          "maxZ": -0.588
+        },
+        {
+          "minX": -1.3882990642116135,
+          "maxX": -0.8882990642116135,
+          "minZ": -1.088,
+          "maxZ": -0.588
+        }
+      ]
+    },
+    "plaza": {
+      "glb": "nervix_arrival_square.glb",
+      "spawn": {
+        "x": 19.0,
+        "z": 0.6,
+        "yaw": 1.570796
+      },
+      "fountain": {
+        "x": 0.0,
+        "z": 0.0,
+        "radius": 4.1,
+        "top_y": 2.46
+      },
+      "bounds": {
+        "minX": -42.0,
+        "maxX": 34.0,
+        "minZ": -13.0,
+        "maxZ": 13.0
+      },
+      "obstacles": [
+        {
+          "minX": -46.0,
+          "maxX": -10.3,
+          "minZ": -24.0,
+          "maxZ": -8.0,
+          "top_y": 8.93
+        },
+        {
+          "minX": -42.55,
+          "maxX": -41.45,
+          "minZ": 7.95,
+          "maxZ": 9.05,
+          "top_y": 3.0
+        },
+        {
+          "minX": -42.0,
+          "maxX": -8.5,
+          "minZ": 12.5,
+          "maxZ": 18.0,
+          "top_y": 5.0
+        },
+        {
+          "minX": -38.36,
+          "maxX": -37.26,
+          "minZ": 7.95,
+          "maxZ": 9.05,
+          "top_y": 3.0
+        },
+        {
+          "minX": -34.17,
+          "maxX": -33.08,
+          "minZ": 7.95,
+          "maxZ": 9.05,
+          "top_y": 3.0
+        },
+        {
+          "minX": -29.99,
+          "maxX": -28.89,
+          "minZ": 7.95,
+          "maxZ": 9.05,
+          "top_y": 3.0
+        },
+        {
+          "minX": -25.8,
+          "maxX": -24.7,
+          "minZ": 7.95,
+          "maxZ": 9.05,
+          "top_y": 3.0
+        },
+        {
+          "minX": -21.61,
+          "maxX": -20.51,
+          "minZ": 7.95,
+          "maxZ": 9.05,
+          "top_y": 3.0
+        },
+        {
+          "minX": -17.42,
+          "maxX": -16.33,
+          "minZ": 7.95,
+          "maxZ": 9.05,
+          "top_y": 3.0
+        },
+        {
+          "minX": -13.24,
+          "maxX": -12.14,
+          "minZ": 7.95,
+          "maxZ": 9.05,
+          "top_y": 3.0
+        },
+        {
+          "minX": -12.45,
+          "maxX": -11.15,
+          "minZ": -7.45,
+          "maxZ": -6.15,
+          "top_y": 2.3
+        },
+        {
+          "minX": -12.02,
+          "maxX": -10.59,
+          "minZ": 6.89,
+          "maxZ": 8.31,
+          "top_y": 2.53
+        },
+        {
+          "minX": -11.58,
+          "maxX": -11.22,
+          "minZ": -7.18,
+          "maxZ": -6.82,
+          "top_y": 3.6
+        },
+        {
+          "minX": -11.58,
+          "maxX": -11.22,
+          "minZ": 7.12,
+          "maxZ": 7.48,
+          "top_y": 3.6
+        },
+        {
+          "minX": -11.48,
+          "maxX": -10.31,
+          "minZ": 3.02,
+          "maxZ": 4.18,
+          "top_y": 2.07
+        },
+        {
+          "minX": -10.3,
+          "maxX": -6.7,
+          "minZ": -11.4,
+          "maxZ": -7.8,
+          "top_y": 9.6
+        },
+        {
+          "minX": -9.74,
+          "maxX": -8.59,
+          "minZ": -3.91,
+          "maxZ": -2.76,
+          "top_y": 1.35
+        },
+        {
+          "minX": -9.74,
+          "maxX": -8.59,
+          "minZ": 2.76,
+          "maxZ": 3.91,
+          "top_y": 1.35
+        },
+        {
+          "minX": -9.05,
+          "maxX": -7.95,
+          "minZ": 7.95,
+          "maxZ": 9.05,
+          "top_y": 3.0
+        },
+        {
+          "minX": -8.65,
+          "maxX": -7.35,
+          "minZ": 8.95,
+          "maxZ": 10.25,
+          "top_y": 2.3
+        },
+        {
+          "minX": -8.57,
+          "maxX": 3.47,
+          "minZ": 10.13,
+          "maxZ": 17.07,
+          "top_y": 4.47
+        },
+        {
+          "minX": -8.35,
+          "maxX": -7.95,
+          "minZ": 7.35,
+          "maxZ": 7.75,
+          "top_y": 4.95
+        },
+        {
+          "minX": -8.21,
+          "maxX": -6.98,
+          "minZ": 6.66,
+          "maxZ": 7.14,
+          "top_y": 0.95
+        },
+        {
+          "minX": -7.87,
+          "maxX": 7.87,
+          "minZ": -26.07,
+          "maxZ": -9.7,
+          "top_y": 8.6
+        },
+        {
+          "minX": -7.8,
+          "maxX": 7.8,
+          "minZ": -9.7,
+          "maxZ": -8.5,
+          "top_y": 8.6
+        },
+        {
+          "minX": -7.51,
+          "maxX": -5.69,
+          "minZ": 7.49,
+          "maxZ": 9.31,
+          "top_y": 2.3
+        },
+        {
+          "minX": -6.65,
+          "maxX": -1.45,
+          "minZ": -7.3,
+          "maxZ": -4.6,
+          "top_y": 0.6
+        },
+        {
+          "minX": -4.51,
+          "maxX": -2.69,
+          "minZ": 6.09,
+          "maxZ": 7.91,
+          "top_y": 1.06
+        },
+        {
+          "minX": -3.79,
+          "maxX": 3.79,
+          "minZ": -3.79,
+          "maxZ": 3.79,
+          "top_y": 0.92
+        },
+        {
+          "minX": -3.39,
+          "maxX": -2.43,
+          "minZ": -3.39,
+          "maxZ": -2.43,
+          "top_y": 1.45
+        },
+        {
+          "minX": -3.39,
+          "maxX": -2.43,
+          "minZ": 2.43,
+          "maxZ": 3.39,
+          "top_y": 1.45
+        },
+        {
+          "minX": -2.37,
+          "maxX": -2.23,
+          "minZ": -4.82,
+          "maxZ": -4.68,
+          "top_y": 2.3
+        },
+        {
+          "minX": -1.75,
+          "maxX": -1.35,
+          "minZ": 7.35,
+          "maxZ": 7.75,
+          "top_y": 4.95
+        },
+        {
+          "minX": -1.41,
+          "maxX": 0.41,
+          "minZ": 7.39,
+          "maxZ": 9.21,
+          "top_y": 2.3
+        },
+        {
+          "minX": -1.3,
+          "maxX": 1.3,
+          "minZ": -9.8,
+          "maxZ": -9.63,
+          "top_y": 4.2
+        },
+        {
+          "minX": 0.99,
+          "maxX": 2.81,
+          "minZ": 5.69,
+          "maxZ": 7.51,
+          "top_y": 1.06
+        },
+        {
+          "minX": 2.23,
+          "maxX": 2.37,
+          "minZ": -4.82,
+          "maxZ": -4.68,
+          "top_y": 2.3
+        },
+        {
+          "minX": 2.43,
+          "maxX": 3.39,
+          "minZ": -3.39,
+          "maxZ": -2.43,
+          "top_y": 1.45
+        },
+        {
+          "minX": 2.43,
+          "maxX": 3.39,
+          "minZ": 2.43,
+          "maxZ": 3.39,
+          "top_y": 1.45
+        },
+        {
+          "minX": 2.52,
+          "maxX": 3.68,
+          "minZ": 9.11,
+          "maxZ": 10.28,
+          "top_y": 2.07
+        },
+        {
+          "minX": 2.85,
+          "maxX": 3.25,
+          "minZ": 7.35,
+          "maxZ": 7.75,
+          "top_y": 4.95
+        },
+        {
+          "minX": 3.4,
+          "maxX": 13.6,
+          "minZ": 10.5,
+          "maxZ": 21.5,
+          "top_y": 7.13
+        },
+        {
+          "minX": 3.8,
+          "maxX": 13.4,
+          "minZ": 7.95,
+          "maxZ": 10.4,
+          "top_y": 1.6
+        },
+        {
+          "minX": 3.88,
+          "maxX": 4.68,
+          "minZ": -2.13,
+          "maxZ": -1.33,
+          "top_y": 1.31
+        },
+        {
+          "minX": 3.88,
+          "maxX": 4.68,
+          "minZ": 1.33,
+          "maxZ": 2.13,
+          "top_y": 1.31
+        },
+        {
+          "minX": 5.87,
+          "maxX": 11.29,
+          "minZ": -13.0,
+          "maxZ": -6.65,
+          "top_y": 5.53
+        },
+        {
+          "minX": 6.6,
+          "maxX": 8.2,
+          "minZ": 6.65,
+          "maxZ": 7.12,
+          "top_y": 0.98
+        },
+        {
+          "minX": 7.79,
+          "maxX": 9.84,
+          "minZ": -6.81,
+          "maxZ": -4.76,
+          "top_y": 1.3
+        },
+        {
+          "minX": 8.01,
+          "maxX": 12.95,
+          "minZ": -9.92,
+          "maxZ": -4.99,
+          "top_y": 0.75
+        },
+        {
+          "minX": 8.2,
+          "maxX": 17.0,
+          "minZ": -24.0,
+          "maxZ": -13.0,
+          "top_y": 10.43
+        },
+        {
+          "minX": 8.59,
+          "maxX": 9.74,
+          "minZ": -3.91,
+          "maxZ": -2.76,
+          "top_y": 1.35
+        },
+        {
+          "minX": 8.59,
+          "maxX": 9.74,
+          "minZ": 2.76,
+          "maxZ": 3.91,
+          "top_y": 1.35
+        },
+        {
+          "minX": 11.12,
+          "maxX": 13.17,
+          "minZ": -10.15,
+          "maxZ": -8.1,
+          "top_y": 1.3
+        },
+        {
+          "minX": 11.15,
+          "maxX": 12.45,
+          "minZ": -12.25,
+          "maxZ": -10.95,
+          "top_y": 2.3
+        },
+        {
+          "minX": 12.2,
+          "maxX": 16.8,
+          "minZ": -13.0,
+          "maxZ": -10.55,
+          "top_y": 1.3
+        },
+        {
+          "minX": 12.72,
+          "maxX": 13.08,
+          "minZ": 6.42,
+          "maxZ": 6.78,
+          "top_y": 3.6
+        },
+        {
+          "minX": 13.31,
+          "maxX": 14.59,
+          "minZ": 3.46,
+          "maxZ": 4.74,
+          "top_y": 1.5
+        },
+        {
+          "minX": 13.8,
+          "maxX": 22.8,
+          "minZ": 4.6,
+          "maxZ": 11.1,
+          "top_y": 7.73
+        },
+        {
+          "minX": 15.83,
+          "maxX": 16.47,
+          "minZ": 3.89,
+          "maxZ": 4.51,
+          "top_y": 0.9
+        },
+        {
+          "minX": 16.52,
+          "maxX": 18.68,
+          "minZ": 3.27,
+          "maxZ": 4.23,
+          "top_y": 1.5
+        },
+        {
+          "minX": 17.0,
+          "maxX": 19.2,
+          "minZ": -22.0,
+          "maxZ": -11.0,
+          "top_y": 10.43
+        },
+        {
+          "minX": 19.2,
+          "maxX": 22.4,
+          "minZ": -15.0,
+          "maxZ": -4.0,
+          "top_y": 10.43
+        },
+        {
+          "minX": 20.32,
+          "maxX": 22.38,
+          "minZ": -3.73,
+          "maxZ": -2.77,
+          "top_y": 1.5
+        },
+        {
+          "minX": 20.6,
+          "maxX": 22.2,
+          "minZ": 3.6,
+          "maxZ": 4.07,
+          "top_y": 0.98
+        },
+        {
+          "minX": 21.72,
+          "maxX": 22.89,
+          "minZ": 3.32,
+          "maxZ": 4.49,
+          "top_y": 2.07
+        },
+        {
+          "minX": 22.4,
+          "maxX": 29.5,
+          "minZ": -15.0,
+          "maxZ": -4.0,
+          "top_y": 13.73
+        },
+        {
+          "minX": 22.8,
+          "maxX": 30.0,
+          "minZ": 4.0,
+          "maxZ": 15.0,
+          "top_y": 13.73
+        },
+        {
+          "minX": 22.98,
+          "maxX": 24.02,
+          "minZ": 2.78,
+          "maxZ": 3.82,
+          "top_y": 1.84
+        },
+        {
+          "minX": 24.14,
+          "maxX": 25.31,
+          "minZ": -3.66,
+          "maxZ": -2.94,
+          "top_y": 1.0
+        },
+        {
+          "minX": 26.69,
+          "maxX": 27.92,
+          "minZ": 3.16,
+          "maxZ": 3.64,
+          "top_y": 0.95
+        },
+        {
+          "minX": 29.5,
+          "maxX": 38.0,
+          "minZ": -15.0,
+          "maxZ": -4.0,
+          "top_y": 10.43
+        },
+        {
+          "minX": 30.0,
+          "maxX": 37.5,
+          "minZ": 4.0,
+          "maxZ": 15.0,
+          "top_y": 10.43
+        },
+        {
+          "minX": 30.48,
+          "maxX": 31.52,
+          "minZ": -3.92,
+          "maxZ": -2.88,
+          "top_y": 1.84
+        },
+        {
+          "minX": 33.14,
+          "maxX": 34.31,
+          "minZ": 2.94,
+          "maxZ": 3.66,
+          "top_y": 1.0
+        }
+      ],
+      "test_builder_door": {
+        "x": 15.0,
+        "z": 3.7,
+        "yaw": 3.141593
+      },
+      "replaces_chunks": [
+        "nervix_cafe",
+        "nervix_cafeinterior",
+        "nervix_merchanthouse",
+        "nervix_npcs",
+        "nervix_plaza",
+        "nervix_props",
+        "nervix_street"
+      ],
+      "lighting": {
+        "background": "#f6c4a0",
+        "fog": {
+          "color": "#efc3a3",
+          "near": 70.0,
+          "far": 460.0
+        },
+        "sun": {
+          "position": [
+            -33.08,
+            39.09,
+            31.27
+          ],
+          "color": "#ffb26b",
+          "intensity": 4.05
+        },
+        "hemisphere": {
+          "sky": "#cfc4d8",
+          "ground": "#a8775c",
+          "intensity": 0.54
+        },
+        "sky_gradient": {
+          "horizon": "#ffcda0",
+          "mid": "#ddc8d8",
+          "zenith": "#8db7e8"
+        },
+        "fill": {
+          "color": "#b9c2e0",
+          "intensity": 0.35
+        },
+        "view": {
+          "tone_mapping": "agx",
+          "exposure": 1.2311
+        }
+      }
+    },
+    "plots": [
+      {
+        "id": "slot-12",
+        "district": "merchant-quarter",
+        "sizeClass": "large",
+        "door": [
+          15.0,
+          0.0,
+          3.7
+        ],
+        "outward": [
+          0.0,
+          -1.0
+        ],
+        "yaw": 3.141593
+      },
+      {
+        "id": "slot-13",
+        "district": "merchant-quarter",
+        "sizeClass": "small",
+        "door": [
+          -10.594,
+          0.0,
+          10.4
+        ],
+        "outward": [
+          0.0,
+          -1.0
+        ],
+        "yaw": 3.141593
+      },
+      {
+        "id": "slot-14",
+        "district": "merchant-quarter",
+        "sizeClass": "medium",
+        "door": [
+          27.725,
+          0.0,
+          -3.1
+        ],
+        "outward": [
+          0.0,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      {
+        "id": "slot-15",
+        "district": "merchant-quarter",
+        "sizeClass": "small",
+        "door": [
+          -14.781,
+          0.0,
+          10.4
+        ],
+        "outward": [
+          0.0,
+          -1.0
+        ],
+        "yaw": 3.141593
+      },
+      {
+        "id": "slot-16",
+        "district": "merchant-quarter",
+        "sizeClass": "small",
+        "door": [
+          -18.969,
+          0.0,
+          10.4
+        ],
+        "outward": [
+          0.0,
+          -1.0
+        ],
+        "yaw": 3.141593
+      },
+      {
+        "id": "slot-17",
+        "district": "merchant-quarter",
+        "sizeClass": "small",
+        "door": [
+          -23.156,
+          0.0,
+          10.4
+        ],
+        "outward": [
+          0.0,
+          -1.0
+        ],
+        "yaw": 3.141593
+      },
+      {
+        "id": "slot-18",
+        "district": "merchant-quarter",
+        "sizeClass": "small",
+        "door": [
+          -27.344,
+          0.0,
+          10.4
+        ],
+        "outward": [
+          0.0,
+          -1.0
+        ],
+        "yaw": 3.141593
+      }
+    ]
+  }
+}

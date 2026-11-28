@@ -32,3 +32,9 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Local pnpm store (worktree installs)
+.pnpm-store/
+app/test-results/
+docs/evidence/slice/iterations/
+docs/references/external/

@@ -1,0 +1,1677 @@
+[
+  {
+    "label": "health",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "ok": true,
+      "demo": true,
+      "uptime": "<uptime>"
+    }
+  },
+  {
+    "label": "me anon",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": null,
+      "displayName": null,
+      "emailVerified": false,
+      "profileCompleted": false,
+      "level": "signed_out",
+      "subscription": {
+        "active": false,
+        "source": "unavailable"
+      }
+    }
+  },
+  {
+    "label": "me dangg",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "usr_dangg",
+      "displayName": "DanGG",
+      "emailVerified": true,
+      "profileCompleted": true,
+      "level": "build",
+      "subscription": {
+        "active": true,
+        "source": "unavailable"
+      }
+    }
+  },
+  {
+    "label": "me test",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "usr_test",
+      "displayName": "Test Builder",
+      "emailVerified": true,
+      "profileCompleted": true,
+      "level": "build",
+      "subscription": {
+        "active": true,
+        "source": "unavailable"
+      }
+    }
+  },
+  {
+    "label": "me visitor",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "usr_visitor",
+      "displayName": "Visitor",
+      "emailVerified": true,
+      "profileCompleted": true,
+      "level": "browse",
+      "subscription": {
+        "active": false,
+        "source": "unavailable"
+      }
+    }
+  },
+  {
+    "label": "me sub",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "usr_sub",
+      "displayName": "Subscriber Only",
+      "emailVerified": true,
+      "profileCompleted": true,
+      "level": "build",
+      "subscription": {
+        "active": true,
+        "source": "unavailable"
+      }
+    }
+  },
+  {
+    "label": "me unverified",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "usr_unverified",
+      "displayName": "Unverified Merchant",
+      "emailVerified": true,
+      "profileCompleted": true,
+      "level": "build",
+      "subscription": {
+        "active": true,
+        "source": "unavailable"
+      }
+    }
+  },
+  {
+    "label": "me admin",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "usr_admin_fixture",
+      "displayName": "Fixture Admin",
+      "emailVerified": true,
+      "profileCompleted": true,
+      "level": "browse",
+      "subscription": {
+        "active": false,
+        "source": "unavailable"
+      }
+    }
+  },
+  {
+    "label": "businesses anon",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "insufficient_level",
+      "message": "requires browse"
+    }
+  },
+  {
+    "label": "businesses visitor",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "businesses": [
+        {
+          "id": "prop_dangg",
+          "ownerId": "usr_dangg",
+          "slotId": "slot-11",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-11"
+        },
+        {
+          "id": "prop_test",
+          "ownerId": "usr_test",
+          "slotId": "slot-12",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-12"
+        },
+        {
+          "id": "prop_unverified",
+          "ownerId": "usr_unverified",
+          "slotId": "slot-13",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-13"
+        },
+        {
+          "id": "prop_demo_lantern",
+          "ownerId": "usr_demo_lantern",
+          "slotId": "slot-15",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-15"
+        },
+        {
+          "id": "prop_demo_kettle",
+          "ownerId": "usr_demo_kettle",
+          "slotId": "slot-16",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-16"
+        },
+        {
+          "id": "prop_demo_juniper",
+          "ownerId": "usr_demo_juniper",
+          "slotId": "slot-17",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-17"
+        },
+        {
+          "id": "prop_demo_atlas",
+          "ownerId": "usr_demo_atlas",
+          "slotId": "slot-18",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-18"
+        }
+      ]
+    }
+  },
+  {
+    "label": "catalog of prop_dangg",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "items": []
+    }
+  },
+  {
+    "label": "catalog unknown",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "not_found"
+    }
+  },
+  {
+    "label": "house dangg visitor",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "house": {
+        "propertyId": "prop_dangg",
+        "ownerId": "usr_dangg",
+        "merchantId": "mer_dangg",
+        "builderId": "bld_dangg",
+        "ownerName": "DanGG",
+        "appUrl": "https://dangg.live/",
+        "listings": [
+          {
+            "id": "off_dangg_2",
+            "name": "DanGG Starter Bundle",
+            "description": "Sample bundle (demo listing).",
+            "priceMinor": 3999,
+            "currency": "EUR",
+            "category": "bundle",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
+          },
+          {
+            "id": "off_dangg_1",
+            "name": "DanGG Table Seat",
+            "description": "Sample seating (demo listing).",
+            "priceMinor": 1750,
+            "currency": "EUR",
+            "category": "seat",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
+          }
+        ],
+        "merchantName": "DanGG",
+        "merchantVerified": true,
+        "profile": {
+          "welcome": null,
+          "decor": {},
+          "display": {},
+          "websiteUrl": null,
+          "updatedAt": null
+        }
+      },
+      "canEdit": false,
+      "demo": false
+    }
+  },
+  {
+    "label": "house dangg owner",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "house": {
+        "propertyId": "prop_dangg",
+        "ownerId": "usr_dangg",
+        "merchantId": "mer_dangg",
+        "builderId": "bld_dangg",
+        "ownerName": "DanGG",
+        "appUrl": "https://dangg.live/",
+        "listings": [
+          {
+            "id": "off_dangg_2",
+            "name": "DanGG Starter Bundle",
+            "description": "Sample bundle (demo listing).",
+            "priceMinor": 3999,
+            "currency": "EUR",
+            "category": "bundle",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
+          },
+          {
+            "id": "off_dangg_1",
+            "name": "DanGG Table Seat",
+            "description": "Sample seating (demo listing).",
+            "priceMinor": 1750,
+            "currency": "EUR",
+            "category": "seat",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
+          }
+        ],
+        "merchantName": "DanGG",
+        "merchantVerified": true,
+        "profile": {
+          "welcome": null,
+          "decor": {},
+          "display": {},
+          "websiteUrl": null,
+          "updatedAt": null
+        }
+      },
+      "canEdit": true,
+      "demo": false
+    }
+  },
+  {
+    "label": "house test by dangg",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "house": {
+        "propertyId": "prop_test",
+        "ownerId": "usr_test",
+        "merchantId": "mer_test",
+        "builderId": "bld_test",
+        "ownerName": "Test Builder",
+        "appUrl": null,
+        "listings": [
+          {
+            "id": "off_test_1",
+            "name": "Test Builder Widget",
+            "description": "Local test listing (demo).",
+            "priceMinor": 750,
+            "currency": "EUR",
+            "category": "merch",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
+          }
+        ],
+        "merchantName": "Test Builder",
+        "merchantVerified": true,
+        "profile": {
+          "welcome": null,
+          "decor": {},
+          "display": {},
+          "websiteUrl": null,
+          "updatedAt": null
+        }
+      },
+      "canEdit": false,
+      "demo": false
+    }
+  },
+  {
+    "label": "house listing mismatch",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "listing_mismatch",
+      "propertyId": "prop_dangg"
+    }
+  },
+  {
+    "label": "house app mismatch",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "app_mismatch",
+      "propertyId": "prop_dangg"
+    }
+  },
+  {
+    "label": "house unknown",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "unknown_house"
+    }
+  },
+  {
+    "label": "house anon",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "insufficient_level",
+      "message": "requires browse"
+    }
+  },
+  {
+    "label": "builders visitor",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "builders": [
+        {
+          "id": "bld_dangg",
+          "ownerId": "usr_dangg",
+          "name": "DanGG",
+          "appUrl": "https://dangg.live/",
+          "offerings": [
+            {
+              "id": "off_dangg_2",
+              "name": "DanGG Starter Bundle",
+              "description": "Sample bundle (demo listing).",
+              "priceMinor": 3999,
+              "currency": "EUR",
+              "category": "bundle",
+              "slot": null,
+              "sortOrder": 0,
+              "active": true,
+              "appUrl": null
+            },
+            {
+              "id": "off_dangg_1",
+              "name": "DanGG Table Seat",
+              "description": "Sample seating (demo listing).",
+              "priceMinor": 1750,
+              "currency": "EUR",
+              "category": "seat",
+              "slot": null,
+              "sortOrder": 0,
+              "active": true,
+              "appUrl": null
+            }
+          ]
+        },
+        {
+          "id": "bld_test",
+          "ownerId": "usr_test",
+          "name": "Test Builder House",
+          "appUrl": null,
+          "offerings": [
+            {
+              "id": "off_test_1",
+              "name": "Test Builder Widget",
+              "description": "Local test listing (demo).",
+              "priceMinor": 750,
+              "currency": "EUR",
+              "category": "merch",
+              "slot": null,
+              "sortOrder": 0,
+              "active": true,
+              "appUrl": null
+            }
+          ]
+        }
+      ],
+      "platform": "OpenPoker",
+      "note": "OpenPoker is an open platform; each builder owns their own catalogue."
+    }
+  },
+  {
+    "label": "merchant products",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "items": []
+    }
+  },
+  {
+    "label": "merchant knowledge",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "items": []
+    }
+  },
+  {
+    "label": "merchant apps",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "apps": []
+    }
+  },
+  {
+    "label": "apps",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "apps": [
+        {
+          "id": "booking",
+          "name": "Booking Desk",
+          "category": "appointments",
+          "integration": "server-api",
+          "authRequired": true,
+          "configFields": [
+            "calendar"
+          ],
+          "actions": [
+            "read_availability",
+            "create_booking"
+          ]
+        },
+        {
+          "id": "loyalty",
+          "name": "Loyalty Card",
+          "category": "retention",
+          "integration": "server-api",
+          "authRequired": true,
+          "configFields": [
+            "programme"
+          ],
+          "actions": [
+            "read_balance",
+            "issue_stamp"
+          ]
+        },
+        {
+          "id": "arcade",
+          "name": "Arcade Table",
+          "category": "entertainment",
+          "integration": "embedded",
+          "authRequired": false,
+          "configFields": [],
+          "actions": [
+            "open_table"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "label": "campaigns",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "campaigns": []
+    }
+  },
+  {
+    "label": "placements",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "placements": []
+    }
+  },
+  {
+    "label": "servable",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "servable": false,
+      "campaign": null
+    }
+  },
+  {
+    "label": "quest",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "quest": {
+        "id": "lost-seals",
+        "title": "The Lost Seals of the City",
+        "steps": [
+          {
+            "id": "find-fountain",
+            "text": "Find the fountain in Central Plaza"
+          },
+          {
+            "id": "meet-guide",
+            "text": "Speak with the city guide"
+          },
+          {
+            "id": "seal-court",
+            "text": "Recover the seal in the Merchant Quarter"
+          },
+          {
+            "id": "seal-cafe",
+            "text": "Recover the seal in the Coffee Courtyard"
+          },
+          {
+            "id": "seal-venue",
+            "text": "Recover the seal in the Entertainment District"
+          }
+        ],
+        "seals": [
+          "seal-court",
+          "seal-cafe",
+          "seal-venue"
+        ]
+      }
+    }
+  },
+  {
+    "label": "catalog",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "items": [
+        {
+          "sku": "coffee",
+          "name": "Coffee",
+          "unitAmountMinor": 450,
+          "currency": "EUR",
+          "fulfillment": "pickup",
+          "active": true,
+          "merchantId": "mer_1"
+        },
+        {
+          "sku": "pastry",
+          "name": "Pastry",
+          "unitAmountMinor": 300,
+          "currency": "EUR",
+          "fulfillment": "pickup",
+          "active": true,
+          "merchantId": "mer_1"
+        }
+      ]
+    }
+  },
+  {
+    "label": "progress read",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "progress": {
+        "questId": "lost-seals",
+        "stepIndex": 0,
+        "seals": [],
+        "completed": false
+      }
+    }
+  },
+  {
+    "label": "progress step",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in to save quest progress"
+    }
+  },
+  {
+    "label": "progress bad step",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in to save quest progress"
+    }
+  },
+  {
+    "label": "progress reread",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "progress": {
+        "questId": "lost-seals",
+        "stepIndex": 0,
+        "seals": [],
+        "completed": false
+      }
+    }
+  },
+  {
+    "label": "orders none",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in first"
+    }
+  },
+  {
+    "label": "order create",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in first"
+    }
+  },
+  {
+    "label": "order create invalid",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in first"
+    }
+  },
+  {
+    "label": "order read",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in first"
+    }
+  },
+  {
+    "label": "order unknown",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in first"
+    }
+  },
+  {
+    "label": "orders list",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in first"
+    }
+  },
+  {
+    "label": "order fulfil early",
+    "status": 404,
+    "setCookie": null,
+    "body": {
+      "error": "not_found",
+      "path": "/orders//fulfil"
+    }
+  },
+  {
+    "label": "order demo event",
+    "status": 404,
+    "setCookie": null,
+    "body": {
+      "error": "not_found",
+      "path": "/orders//events"
+    }
+  },
+  {
+    "label": "webhook paid",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "demo_only",
+      "message": "the payment webhook is disabled in demo mode"
+    }
+  },
+  {
+    "label": "webhook unknown order",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "demo_only",
+      "message": "the payment webhook is disabled in demo mode"
+    }
+  },
+  {
+    "label": "order after webhook",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in first"
+    }
+  },
+  {
+    "label": "order refund",
+    "status": 404,
+    "setCookie": null,
+    "body": {
+      "error": "not_found",
+      "path": "/orders//refund"
+    }
+  },
+  {
+    "label": "session fixed",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "demo_fixed",
+      "displayName": "Fixed",
+      "role": "player",
+      "demo": true
+    }
+  },
+  {
+    "label": "signup",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "usr_48df2b693ea0",
+      "email": "snap@example.invalid",
+      "displayName": "Snap",
+      "verified": false,
+      "devCode": "<code>",
+      "emailed": false
+    }
+  },
+  {
+    "label": "signup invalid",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "invalid_email"
+    }
+  },
+  {
+    "label": "login unknown",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "no_such_user"
+    }
+  },
+  {
+    "label": "login",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "usr_48df2b693ea0",
+      "email": "snap@example.invalid",
+      "devCode": "<code>",
+      "emailed": false
+    }
+  },
+  {
+    "label": "verify wrong",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "mismatch"
+    }
+  },
+  {
+    "label": "verify",
+    "status": 200,
+    "setCookie": "nervix_session=<sid>; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800",
+    "body": {
+      "userId": "usr_48df2b693ea0",
+      "displayName": "Snap",
+      "role": "player",
+      "verified": true,
+      "demo": true
+    }
+  },
+  {
+    "label": "me cookie",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": "usr_48df2b693ea0",
+      "displayName": "Snap",
+      "emailVerified": true,
+      "profileCompleted": false,
+      "level": "explore",
+      "subscription": {
+        "active": false,
+        "source": "unavailable"
+      }
+    }
+  },
+  {
+    "label": "profile",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "ok": true,
+      "level": "browse"
+    }
+  },
+  {
+    "label": "profile anon",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized"
+    }
+  },
+  {
+    "label": "logout",
+    "status": 200,
+    "setCookie": "nervix_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax",
+    "body": {
+      "ok": true
+    }
+  },
+  {
+    "label": "me after logout",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "userId": null,
+      "displayName": null,
+      "emailVerified": false,
+      "profileCompleted": false,
+      "level": "signed_out",
+      "subscription": {
+        "active": false,
+        "source": "unavailable"
+      }
+    }
+  },
+  {
+    "label": "profile edit anon",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in to edit"
+    }
+  },
+  {
+    "label": "profile edit visitor",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "insufficient_level",
+      "message": "requires build eligibility"
+    }
+  },
+  {
+    "label": "profile edit sub",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "not_merchant",
+      "message": "no merchant record for this account"
+    }
+  },
+  {
+    "label": "profile edit unverified",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "unverified_merchant",
+      "message": "merchant is not verified"
+    }
+  },
+  {
+    "label": "profile edit cross",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "cross_owner",
+      "message": "not your house"
+    }
+  },
+  {
+    "label": "profile edit invalid",
+    "status": 400,
+    "setCookie": null,
+    "body": {
+      "error": "invalid_profile",
+      "message": "websiteUrl must be a public https url"
+    }
+  },
+  {
+    "label": "profile edit owner",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "profile": {
+        "welcome": "Snapshot welcome",
+        "decor": {
+          "theme": "salon",
+          "accent": "#c9a441"
+        },
+        "display": {},
+        "websiteUrl": null,
+        "updatedAt": "<ts>"
+      }
+    }
+  },
+  {
+    "label": "listing add",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "offering": {
+        "id": "<OFFERING>",
+        "builderId": "bld_dangg",
+        "name": "Snap Pass",
+        "description": null,
+        "priceMinor": 500,
+        "currency": "EUR",
+        "appUrl": null,
+        "category": null,
+        "slot": null,
+        "sortOrder": 0,
+        "active": true
+      }
+    }
+  },
+  {
+    "label": "listing add invalid",
+    "status": 400,
+    "setCookie": null,
+    "body": {
+      "error": "name_required",
+      "message": "listing refused: name_required"
+    }
+  },
+  {
+    "label": "listing edit",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "offering": {
+        "id": "<OFFERING>",
+        "builder_id": "bld_dangg",
+        "name": "Snap Pass",
+        "description": null,
+        "price_minor": 650,
+        "currency": "EUR",
+        "app_url": null,
+        "category": null,
+        "display_slot": null,
+        "sort_order": 0,
+        "active": true
+      }
+    }
+  },
+  {
+    "label": "listing edit cross",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "cross_owner",
+      "message": "not your house"
+    }
+  },
+  {
+    "label": "builder offering cross",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "cross_owner",
+      "message": "not your catalogue"
+    }
+  },
+  {
+    "label": "builder offering unknown",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "not_found",
+      "message": "unknown catalogue"
+    }
+  },
+  {
+    "label": "builder offering unsafe",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "unsafe_app_url"
+    }
+  },
+  {
+    "label": "builder offering patch bad price",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "invalid_price"
+    }
+  },
+  {
+    "label": "builder offering patch",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "offering": {
+        "id": "off_dangg_1",
+        "builder_id": "bld_dangg",
+        "name": "DanGG Table Seat",
+        "description": "Edited by snapshot.",
+        "price_minor": 1750,
+        "currency": "EUR",
+        "app_url": null,
+        "category": "seat",
+        "display_slot": null,
+        "sort_order": 0,
+        "active": true
+      }
+    }
+  },
+  {
+    "label": "builder create sub",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "not_merchant",
+      "message": "no merchant record for this account"
+    }
+  },
+  {
+    "label": "builder create dangg",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "builder": {
+        "id": "bld_sr_dangg",
+        "ownerId": "usr_dangg",
+        "name": "DanGG Two",
+        "appUrl": "https://dangg.live/two"
+      }
+    }
+  },
+  {
+    "label": "merchant product cross",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "cross_owner",
+      "message": "not your merchant record"
+    }
+  },
+  {
+    "label": "merchant product owner",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "product": {
+        "sku": "chip",
+        "name": "Chip",
+        "unitAmountMinor": 100,
+        "currency": "EUR",
+        "fulfillment": "digital",
+        "active": true
+      }
+    }
+  },
+  {
+    "label": "merchant products after",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "items": [
+        {
+          "sku": "chip",
+          "name": "Chip",
+          "unitAmountMinor": 100,
+          "currency": "EUR",
+          "fulfillment": "digital",
+          "active": true
+        }
+      ]
+    }
+  },
+  {
+    "label": "knowledge add anon",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in to edit"
+    }
+  },
+  {
+    "label": "knowledge add empty",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "content_required"
+    }
+  },
+  {
+    "label": "knowledge add",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "id": "<KNOWLEDGE>",
+      "approved": false
+    }
+  },
+  {
+    "label": "knowledge approve cross",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "cross_owner",
+      "message": "not your merchant record"
+    }
+  },
+  {
+    "label": "knowledge approve",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "approved": true
+    }
+  },
+  {
+    "label": "knowledge after",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "items": [
+        {
+          "id": "<KNOWLEDGE>",
+          "kind": "faq",
+          "uri": null,
+          "content": "We deal at nine.",
+          "approved": true
+        }
+      ]
+    }
+  },
+  {
+    "label": "agent patch wrong property",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "cross_owner",
+      "message": "not your property"
+    }
+  },
+  {
+    "label": "agent patch",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "config": {
+        "name": "Ava",
+        "tone": "warm",
+        "languages": [
+          "en"
+        ],
+        "allowed_actions": [
+          "search_catalog"
+        ],
+        "monthlyRequestCap": null
+      }
+    }
+  },
+  {
+    "label": "appearance unknown property",
+    "status": 400,
+    "setCookie": null,
+    "body": {
+      "error": "MerchantError",
+      "message": "palette must be a hex colour"
+    }
+  },
+  {
+    "label": "appearance patch",
+    "status": 400,
+    "setCookie": null,
+    "body": {
+      "error": "MerchantError",
+      "message": "palette must be a hex colour"
+    }
+  },
+  {
+    "label": "app connect unknown",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "unknown_app"
+    }
+  },
+  {
+    "label": "app connect anon",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in to edit"
+    }
+  },
+  {
+    "label": "app connect",
+    "status": 400,
+    "setCookie": null,
+    "body": {
+      "error": "error",
+      "message": "insert or update on table \"merchant_app_connections\" violates foreign key constraint \"merchant_app_connections_app_id_fkey\""
+    }
+  },
+  {
+    "label": "app disconnect",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "app": "booking",
+      "connected": false,
+      "health": "not_connected"
+    }
+  },
+  {
+    "label": "provision visitor",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "insufficient_level",
+      "message": "requires build"
+    }
+  },
+  {
+    "label": "provision sub",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "not_merchant",
+      "message": "no merchant record for this account"
+    }
+  },
+  {
+    "label": "businesses create visitor",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "insufficient_level",
+      "message": "requires build"
+    }
+  },
+  {
+    "label": "businesses create dangg",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "property": {
+        "id": "prop_dangg",
+        "ownerId": "usr_dangg",
+        "slotId": "slot-11",
+        "district": "merchant-quarter",
+        "template": "merchant_house",
+        "address": "slot-11",
+        "published": true,
+        "merchantId": "mer_dangg"
+      },
+      "created": false
+    }
+  },
+  {
+    "label": "business product cross",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "cross_owner",
+      "message": "not your house"
+    }
+  },
+  {
+    "label": "business product unsafe",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "unsafe_app_url"
+    }
+  },
+  {
+    "label": "agent message anon",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in to talk to the merchant"
+    }
+  },
+  {
+    "label": "agent message unknown",
+    "status": 404,
+    "setCookie": null,
+    "body": {
+      "error": "unknown_property",
+      "message": "unknown property"
+    }
+  },
+  {
+    "label": "agent message",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "text": "I don't have that information. I can take a support request for the merchant.",
+      "citations": [
+        {
+          "id": "<KNOWLEDGE>",
+          "kind": "faq",
+          "uri": null
+        }
+      ],
+      "actions": [],
+      "history": [
+        {
+          "role": "player",
+          "content": "What do you sell?"
+        }
+      ]
+    }
+  },
+  {
+    "label": "agent confirm",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in to talk to the merchant"
+    }
+  },
+  {
+    "label": "agent speak",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in to talk to the merchant"
+    }
+  },
+  {
+    "label": "agent speak unknown",
+    "status": 401,
+    "setCookie": null,
+    "body": {
+      "error": "unauthorized",
+      "message": "sign in to talk to the merchant"
+    }
+  },
+  {
+    "label": "campaign invalid",
+    "status": 400,
+    "setCookie": null,
+    "body": {
+      "error": "CampaignError",
+      "message": "id, merchantId and placementId are required"
+    }
+  },
+  {
+    "label": "campaign create",
+    "status": 400,
+    "setCookie": null,
+    "body": {
+      "error": "error",
+      "message": "insert or update on table \"campaigns\" violates foreign key constraint \"campaigns_placement_id_fkey\""
+    }
+  },
+  {
+    "label": "campaign missing",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "not_found"
+    }
+  },
+  {
+    "label": "admin merchants visitor",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "forbidden",
+      "message": "admin only"
+    }
+  },
+  {
+    "label": "admin merchants",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "merchants": [
+        {
+          "id": "mer_demo_atlas",
+          "name": "Atlas Map Room (demo)",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
+          "id": "mer_demo_kettle",
+          "name": "Copper Kettle Tea (demo)",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
+          "id": "mer_dangg",
+          "name": "DanGG",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
+          "id": "mer_demo_juniper",
+          "name": "Juniper Florist (demo)",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
+          "id": "mer_demo_lantern",
+          "name": "Lantern Books (demo)",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
+          "id": "mer_test",
+          "name": "Test Builder",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
+          "id": "mer_unverified",
+          "name": "Unverified Shop",
+          "businessType": "merchant",
+          "suspended": false
+        }
+      ]
+    }
+  },
+  {
+    "label": "admin suspend spoof",
+    "status": 403,
+    "setCookie": null,
+    "body": {
+      "error": "forbidden",
+      "message": "admin only"
+    }
+  },
+  {
+    "label": "admin suspend",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "merchant": "mer_test",
+      "suspended": true
+    }
+  },
+  {
+    "label": "admin reinstate",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "merchant": "mer_test",
+      "suspended": false
+    }
+  },
+  {
+    "label": "admin verify unknown",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "error": "unknown_merchant"
+    }
+  },
+  {
+    "label": "admin verify",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "merchant": "mer_unverified",
+      "verified": true
+    }
+  },
+  {
+    "label": "admin audit",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "events": [
+        {
+          "id": "6",
+          "actorId": "usr_admin_fixture",
+          "action": "merchant.verify",
+          "subject": "mer_unverified",
+          "detail": null,
+          "createdAt": "<ts>"
+        },
+        {
+          "id": "5",
+          "actorId": "usr_admin_fixture",
+          "action": "merchant.reinstate",
+          "subject": "mer_test",
+          "detail": null,
+          "createdAt": "<ts>"
+        },
+        {
+          "id": "4",
+          "actorId": "usr_admin_fixture",
+          "action": "merchant.suspend",
+          "subject": "mer_test",
+          "detail": null,
+          "createdAt": "<ts>"
+        },
+        {
+          "id": "3",
+          "actorId": "usr_dangg",
+          "action": "house.listing.edit",
+          "subject": "prop_dangg",
+          "detail": {
+            "listing": "<OFFERING>"
+          },
+          "createdAt": "<ts>"
+        },
+        {
+          "id": "2",
+          "actorId": "usr_dangg",
+          "action": "house.listing.add",
+          "subject": "prop_dangg",
+          "detail": {
+            "listing": "<OFFERING>"
+          },
+          "createdAt": "<ts>"
+        },
+        {
+          "id": "1",
+          "actorId": "usr_dangg",
+          "action": "house.profile",
+          "subject": "prop_dangg",
+          "detail": {
+            "fields": [
+              "welcome",
+              "decor"
+            ]
+          },
+          "createdAt": "<ts>"
+        }
+      ]
+    }
+  },
+  {
+    "label": "house dangg final",
+    "status": 200,
+    "setCookie": null,
+    "body": {
+      "house": {
+        "propertyId": "prop_dangg",
+        "ownerId": "usr_dangg",
+        "merchantId": "mer_dangg",
+        "builderId": "bld_dangg",
+        "ownerName": "DanGG",
+        "appUrl": "https://dangg.live/",
+        "listings": [
+          {
+            "id": "off_dangg_2",
+            "name": "DanGG Starter Bundle",
+            "description": "Sample bundle (demo listing).",
+            "priceMinor": 3999,
+            "currency": "EUR",
+            "category": "bundle",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
+          },
+          {
+            "id": "off_dangg_1",
+            "name": "DanGG Table Seat",
+            "description": "Edited by snapshot.",
+            "priceMinor": 1750,
+            "currency": "EUR",
+            "category": "seat",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
+          },
+          {
+            "id": "<OFFERING>",
+            "name": "Snap Pass",
+            "description": null,
+            "priceMinor": 650,
+            "currency": "EUR",
+            "category": null,
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
+          }
+        ],
+        "merchantName": "DanGG",
+        "merchantVerified": true,
+        "profile": {
+          "welcome": "Snapshot welcome",
+          "decor": {
+            "theme": "salon",
+            "accent": "#c9a441"
+          },
+          "display": {},
+          "websiteUrl": null,
+          "updatedAt": "<ts>"
+        }
+      },
+      "canEdit": false,
+      "demo": false
+    }
+  },
+  {
+    "label": "router 404",
+    "status": 404,
+    "setCookie": null,
+    "body": {
+      "error": "not_found",
+      "path": "/no-such-route"
+    }
+  }
+]

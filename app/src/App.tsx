@@ -1,129 +1,143 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { Marker } from "./scene/CityScene";
 import { Hud } from "./ui/Hud";
-import { AgentPanel } from "./ui/AgentPanel";
-import { AuthPanel } from "./ui/AuthPanel";
-import { MerchantPanel } from "./ui/MerchantPanel";
-import { CheckoutPanel } from "./ui/CheckoutPanel";
-import { AdsPanel } from "./ui/AdsPanel";
-import { AdminPanel } from "./ui/AdminPanel";
 import { GuidePanel } from "./ui/GuidePanel";
 import { AccessGate } from "./ui/AccessGate";
 import { InteriorCatalog } from "./ui/InteriorCatalog";
 import { TouchControls } from "./ui/TouchControls";
-import { HOUSE_DOORS, type HouseDoor } from "./scene/HouseDoors";
+import { PanelHost } from "./ui/PanelHost";
+import { InteriorPanelHost } from "./ui/InteriorPanelHost";
+import { PlayerChat } from "./ui/PlayerChat";
+import { arrival, loadSliceLayout, STREET_SPAWN, streetSpawn, type Anchor, type SliceLayout } from "./scene/slice";
 import { usePresence } from "./net/presence";
+import { api, type Session } from "./net/api";
+import { PLAZA, placeKey, placeStore, resetPlace, type Place } from "./world/place";
+import { usePlace } from "./world/usePlace";
+import { destinationOf, targetAt, type Target } from "./world/targets";
+import { sidePanels } from "./features/sidePanels";
+import type { ShellContext } from "./features/panelContext";
+import { useHintsSettled } from "./shell/useHintsSettled";
+import { useWorldSession } from "./shell/useWorldSession";
+import { useWorldKeys } from "./shell/useWorldKeys";
+import { HintStack } from "./shell/HintStack";
+import { A11yLayer } from "./ui/LiveRegion";
+import { useWorldDirectory } from "./world/useWorldDirectory";
+import { houseSnapshot } from "./world/useHouseSnapshot";
 
 const SceneView = lazy(() => import("./scene/SceneView"));
-import { api, type Session, type QuestProgress } from "./net/api";
-import { loadSession } from "./net/session";
+
+/** Walking this far from the arrival spawn ends the arrival shot (quest card opens). */
+const EXPLORE_DISTANCE = 1.0;
+const PROFILE_REQUIRED = "A completed profile is required to enter a business.";
+const NO_SESSION: Session = { userId: "", displayName: "", role: "player", demo: true };
 
 export function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [propertyId, setPropertyId] = useState<string | null>(null);
-  const [status, setStatus] = useState("connecting");
+  const [entered, setEntered] = useState(false);
+  const { session, setSession, propertyId, status, quest, setQuest } = useWorldSession(() => setEntered(true));
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [nearby, setNearby] = useState<Marker | null>(null);
-  const [quest, setQuest] = useState<QuestProgress | null>(null);
   const [fps, setFps] = useState(0);
   const params = new URLSearchParams(window.location.search);
-  const [entered, setEntered] = useState(false);
+  // FPS and presence diagnostics are for developers only: ?debug=1.
+  const debug = params.get("debug") === "1";
   const sceneMode = params.get("scene") === "full" ? "full" : "chunks";
-  const [showAuth, setShowAuth] = useState(false);
-  const [showMerchant, setShowMerchant] = useState(false);
-  const [showOrders, setShowOrders] = useState(false);
-  const [showAds, setShowAds] = useState(false);
+  const [exploring, setExploring] = useState(false);
+  const [questPinned, setQuestPinned] = useState<boolean | null>(null);
+  const questOpen = questPinned ?? exploring;
   const [showGuide, setShowGuide] = useState(false);
-  const [nearDoor, setNearDoor] = useState<HouseDoor | null>(null);
-  const [interior, setInterior] = useState<HouseDoor | null>(null);
-  const [teleport, setTeleport] = useState<{ x: number; z: number; key: number } | null>(null);
+  useState(resetPlace); // once per mount, before the first read of the place
+  const place = usePlace();
+  const hintsSettled = useHintsSettled(entered, placeKey(place));
+  const [layout, setLayout] = useState<SliceLayout | null>(null);
+  const [layoutError, setLayoutError] = useState<string | null>(null);
+  const [spawn, setSpawn] = useState<Anchor>(STREET_SPAWN);
+  const [target, setTarget] = useState<Target | null>(null);
+  const [teleport] = useState<{ x: number; z: number; key: number; yaw?: number } | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [arrivalError, setArrivalError] = useState<string | null>(null);
+  const interior = place.kind === "house" ? place.door : null;
   const onMarkers = useCallback((m: Marker[]) => setMarkers(m), []);
-  const onPosition = useCallback((x: number, z: number) => {
-    let best: HouseDoor | null = null;
-    let bestD = 2.8;
-    for (const d of HOUSE_DOORS) {
-      const dist = Math.hypot(d.position[0] - x, d.position[2] - z);
-      if (dist < bestD) { bestD = dist; best = d; }
-    }
-    setNearDoor(best);
+  // District markers were authored for the legacy plaza chunks: never shown outside the plaza,
+  // and not on top of the Blender arrival square that supersedes those chunks.
+  const districtMarkers = place.kind === "plaza" && !layout?.plaza ? markers : [];
+  const directory = useWorldDirectory(layout);
+
+  useEffect(() => {
+    loadSliceLayout()
+      .then((l) => {
+        setLayout(l);
+        // Arrive where the Blender camera study put the street spawn, when exported.
+        setSpawn(streetSpawn(l));
+      })
+      .catch((e: Error) => setLayoutError(e.message));
   }, []);
+
+  /** What the player can interact with from where they stand. */
+  const onPosition = useCallback(
+    (x: number, z: number) => {
+      setTarget(targetAt(place, layout, x, z, directory));
+      if (!exploring && Math.hypot(x - spawn.x, z - spawn.z) > EXPLORE_DISTANCE) setExploring(true);
+    },
+    [place, layout, exploring, spawn, directory],
+  );
+
+  const go = useCallback(
+    async (next: Place) => {
+      if (next.kind !== "plaza") {
+        // Entering any business needs a completed profile; the server re-checks every read.
+        const me = await api.me().catch(() => null);
+        if (!me || (me.level !== "browse" && me.level !== "build")) {
+          setAuthError(PROFILE_REQUIRED);
+          return;
+        }
+      }
+      if (!layout) return;
+      setAuthError(null);
+      setSpawn(arrival(next, place, layout));
+      setTarget(null);
+      // Interaction prompts belong to the place being left.
+      setNearby(null);
+      placeStore.set(next);
+    },
+    [layout, place],
+  );
+
+  const activate = useCallback((t: Target | null) => {
+    if (t) void go(destinationOf(t, place));
+  }, [go, place]);
+  const goPlaza = useCallback(() => void go(PLAZA), [go]);
+  const toggleGuide = useCallback(() => setShowGuide((v) => !v), []);
+  const closeGuide = useCallback(() => setShowGuide(false), []);
+
+  useEffect(() => {
+    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__nervixPlace = placeKey(place);
+  }, [place]);
   const { players, status: presence, sendMove } = usePresence({
     userId: session?.userId ?? "guest",
     name: session?.displayName ?? "Traveler",
     district: "central-plaza",
   });
 
-  useEffect(() => {
-    // Resume an existing verified session; never enter on a client flag.
-    void api
-      .me()
-      .then((me) => {
-        if (me.level === "signed_out") return;
-        setSession({ userId: me.userId ?? "", displayName: me.displayName ?? "Traveler", role: me.level === "build" ? "merchant_owner" : "player", demo: true });
-        setEntered(true);
-      })
-      .catch(() => {});
+  useWorldKeys({ session, nearby, quest, place, target, goPlaza, activate, toggleGuide, closeGuide, onQuest: setQuest });
 
-    let alive = true;
-    (async () => {
-      try {
-        const s = await api.session(loadSession().userId);
-        const { property } = await api.provision(s.userId, "merchant");
-        if (!alive) return;
-        setSession(s);
-        setPropertyId(property.id);
-        setQuest((await api.progress(s.userId)).progress);
-        setStatus("connected");
-      } catch {
-        if (alive) setStatus("offline");
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === "g") setShowGuide((v) => !v);
-      if (e.key === "Escape") {
-        setShowGuide(false);
-        setInterior(null);
-      }
-      if (interior && (e.key.toLowerCase() === "e" || e.key === "Enter" || e.key === "Escape")) {
-        setInterior(null);
-        setTeleport({ x: interior.position[0], z: interior.position[2] + 2.8, key: Date.now() });
-        return;
-      }
-      if (!interior && (e.key.toLowerCase() === "e" || e.key === "Enter") && nearDoor) {
-        void api
-          .me()
-          .then((me) => {
-            if (me.level !== "browse" && me.level !== "build") {
-              setAuthError("A completed profile is required to enter a business.");
-              return;
-            }
-            setInterior(nearDoor);
-            setTeleport({ x: 0, z: 3.2, key: Date.now() });
-          })
-          .catch(() => setAuthError("Could not verify your access."));
-      }
-      if (e.key.toLowerCase() !== "e") return;
-      if (!session || !nearby) return;
-      if (!nearby.id.toLowerCase().includes("seal") || quest?.seals.includes(nearby.id)) return;
-      void api.collectSeal(session.userId, nearby.id).then((r) => setQuest(r.progress));
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [session, nearby, quest, interior, nearDoor]);
+  const shellCtx = useMemo<ShellContext>(() => ({
+    session, propertyId, entered, showGuide,
+    openGuide: () => setShowGuide(true),
+    onSignedIn: (s) => {
+      setSession(s);
+      void api.progress(s.userId).then((r) => setQuest(r.progress));
+    },
+  }), [session, propertyId, entered, showGuide, setSession, setQuest]);
 
   return (
     <div className="app">
+      {/* CT5: always mounted, so the live region exists before the first announcement ("Enter OpenPoker"). */}
+      <A11yLayer place={place} target={target} />
       {!entered && <AccessGate onEnter={() => setEntered(true)} />}
-      {entered && <Suspense fallback={null}>
+      {/* The scene mounts once the layout is known, so the first frame is the real arrival. */}
+      {entered && (layout || layoutError) && <Suspense fallback={null}>
         <SceneView
-          markers={markers}
+          markers={districtMarkers}
           onMarkers={onMarkers}
           onNearby={setNearby}
           onMove={sendMove}
@@ -132,84 +146,54 @@ export function App() {
           selfId={session?.userId ?? ""}
           mode={sceneMode}
           teleportTo={teleport}
-          onNearDoor={setNearDoor}
           onPosition={onPosition}
-          interior={interior}
-          onExitInterior={() => {
-            setInterior(null);
-            if (interior) setTeleport({ x: interior.position[0], z: interior.position[2] + 2.8, key: Date.now() });
-          }}
+          place={place}
+          layout={layout}
+          spawn={spawn}
+          onEnterHouse={(door) => activate({ kind: "house", door, label: door.label })}
+          onEnterVenue={() => activate({ kind: "venue", label: "OpenPoker" })}
+          directory={directory}
+          onArrivalError={setArrivalError}
         />
       </Suspense>}
 
-
-      {interior && <InteriorCatalog door={interior} />}
-      {entered && !interior && nearDoor && (
-        <TouchControls interior={false} canEnter onEnter={() => setInterior(nearDoor)} onExit={() => {}} />
+      {interior && <InteriorCatalog door={interior} onHouse={houseSnapshot.set} />}
+      {entered && <InteriorPanelHost ctx={shellCtx} />}
+      {entered && <PlayerChat enterFocuses={target === null} />}
+      {entered && <HintStack place={place} target={target} settled={hintsSettled} />}
+      {entered && layoutError && <div className="app__notice" role="alert">{layoutError}</div>}
+      {entered && arrivalError && place.kind === "plaza" && <div className="app__notice" role="alert">{arrivalError}</div>}
+      {entered && layout && !layout.plaza && place.kind === "plaza" && (
+        <div className="app__notice" role="status" data-testid="arrival-missing">
+          Arrival square not exported yet (no runtime_layout.plaza in /slice/manifest.json): showing the legacy district.
+        </div>
       )}
-      {interior && (
-        <TouchControls
-          interior
-          canEnter={false}
-          onEnter={() => {}}
-          onExit={() => {
-            setInterior(null);
-            setTeleport({ x: interior.position[0], z: interior.position[2] + 2.8, key: Date.now() });
-          }}
-        />
-      )}
-
-      {entered && !interior && <Hud session={session ?? { userId: "", displayName: "", role: "player", demo: true }} nearby={nearby} seals={quest?.seals.length ?? 0} />}
+      {/* CT4: always mounted; on a desktop mouse the pad shows only near a door (TouchControls.css). */}
+      {entered && <TouchControls interior={target?.kind === "exit"} canEnter={!!target && target.kind !== "exit"}
+        onEnter={() => target && activate(target)} onExit={() => target && activate(target)} />}
+      {entered && !interior && <Hud
+          session={session ?? NO_SESSION}
+          nearby={place.kind === "plaza" ? nearby : null}
+          seals={quest?.seals.length ?? 0}
+          questOpen={questOpen}
+          onToggleQuest={() => setQuestPinned(!questOpen)}
+        />}
 
       <div className="app__side" style={!entered || interior ? { display: "none" } : undefined}>
-        <div className="app__status" role="status">
-          {status === "connected" ? "demo API connected" : status === "connecting" ? "connecting…" : "API offline — blockout only"}
-          {" · fps "}{fps || "—"}{" · presence "}
-          {presence === "live" ? `live (${players.length})` : presence}
-        </div>
-        {showAuth && (
-          <AuthPanel
-            onSignedIn={(s) => {
-              setSession(s);
-              setShowAuth(false);
-              void api.progress(s.userId).then((r) => setQuest(r.progress));
-            }}
-          />
+        {debug ? (
+          <div className="app__status" role="status" data-testid="debug-status">
+            {status === "connected" ? "demo API connected" : status === "connecting" ? "connecting…" : "API offline — blockout only"}
+            {" · fps "}{fps || "—"}{" · presence "}
+            {presence === "live" ? `live (${players.length})` : presence}
+          </div>
+        ) : (
+          // Players only hear about the connection when something is wrong.
+          status === "offline" && <div className="app__status" role="status">API offline — blockout only</div>
         )}
-        {!showAuth && session && (
-          <button type="button" className="app__account" onClick={() => setShowAuth(true)}>
-            {session.verified ? `Verified: ${session.displayName}` : "Sign in with email"}
-          </button>
-        )}
-        {!showMerchant && propertyId && session && (
-          <button type="button" className="app__account" onClick={() => setShowMerchant(true)}>
-            Merchant workspace
-          </button>
-        )}
-        {showMerchant && propertyId && session && (
-          <MerchantPanel merchantId="mer_1" propertyId={propertyId} />
-        )}
-        {session && !showOrders && (
-          <button type="button" className="app__account" onClick={() => setShowOrders(true)}>
-            Orders
-          </button>
-        )}
-        {showOrders && session && <CheckoutPanel userId={session.userId} />}
-        {entered && !showGuide && (
-          <button type="button" className="app__account" onClick={() => setShowGuide(true)}>
-            District guide (G)
-          </button>
-        )}
-        {entered && showGuide && <GuidePanel markers={markers} onClose={() => setShowGuide(false)} />}
         {authError && <div className="app__notice">{authError}</div>}
-        {!showAds && session && (
-          <button type="button" className="app__account" onClick={() => setShowAds(true)}>
-            Advertising
-          </button>
-        )}
-        {showAds && session && <AdsPanel merchantId="mer_1" />}
-        {session?.role === "admin" && <AdminPanel userId={session.userId} />}
-        {propertyId && <AgentPanel propertyId={propertyId} agentName="Mira" />}
+        <PanelHost registry={sidePanels} ctx={shellCtx} />
+        {/* G toggles the guide even while the menu is closed. */}
+        {entered && showGuide && <GuidePanel markers={districtMarkers} onClose={() => setShowGuide(false)} />}
       </div>
     </div>
   );

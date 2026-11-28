@@ -1,0 +1,49 @@
+/* CT5 control settings panel. Inherits .panel tokens from styles.css. */
+.control-settings__title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: 700;
+}
+
+.control-settings__group {
+  margin: 0.5rem 0 0;
+  padding: 0.4rem 0.6rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+}
+
+.control-settings__group legend {
+  padding: 0 0.25rem;
+  font-weight: 600;
+}
+
+.control-settings__choice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+}
+
+.control-settings__hint {
+  flex-basis: 100%;
+  padding-left: 1.6rem;
+  opacity: 0.8;
+}
+
+.control-settings__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.control-settings__row label {
+  grid-column: 1 / -1;
+}
+
+.control-settings__row input[type="range"] {
+  width: 100%;
+  min-height: 44px;
+}

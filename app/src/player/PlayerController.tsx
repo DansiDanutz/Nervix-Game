@@ -2,89 +2,109 @@ import { useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Marker } from "../scene/CityScene";
-import { touch } from "../net/input";
+import { touch, touchPad, withTouch } from "../net/input";
+import { useDragLook } from "../input/useDragLook";
+import { useHeldKeys } from "../input/useHeldKeys";
+import { bindPointerLockLook } from "../input/pointerLockLook";
+import { driveFrom, frameDelta, groundSpeed, turnYaw } from "../input/movement";
+import { scaleLook } from "../ui/controlSettingsModel";
+import { controlSettingsStore, useControlSettings, useReducedMotion } from "../ui/useControlSettings";
+import { LocalAvatar } from "./LocalAvatar";
+import { applyLook, moveVector, pulledInCamera, resolveMove, VIEW, type Box, type Look } from "./cameraRig";
+import { playerState } from "./playerState";
 
-const SPEED = 4.2;
-const RUN_MULTIPLIER = 1.7;
 const INTERACT_DISTANCE = 2.6;
+const PLAYER_RADIUS = 0.35;
+const LOOK_SENSITIVITY = 0.005;
 
+export interface PlayerControllerProps {
+  markers: Marker[];
+  onNearby: (m: Marker | null) => void;
+  onMove?: (x: number, z: number) => void;
+  teleportTo?: { x: number; z: number; key: number; yaw?: number } | null;
+  bounds?: number | Box;
+  obstacles?: Box[];
+  onPosition?: (x: number, z: number) => void;
+  interior?: boolean;
+  spawn?: { x: number; z: number; yaw?: number };
+  /** The player's avatar preset (null: default). */
+  preset?: string | null;
+  /** Boxes the camera boom must not pass through (collision boxes, room walls); the scene supplies them. */
+  cameraBlockers?: readonly Box[];
+}
+
+/** Look delta (px) after the player's sensitivity and invert-Y settings. */
+function settledLook(look: Look, dx: number, dy: number): Look {
+  const d = scaleLook(controlSettingsStore.get(), dx, dy);
+  return applyLook(look, d.dx, d.dy, LOOK_SENSITIVITY);
+}
+
+/** Third-person player: WASD/arrows move, drag with the mouse to look, Shift runs, Q/R turn (docs/CONTROLS.md). */
 export function PlayerController({
   markers,
   onNearby,
   onMove,
   teleportTo,
   bounds = 38,
+  obstacles = [],
   onPosition,
   interior = false,
-}: {
-  markers: Marker[];
-  onNearby: (m: Marker | null) => void;
-  onMove?: (x: number, z: number) => void;
-  teleportTo?: { x: number; z: number; key: number } | null;
-  bounds?: number;
-  onPosition?: (x: number, z: number) => void;
-  interior?: boolean;
-}) {
+  spawn = { x: 3.2, z: 7.5 },
+  preset = null,
+  cameraBlockers = obstacles,
+}: PlayerControllerProps) {
   const group = useRef<THREE.Group>(null);
-  const keys = useRef<Record<string, boolean>>({});
-  const { camera } = useThree();
+  const look = useRef<Look>({ yaw: spawn.yaw ?? 0, pitch: interior ? VIEW.interior.pitch : VIEW.exterior.pitch });
+  // Exposed for tests: the arrival view must be pedestrian height and level.
+  if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__nervixView = { exterior: VIEW.exterior, interior: VIEW.interior };
+  const { camera, gl } = useThree();
   const [nearbyId, setNearbyId] = useState<string | null>(null);
   const lastSent = useRef(0);
-  const moved = useRef(false);
   const appliedTeleport = useRef(0);
   const lastPos = useRef(0);
+  const snapped = useRef(false);
+  const onNearbyRef = useRef(onNearby);
+  onNearbyRef.current = onNearby;
 
+  // A nearby prompt belongs to this place only: clear it when the place (canvas) goes away.
+  useEffect(() => () => onNearbyRef.current(null), []);
+
+  // Movement keys (one typing filter, cleared on blur, hidden tab and Meta) and drag-to-orbit.
+  const keys = useHeldKeys();
+  useDragLook(gl.domElement, (dx, dy) => {
+    look.current = settledLook(look.current, dx, dy);
+  });
+  // CT5: optional pointer lock (a local preference), camera boom pull-in and reduced motion.
+  const settings = useControlSettings();
+  const reducedMotion = useReducedMotion();
+  const boom = useRef(Number.NaN);
   useEffect(() => {
-    const typing = (t: EventTarget | null) =>
-      t instanceof HTMLElement && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
-    const down = (e: KeyboardEvent) => {
-      if (typing(e.target)) return;
-      keys.current[e.key.toLowerCase()] = true;
-    };
-    const up = (e: KeyboardEvent) => {
-      keys.current[e.key.toLowerCase()] = false;
-    };
-    const reset = () => {
-      keys.current = {};
-    };
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    window.addEventListener("blur", reset);
-    return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-      window.removeEventListener("blur", reset);
-    };
-  }, []);
+    if (!settings.pointerLock) return undefined;
+    return bindPointerLockLook(gl.domElement, document, (dx, dy) => {
+      look.current = settledLook(look.current, dx, dy);
+    });
+  }, [gl, settings.pointerLock]);
 
-  useFrame((_, delta) => {
-    if (teleportTo && teleportTo.key !== appliedTeleport.current && group.current) {
-      appliedTeleport.current = teleportTo.key;
-      group.current.position.set(teleportTo.x, 0, teleportTo.z);
-      moved.current = false;
-    }
+  useFrame((_, rawDelta) => {
     const g = group.current;
     if (!g) return;
-    const k = keys.current;
-    const forward = (k["w"] || k["arrowup"] || touch.forward ? 1 : 0) - (k["s"] || k["arrowdown"] || touch.back ? 1 : 0);
-    const strafe = (k["d"] || k["arrowright"] || touch.right ? 1 : 0) - (k["a"] || k["arrowleft"] || touch.left ? 1 : 0);
-    const speed = SPEED * (k["shift"] ? RUN_MULTIPLIER : 1) * Math.min(delta, 0.05);
+    const delta = frameDelta(rawDelta);
+    if (teleportTo && teleportTo.key !== appliedTeleport.current) {
+      appliedTeleport.current = teleportTo.key;
+      g.position.set(teleportTo.x, 0, teleportTo.z);
+      if (teleportTo.yaw !== undefined) look.current = { ...look.current, yaw: teleportTo.yaw };
+    }
+    const drive = withTouch(driveFrom(keys.current, touch), touchPad.get());
+    if (drive.turn !== 0) look.current = { ...look.current, yaw: turnYaw(look.current.yaw, drive.turn, delta) };
+    const dir = moveVector(drive.forward, drive.strafe, look.current.yaw);
 
-    if (forward !== 0 || strafe !== 0) {
-      moved.current = true;
-      // Camera-relative, no yaw feedback: W moves away from the camera,
-      // D moves to screen-right.
-      let fx = g.position.x - camera.position.x;
-      let fz = g.position.z - camera.position.z;
-      const flen = Math.hypot(fx, fz) || 1;
-    fx /= flen;
-      fz /= flen;
-      const dx = fx * forward + -fz * strafe;
-      const dz = fz * forward + fx * strafe;
-      const len = Math.hypot(dx, dz) || 1;
-      g.position.x = THREE.MathUtils.clamp(g.position.x + (dx / len) * speed, -bounds, bounds);
-      g.position.z = THREE.MathUtils.clamp(g.position.z + (dz / len) * speed, -bounds, bounds);
-      g.rotation.y = Math.atan2(dx, dz);
+    if (dir.x !== 0 || dir.z !== 0) {
+      const step = groundSpeed(drive.run) * delta;
+      const from = { x: g.position.x, z: g.position.z };
+      const next = resolveMove(from, { x: from.x + dir.x * step, z: from.z + dir.z * step }, obstacles, PLAYER_RADIUS, bounds);
+      g.position.x = next.x;
+      g.position.z = next.z;
+      // No g.rotation.y here: the skinned avatar turns itself toward travel (LocalAvatar).
       const now = performance.now();
       if (onMove && now - lastSent.current > 150) {
         lastSent.current = now;
@@ -92,35 +112,37 @@ export function PlayerController({
       }
     }
 
+    // Read-only player state for presence and the scene: the look yaw (forward = (-sin, -cos)).
+    playerState.publish({ x: g.position.x, z: g.position.z, yaw: look.current.yaw, tMs: performance.now() });
+
+    // Over the right shoulder so the avatar never covers the centre of the view; pulled in before a wall.
+    const frame = pulledInCamera({
+      at: { x: g.position.x, z: g.position.z }, look: look.current, view: interior ? VIEW.interior : VIEW.exterior,
+      blockers: cameraBlockers, boom: boom.current, delta, reducedMotion,
+    });
+    boom.current = frame.boom;
+    const target = new THREE.Vector3(frame.camera.x, frame.camera.y, frame.camera.z);
+    // The first frame is already the settled arrival view: no swoop from a default camera.
+    if (!snapped.current) {
+      camera.position.copy(target);
+      snapped.current = true;
+    } else {
+      camera.position.lerp(target, frame.alpha);
+    }
+    // Look past the player's shoulder toward where they face, at eye height.
+    camera.lookAt(frame.target.x, frame.target.y, frame.target.z);
+
     if (import.meta.env.DEV) {
       (window as unknown as Record<string, unknown>).__nervixPlayer = {
-        x: +g.position.x.toFixed(2), z: +g.position.z.toFixed(2),
-        cx: +camera.position.x.toFixed(2), cz: +camera.position.z.toFixed(2),
+        x: +g.position.x.toFixed(2), z: +g.position.z.toFixed(2), yaw: +look.current.yaw.toFixed(3),
+        cx: +camera.position.x.toFixed(2), cy: +camera.position.y.toFixed(2), cz: +camera.position.z.toFixed(2),
+        lookY: +camera.getWorldDirection(new THREE.Vector3()).y.toFixed(3),
       };
     }
     const nowPos = performance.now();
-    if (onPosition && nowPos - lastPos.current > 200) {
+    if (onPosition && nowPos - lastPos.current > 120) {
       lastPos.current = nowPos;
       onPosition(g.position.x, g.position.z);
-    }
-
-    if (interior) {
-      // Eye-level interior camera, behind the avatar, after movement.
-      const back = 4.2;
-      const target = new THREE.Vector3(g.position.x, 1.65, g.position.z + back);
-      camera.position.lerp(target, 1 - Math.pow(0.0001, delta));
-      camera.lookAt(g.position.x, 1.3, g.position.z - 1.2);
-      return;
-    }
-    const dist = interior ? 4.4 : 9;
-    const height = interior ? 2.7 : 5.2;
-    const target = new THREE.Vector3(g.position.x, g.position.y + height, g.position.z + dist);
-    // Establishing shot holds a fixed offset until the player moves.
-    camera.position.lerp(target, 1 - Math.pow(moved.current ? 0.001 : 0.02, delta));
-    if (moved.current) {
-      camera.lookAt(g.position.x, g.position.y + 1.2, g.position.z);
-    } else {
-      camera.lookAt(0, 1.0, 0);
     }
 
     let best: Marker | null = null;
@@ -139,21 +161,8 @@ export function PlayerController({
   });
 
   return (
-    <group ref={group} name="player" position={[3.2, 0, 7.5]}>
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <capsuleGeometry args={[0.35, 0.9, 6, 12]} />
-        <meshStandardMaterial color="#3f6f8f" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 1.62, 0]} castShadow>
-        <sphereGeometry args={[0.26, 16, 16]} />
-        <meshStandardMaterial color="#e7b98f" roughness={0.6} />
-      </mesh>
-      {[-0.09, 0.09].map((x) => (
-        <mesh key={x} position={[x, 1.66, 0.22]}>
-          <sphereGeometry args={[0.035, 8, 8]} />
-          <meshStandardMaterial color="#2b2118" />
-        </mesh>
-      ))}
+    <group ref={group} name="player" position={[spawn.x, 0, spawn.z]}>
+      <LocalAvatar preset={preset} spawnYaw={spawn.yaw ?? 0} />
     </group>
   );
 }

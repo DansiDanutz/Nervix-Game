@@ -1,0 +1,39 @@
+{
+  "id": "A01",
+  "source": "blender/scripts/arrival_camera.py (CAM_A01 in nervix_city_slice_01.blend)",
+  "convention": "runtime = (blender_x, blender_z, -blender_y); fov is vertical degrees",
+  "width": 1672,
+  "height": 941,
+  "position": [
+    15.6,
+    6.0,
+    1.2
+  ],
+  "target": [
+    -14.094,
+    3.385,
+    4.583
+  ],
+  "up": [
+    0,
+    1,
+    0
+  ],
+  "fov": 66.0,
+  "near": 0.1,
+  "far": 1200,
+  "yaw_deg": 96.5,
+  "pitch_deg": -5.001,
+  "blender": {
+    "eye": [
+      15.6,
+      -1.2,
+      6.0
+    ],
+    "target": [
+      -14.094,
+      -4.583,
+      3.385
+    ]
+  }
+}

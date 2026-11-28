@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../net/api";
-import { interiorFor, type HouseDoor } from "../scene/HouseDoors";
+import type { HouseDoor } from "../scene/HouseDoors";
+
+/** Neutral look: per-merchant interiors are no longer hard-coded (identity loads from the server). */
+const interiorFor = (door: HouseDoor) => ({ colour: "#26333d", accent: door.trim, blurb: "A merchant interior." });
 
 interface Builder {
   id: string;
@@ -12,7 +15,7 @@ interface Builder {
 export function InteriorPanel({ door, onExit }: { door: HouseDoor; onExit: () => void }) {
   const [builder, setBuilder] = useState<Builder | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const look = interiorFor(door.id);
+  const look = interiorFor(door);
 
   useEffect(() => {
     let alive = true;

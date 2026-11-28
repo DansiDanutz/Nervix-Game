@@ -1,0 +1,23 @@
+.product-card {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 252, 245, 0.96);
+  font-size: 12px;
+}
+.product-card__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.product-card__category { font-size: 11px; opacity: 0.75; }
+.product-card__price { margin: 4px 0; font-weight: 600; }
+.product-card__description { margin: 4px 0; }
+.product-card__note { margin: 6px 0; font-size: 11px; opacity: 0.85; }
+.product-card__badge { padding: 1px 5px; border-radius: 3px; background: rgba(20, 16, 12, 0.72); color: #f3ead8; }
+.product-card__close { font: inherit; }
+.catalog-overlay__view { all: unset; cursor: pointer; text-decoration: underline dotted; }
+.catalog-overlay__view:focus-visible { outline: 2px solid #b08a2e; outline-offset: 2px; }
+.house-listings { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.house-listings__item { border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 4px; padding: 4px 6px; }
+.house-listings__item.is-inactive { opacity: 0.6; }
+.house-listings__item summary { cursor: pointer; font-size: 11px; }
+.house-listings__actions { display: flex; gap: 6px; }
+.catalog-overlay li.is-featured .catalog-overlay__view::before { content: "★ "; color: #b08a2e; }
