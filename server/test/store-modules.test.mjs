@@ -15,7 +15,7 @@ test("no method name is defined by two store modules", () => {
       seen.set(name, mod);
     }
   }
-  // 58 domain methods plus close(), which stays on the class.
-  assert.equal(seen.size, 58);
+  // 60 domain methods (58 from F0 plus C5 getAvatar and setAvatarPreset) plus close(), which stays on the class.
+  assert.equal(seen.size, 60);
   assert.ok(!seen.has("close"));
 });

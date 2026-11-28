@@ -159,6 +159,38 @@
           "district": "merchant-quarter",
           "template": "merchant_house",
           "address": "slot-13"
+        },
+        {
+          "id": "prop_demo_lantern",
+          "ownerId": "usr_demo_lantern",
+          "slotId": "slot-15",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-15"
+        },
+        {
+          "id": "prop_demo_kettle",
+          "ownerId": "usr_demo_kettle",
+          "slotId": "slot-16",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-16"
+        },
+        {
+          "id": "prop_demo_juniper",
+          "ownerId": "usr_demo_juniper",
+          "slotId": "slot-17",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-17"
+        },
+        {
+          "id": "prop_demo_atlas",
+          "ownerId": "usr_demo_atlas",
+          "slotId": "slot-18",
+          "district": "merchant-quarter",
+          "template": "merchant_house",
+          "address": "slot-18"
         }
       ]
     }
@@ -1414,8 +1446,32 @@
     "body": {
       "merchants": [
         {
+          "id": "mer_demo_atlas",
+          "name": "Atlas Map Room (demo)",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
+          "id": "mer_demo_kettle",
+          "name": "Copper Kettle Tea (demo)",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
           "id": "mer_dangg",
           "name": "DanGG",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
+          "id": "mer_demo_juniper",
+          "name": "Juniper Florist (demo)",
+          "businessType": "merchant",
+          "suspended": false
+        },
+        {
+          "id": "mer_demo_lantern",
+          "name": "Lantern Books (demo)",
           "businessType": "merchant",
           "suspended": false
         },

@@ -66,7 +66,10 @@ export const houseMethods = Object.freeze({
 
   /**
    * One house and its catalogue: the builder bound to the house's merchant
-   * (unique since 017). Listings include inactive ones, arranged (P1); routes
+   * (unique since 017). No owner check is needed here: migration 017's
+   * composite key properties_merchant_owner_fkey, (merchant_id, owner_id) ->
+   * merchants (id, owner_id), already guarantees the merchant is the owner's,
+   * the rule `listWorldHouses` restates in its join. Listings include inactive ones, arranged (P1); routes
    * show visitors only `visibleListings`.
    */
   async getHouse(propertyId) {
@@ -147,4 +150,26 @@ export async function bindBuilderMerchant(store, builderId, merchantId) {
     if (error.code === "23505") return false; // a concurrent bind won
     throw error;
   }
+}
+
+/** Upper bound on one directory read: well above the district's plot count, so the public query stays bounded. */
+export const WORLD_HOUSES_LIMIT = 200;
+
+/**
+ * B3 world directory: published houses on a plot, bound to a verified,
+ * non-suspended merchant with the house's owner, in plot order (at most
+ * WORLD_HOUSES_LIMIT). Public fields only; owner and merchant ids never leave the server.
+ */
+export async function listWorldHouses(store) {
+  const { rows } = await store.pool.query(
+    `SELECT p.id, p.plot_id, p.template, p.palette, m.name
+       FROM properties p
+       JOIN plots pl ON pl.id = p.plot_id
+       JOIN merchants m ON m.id = p.merchant_id AND m.owner_id = p.owner_id
+      WHERE p.published AND m.verified_at IS NOT NULL AND NOT m.suspended
+      ORDER BY pl.sort_order, pl.id, p.id
+      LIMIT $1`, [WORLD_HOUSES_LIMIT]);
+  return Object.freeze(rows.map((r) => Object.freeze({
+    plotId: r.plot_id, propertyId: r.id, merchantName: r.name, verified: true, theme: r.template, accent: r.palette,
+  })));
 }

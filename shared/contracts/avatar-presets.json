@@ -2,9 +2,121 @@
   "contract": "avatar-presets",
   "version": 1,
   "frozen": true,
-  "note": "Avatar appearance presets by id. Values mirror app/src/player/avatarShape.ts (LOCAL_PALETTE, REMOTE_PALETTE). Players store a preset id, never raw colours.",
+  "note": "Avatar appearance presets by id, the single source for the K1 character kit (app/public/kits/k1/manifest.json presets) and the server (server/src/avatar.mjs). Players store a preset id, never raw colours. teal and terracotta keep the six avatarShape.ts slots (LOCAL_PALETTE, REMOTE_PALETTE) verbatim; leather, accent and parts are the K1 kit slots. Additive changes only.",
   "presets": [
-    { "id": "teal", "label": "Teal tunic", "palette": { "tunic": "#2f7a76", "trim": "#c9993f", "legs": "#5a2a44", "skin": "#e2b08a", "hair": "#3b2418", "eyes": "#2b2118" } },
-    { "id": "terracotta", "label": "Terracotta tunic", "palette": { "tunic": "#b5651d", "trim": "#e0c07a", "legs": "#4a3328", "skin": "#f0c9a0", "hair": "#5b3a22", "eyes": "#2b2118" } }
+    {
+      "id": "teal",
+      "label": "Teal tunic",
+      "palette": {
+        "tunic": "#2f7a76",
+        "trim": "#c9993f",
+        "legs": "#5a2a44",
+        "skin": "#e2b08a",
+        "hair": "#3b2418",
+        "eyes": "#2b2118",
+        "leather": "#6b4128",
+        "accent": "#e8d9b8"
+      },
+      "parts": [
+        "tunic_knee",
+        "hair_curly",
+        "satchel"
+      ]
+    },
+    {
+      "id": "terracotta",
+      "label": "Terracotta tunic",
+      "palette": {
+        "tunic": "#b5651d",
+        "trim": "#e0c07a",
+        "legs": "#4a3328",
+        "skin": "#f0c9a0",
+        "hair": "#5b3a22",
+        "eyes": "#2b2118",
+        "leather": "#5a3420",
+        "accent": "#3f6f6a"
+      },
+      "parts": [
+        "tunic_knee",
+        "hair_bob",
+        "shawl"
+      ]
+    },
+    {
+      "id": "burgundy",
+      "label": "Burgundy coat",
+      "palette": {
+        "tunic": "#7a2636",
+        "trim": "#c9993f",
+        "legs": "#e6d5b8",
+        "skin": "#d9a27c",
+        "hair": "#3a2219",
+        "eyes": "#2b2118",
+        "leather": "#6b4128",
+        "accent": "#7a2636"
+      },
+      "parts": [
+        "robe_long",
+        "hair_bob",
+        "satchel"
+      ]
+    },
+    {
+      "id": "linen",
+      "label": "Linen and teal apron",
+      "palette": {
+        "tunic": "#e6d6b8",
+        "trim": "#c9a96a",
+        "legs": "#b48e62",
+        "skin": "#c98e68",
+        "hair": "#3b2418",
+        "eyes": "#2b2118",
+        "leather": "#6b4128",
+        "accent": "#3e6c68"
+      },
+      "parts": [
+        "tunic_knee",
+        "hair_curly",
+        "apron"
+      ]
+    },
+    {
+      "id": "traveller",
+      "label": "Sand tunic and blue shawl",
+      "palette": {
+        "tunic": "#d8c095",
+        "trim": "#8fa3a0",
+        "legs": "#6e5a3e",
+        "skin": "#b97b55",
+        "hair": "#2e1c14",
+        "eyes": "#2b2118",
+        "leather": "#6e4127",
+        "accent": "#4b6f76"
+      },
+      "parts": [
+        "tunic_knee",
+        "hair_curly",
+        "shawl",
+        "satchel"
+      ]
+    },
+    {
+      "id": "sage",
+      "label": "Teal robe",
+      "palette": {
+        "tunic": "#3d7f7a",
+        "trim": "#e3cf9e",
+        "legs": "#efe3c8",
+        "skin": "#9a6444",
+        "hair": "#22150f",
+        "eyes": "#1f1813",
+        "leather": "#5a3420",
+        "accent": "#efe3c8"
+      },
+      "parts": [
+        "robe_long",
+        "hair_bun"
+      ]
+    }
   ]
 }

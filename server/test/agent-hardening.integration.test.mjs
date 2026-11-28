@@ -22,6 +22,9 @@ import { startServer } from "./helpers/server.mjs";
 const PORT_SLOT = 4;
 const RACE_SESSION = "sess_s3h_race";
 const KIT_PRICE = 2500;
+// P5: the agent sells builder_offerings; a listing id is its sku.
+const DANGG_KIT = "off_s3h_kit_dangg";
+const UNVERIFIED_THING = "off_s3h_thing";
 
 const available = pgAvailable();
 let db;
@@ -39,12 +42,14 @@ const orderCount = async () => (await pool.query("SELECT count(*)::int AS n FROM
 const usage = async (propertyId) =>
   (await pool.query("SELECT coalesce(sum(requests), 0)::int AS n FROM agent_usage WHERE property_id = $1", [propertyId])).rows[0].n;
 
-const tamperedCart = { cart: { lines: [{ sku: "kit", name: "Free", unitAmountMinor: 1, quantity: 2, lineTotalMinor: 2, currency: "EUR" }], totalMinor: 2, currency: "EUR" } };
+const tamperedCart = { cart: { lines: [{ sku: DANGG_KIT, name: "Free", unitAmountMinor: 1, quantity: 2, lineTotalMinor: 2, currency: "EUR" }], totalMinor: 2, currency: "EUR" } };
 
 async function seed(q) {
-  await q(`INSERT INTO products (merchant_id, sku, name, unit_amount_minor, currency, fulfillment, active) VALUES
-             ('mer_test', 'kit', 'Builder kit', ${KIT_PRICE}, 'EUR', 'pickup', true),
-             ('mer_unverified', 'thing', 'Thing', 100, 'EUR', 'pickup', true)`);
+  await q(`INSERT INTO builders (id, owner_id, name, merchant_id)
+           VALUES ('bld_s3h_unverified', 'usr_unverified', 'Unverified Shop', 'mer_unverified')`);
+  await q(`INSERT INTO builder_offerings (id, builder_id, name, price_minor, currency) VALUES
+             ('off_s3h_kit_test', 'bld_test', 'Builder kit', ${KIT_PRICE}, 'EUR'),
+             ($1, 'bld_s3h_unverified', 'Thing', 100, 'EUR')`, [UNVERIFIED_THING]);
   const checkout = "ARRAY['search_catalog', 'prepare_cart', 'create_checkout', 'request_support']";
   await q(`INSERT INTO agent_configs (property_id, name, tone, languages, allowed_actions)
            VALUES ('prop_dangg', 'Ava', 'warm', ARRAY['en'], ${checkout}),
@@ -84,8 +89,8 @@ it("the reported exploit is refused: a client-sent action never runs", async () 
 
 it("a tampered cart is proposed and charged at the catalogue total", async () => {
   // prop_dangg has an agent config that allows checkout; give mer_dangg the kit too.
-  await pool.query(`INSERT INTO products (merchant_id, sku, name, unit_amount_minor, currency, fulfillment, active)
-                    VALUES ('mer_dangg', 'kit', 'Salon kit', $1, 'EUR', 'pickup', true)`, [KIT_PRICE]);
+  await pool.query(`INSERT INTO builder_offerings (id, builder_id, name, price_minor, currency)
+                    VALUES ($1, 'bld_dangg', 'Salon kit', $2, 'EUR')`, [DANGG_KIT, KIT_PRICE]);
   const proposed = await call("POST", "/agent/prop_dangg/message", "visitor", { message: "buy two kits", tool: "create_checkout", args: tamperedCart });
   assert.equal(proposed.status, 200);
   const [action] = proposed.body.actions;
@@ -108,7 +113,7 @@ it("a tampered cart is proposed and charged at the catalogue total", async () =>
 });
 
 it("another user cannot confirm someone else's proposal", async () => {
-  const proposed = await call("POST", "/agent/prop_dangg/message", "visitor", { message: "buy a kit", tool: "create_checkout", args: { items: [{ sku: "kit", quantity: 1 }] } });
+  const proposed = await call("POST", "/agent/prop_dangg/message", "visitor", { message: "buy a kit", tool: "create_checkout", args: { items: [{ sku: DANGG_KIT, quantity: 1 }] } });
   const before = await orderCount();
   const stolen = await call("POST", "/agent/prop_dangg/confirm", "sub", { proposalId: proposed.body.actions[0].proposalId });
   assert.equal(stolen.status, 400);
@@ -118,7 +123,7 @@ it("another user cannot confirm someone else's proposal", async () => {
 
 it("an unverified merchant cannot take an agent checkout", async () => {
   const before = await orderCount();
-  const res = await call("POST", "/agent/prop_unverified/message", "visitor", { message: "buy", tool: "create_checkout", args: { items: [{ sku: "thing", quantity: 1 }] } });
+  const res = await call("POST", "/agent/prop_unverified/message", "visitor", { message: "buy", tool: "create_checkout", args: { items: [{ sku: UNVERIFIED_THING, quantity: 1 }] } });
   assert.equal(res.status, 400);
   assert.equal(res.body.error, "merchant_unavailable");
   assert.equal(await orderCount(), before);
@@ -126,7 +131,7 @@ it("an unverified merchant cannot take an agent checkout", async () => {
 
 it("a property without an agent config cannot check out", async () => {
   const before = await orderCount();
-  const res = await call("POST", "/agent/prop_test/message", "visitor", { message: "buy", tool: "create_checkout", args: { items: [{ sku: "kit", quantity: 1 }] } });
+  const res = await call("POST", "/agent/prop_test/message", "visitor", { message: "buy", tool: "create_checkout", args: { items: [{ sku: "off_s3h_kit_test", quantity: 1 }] } });
   assert.equal(res.status, 200);
   assert.equal(res.body.denied, "create_checkout");
   assert.deepEqual(res.body.actions, []);

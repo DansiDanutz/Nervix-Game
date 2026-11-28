@@ -1,4 +1,4 @@
-/** The F0 route registry: same 61 keys, one owner module per key, deterministic dispatch. */
+/** The F0 route registry: same 64 keys (61 from F0, C5 GET and PUT /me/avatar, B3 GET /world/houses), one owner module per key, deterministic dispatch. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -9,7 +9,7 @@ const KEYS = JSON.parse(readFileSync(new URL("./snapshots/route-keys.json", impo
 const ctx = createContext({ env: {} });
 const routes = createRoutes(ctx);
 
-test("the registry exposes exactly the 61 snapshot keys", () => {
+test("the registry exposes exactly the 64 snapshot keys", () => {
   assert.deepEqual(Object.keys(routes).sort(), KEYS);
 });
 
@@ -21,7 +21,7 @@ test("every key belongs to exactly one route module", () => {
       owners.set(key, name);
     }
   }
-  assert.equal(owners.size, 61);
+  assert.equal(owners.size, 64);
 });
 
 test("the registry names the planned route modules", () => {

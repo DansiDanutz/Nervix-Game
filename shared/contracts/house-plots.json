@@ -1,0 +1,16 @@
+{
+  "contract": "house-plots",
+  "version": 1,
+  "frozen": true,
+  "note": "B3 plot-id contract. The seed puts houses on these plots.id rows (slot-12/13 slice fixtures, slot-14 tests, slot-15..18 DEMO directory). B2 must export one manifest door plot runtime_layout.plots[].id per street plot with exactly these ids, or the client join places no house. salon_plots are inside the OpenPoker salon and must never be exported as street doors. Add plots in a new version; never rename or reuse an id.",
+  "plots": [
+    { "id": "slot-12" },
+    { "id": "slot-13" },
+    { "id": "slot-14" },
+    { "id": "slot-15" },
+    { "id": "slot-16" },
+    { "id": "slot-17" },
+    { "id": "slot-18" }
+  ],
+  "salon_plots": ["slot-11"]
+}

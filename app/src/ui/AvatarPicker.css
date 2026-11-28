@@ -1,0 +1,54 @@
+/* AvatarPicker (C5). Uses the shared panel tokens from styles.css with local fallbacks. */
+.avatar-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.panel .avatar-picker__option {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.45rem;
+  background: transparent;
+  color: var(--ink, #2b2118);
+  border: 1px solid rgba(43, 33, 24, 0.25);
+  border-radius: 6px;
+  text-align: left;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.panel .avatar-picker__option[aria-checked="true"] {
+  border-color: var(--teal, #2f6f6a);
+  box-shadow: 0 0 0 2px var(--teal, #2f6f6a) inset;
+}
+
+.panel .avatar-picker__option:focus-visible {
+  outline: 2px solid var(--plum, #5b3a5e);
+  outline-offset: 1px;
+}
+
+.avatar-picker__swatch {
+  display: inline-flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 1.6rem;
+  padding: 0.2rem 0.15rem 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.avatar-picker__swatch span {
+  flex: 1 1 0;
+}
+
+.avatar-picker__swatch span:nth-child(2) {
+  flex: 0 0 0.18rem;
+}
+
+.avatar-picker__label {
+  line-height: 1.15;
+}

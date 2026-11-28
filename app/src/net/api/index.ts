@@ -8,10 +8,14 @@ import { adminEndpoints } from "./admin";
 import { houseEndpoints } from "./houses";
 import { adsEndpoints } from "./ads";
 import { orderEndpoints } from "./orders";
+import { avatarEndpoints } from "./avatar";
+import { worldEndpoints } from "./world";
 
 export { ApiError, BASE, type Call } from "./http";
 export type { Me } from "./auth";
+export { AVATAR_PRESETS, DEFAULT_PRESET, isAvatarPresetId, type AvatarPreset, type AvatarPalette, type MyAvatar } from "./avatar";
 export type * from "./types";
+export { parseWorldHouses, type WorldHouse } from "./world";
 
 export const api = Object.freeze({
   ...authEndpoints(call),
@@ -22,4 +26,6 @@ export const api = Object.freeze({
   ...houseEndpoints(call),
   ...adsEndpoints(call),
   ...orderEndpoints(call),
+  ...avatarEndpoints(call),
+  ...worldEndpoints(call),
 });

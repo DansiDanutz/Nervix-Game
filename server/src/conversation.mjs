@@ -10,7 +10,7 @@
 
 import { randomUUID } from "node:crypto";
 import { TOOLS, authorize, requiresConfirmation } from "./agent.mjs";
-import { createOrder, priceLines, applyPaymentEvent } from "./ledger.mjs";
+import { createOrder, priceLines, orderFulfillment, applyPaymentEvent } from "./ledger.mjs";
 import { createCheckout } from "./nervixpay.demo.mjs";
 
 /** Turns kept per conversation; older turns are dropped. */
@@ -20,7 +20,6 @@ export const SUPPORT_MAX = 20;
 /** Open proposals per conversation; older ones expire. */
 export const PROPOSALS_MAX = 10;
 const SUPPORT_MESSAGE_MAX = 2000;
-const FULFILMENTS = Object.freeze(["pickup", "delivery", "digital"]);
 
 /** A tool failure with a fixed public `code`; `message` is server-side detail. */
 export class ToolError extends Error {
@@ -67,6 +66,15 @@ function priceCart(catalog, requested) {
   return { lines, totalMinor: lines.reduce((s, l) => s + l.lineTotalMinor, 0), currency: priced.currency };
 }
 
+/** The cart's fulfilment comes from its catalogue lines (S2 rule), never from the client. */
+function cartFulfillment(catalog, cart) {
+  try {
+    return orderFulfillment(catalog, cart.lines);
+  } catch (error) {
+    throw new ToolError(error.message, "invalid_cart");
+  }
+}
+
 const requestedLines = (args) => args?.cart?.lines ?? args?.items;
 
 function requireMerchantAvailable(merchant) {
@@ -90,7 +98,7 @@ function checkout(args, ctx) {
     merchantId: ctx.merchant.id,
     items: cart.lines.map(({ sku, name, unitAmountMinor, quantity }) => ({ sku, name, unitAmountMinor, quantity })),
     currency: cart.currency,
-    fulfillment: FULFILMENTS.includes(args?.fulfillment) ? args.fulfillment : "pickup",
+    fulfillment: cartFulfillment(ctx.catalog, cart),
     terms: "demo",
   });
   ctx.orders.set(order.id, order);
@@ -149,7 +157,7 @@ function proposalArgs(tool, args, message, ctx) {
   if (tool === TOOLS.CREATE_CHECKOUT) {
     const cart = priceCart(ctx.catalog, requestedLines(args));
     requireMerchantAvailable(ctx.merchant);
-    return { cart, fulfillment: FULFILMENTS.includes(args?.fulfillment) ? args.fulfillment : "pickup" };
+    return { cart, fulfillment: cartFulfillment(ctx.catalog, cart) };
   }
   if (tool === TOOLS.REQUEST_SUPPORT) {
     requireSupportRoom(ctx.state);
@@ -198,14 +206,30 @@ export function confirmAndRun({ action, ctx }) {
 }
 
 /**
- * Run a proposal the server stored in this conversation, at most once.
- * The tool re-prices and re-authorizes at run time.
+ * A checkout is charged only what the visitor was shown: if the catalogue's
+ * total or currency for the proposed cart changed since it was proposed, the
+ * confirm is rejected with `price_changed` and the client proposes again.
+ */
+function requireUnchangedPrice(proposal, ctx) {
+  if (proposal.tool !== TOOLS.CREATE_CHECKOUT) return;
+  const shown = proposal.args.cart;
+  const now = priceCart(ctx.catalog, shown.lines);
+  if (now.totalMinor !== shown.totalMinor || now.currency !== shown.currency) {
+    throw new ToolError(`price changed from ${shown.totalMinor} ${shown.currency} to ${now.totalMinor} ${now.currency}`, "price_changed");
+  }
+}
+
+/**
+ * Run a proposal the server stored in this conversation, at most once (a
+ * rejected confirm consumes it too). The tool re-prices and re-authorizes at
+ * run time.
  */
 export function confirmProposal({ state, proposalId, ctx }) {
   if (typeof proposalId !== "string" || !proposalId) throw new ToolError("a proposal id is required", "proposal_required");
   const proposal = state.proposals.find((p) => p.id === proposalId);
   if (!proposal) throw new ToolError("no such proposal in this conversation", "proposal_not_found");
   state.proposals = state.proposals.filter((p) => p.id !== proposalId);
+  requireUnchangedPrice(proposal, ctx);
   return confirmAndRun({ action: { tool: proposal.tool, args: proposal.args, confirmationRequired: true, acknowledged: true }, ctx });
 }
 

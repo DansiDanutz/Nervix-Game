@@ -9,8 +9,9 @@
  *   config the demo default applies, minus checkout.
  * - /confirm runs only a proposal the server built and stored in the caller's
  *   own conversation, by its id. Both routes check the monthly cap and record usage.
- * - Agent checkouts are priced from the catalogue, need a verified merchant and
- *   are saved like S2 orders.
+ * - The catalogue is the house's visible builder_offerings (P5, D12), never the
+ *   legacy `products` table; agent checkouts are priced from it, need a verified
+ *   merchant and are saved like S2 orders.
  * - Errors are thrown with fixed public codes, so the dispatcher answers with a
  *   non-200 status and no internal detail.
  * - /speak is captions-only (decision D8: no robotic or system voice).
@@ -21,6 +22,7 @@ import { TOOLS, buildContext } from "../agent.mjs";
 import { checkCap, monthKey } from "../usage.mjs";
 import { normalizeState, say, confirmProposal, ToolError } from "../conversation.mjs";
 import { caller } from "./guards.mjs";
+import { agentCatalogue } from "../house-catalogue.mjs";
 
 const MESSAGE_MAX = 4000;
 /** Conversations kept in memory; the least recently used are reloaded from the store. */
@@ -34,6 +36,7 @@ const PUBLIC_MESSAGES = Object.freeze({
   tool_not_authorized: "This action is not authorized for this assistant.",
   tool_not_implemented: "This action is not available.",
   invalid_cart: "The cart could not be priced from this merchant's catalogue.",
+  price_changed: "A price changed since this was proposed. Ask again for the current price.",
   merchant_unavailable: "This merchant cannot take orders right now.",
   support_limit: "The support request limit for this conversation is reached.",
   proposal_required: "Confirm an action the assistant proposed.",
@@ -114,14 +117,15 @@ export function agentConfig(defaults, agent) {
 async function merchantTurn(ctx, { user, property }) {
   const { db } = ctx;
   const merchantId = property.merchantId ?? null;
-  const [knowledge, agent, catalog, merchant, state] = await Promise.all([
+  const [knowledge, agent, house, merchant, state] = await Promise.all([
     merchantId ? db.store.listKnowledge(merchantId, true) : [],
     db.store.getAgent(property.id),
-    merchantId ? db.store.listProducts(merchantId) : [],
+    db.store.getHouse(property.id),
     merchantId ? db.store.getMerchant(merchantId) : null,
     conversationFor(db.conversations, conversationKey(property.id, user.id), () => db.store.getConversation(property.id, user.id)),
   ]);
   const config = agentConfig(db.agent.config, agent);
+  const catalog = agentCatalogue(house, user.id);
   const turn = {
     config,
     knowledge,

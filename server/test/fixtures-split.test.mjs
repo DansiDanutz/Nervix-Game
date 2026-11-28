@@ -41,7 +41,7 @@ it("the CLI applies the fixtures to a throwaway database, idempotently", async (
       const count = async (t) => Number((await pool.query(`SELECT count(*) FROM ${t}`)).rows[0].count);
       assert.deepEqual(
         { users: await count("users"), merchants: await count("merchants"), properties: await count("properties"), builders: await count("builders"), offerings: await count("builder_offerings"), sessions: await count("sessions") },
-        { users: 6, merchants: 3, properties: 3, builders: 2, offerings: 3, sessions: 6 },
+        { users: 10, merchants: 7, properties: 7, builders: 2, offerings: 3, sessions: 6 },
       );
     } finally {
       await pool.end();

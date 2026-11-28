@@ -19,10 +19,12 @@ export class ApiError extends Error {
   }
 }
 
-export type Call = <T>(path: string, body?: unknown, method?: "PATCH") => Promise<T>;
+export type Method = "PATCH" | "PUT";
+
+export type Call = <T>(path: string, body?: unknown, method?: Method) => Promise<T>;
 
 export function createCall(fetchImpl: typeof fetch): Call {
-  return async function call<T>(path: string, body?: unknown, method?: "PATCH"): Promise<T> {
+  return async function call<T>(path: string, body?: unknown, method?: Method): Promise<T> {
     const res = await fetchImpl(`${BASE}${path}`, {
       method: method ?? (body === undefined ? "GET" : "POST"),
       headers: body === undefined ? undefined : { "content-type": "application/json" },
