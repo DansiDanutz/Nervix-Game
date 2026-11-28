@@ -18,32 +18,40 @@ interface PointerLike {
   readonly clientX: number;
   readonly clientY: number;
   readonly buttons: number;
+  /** Absent on synthetic events; then every event counts as the same pointer. */
+  readonly pointerId?: number;
 }
 
 /**
  * Mouse look: a press on `el` that travels past the click threshold orbits
  * (reports dx, dy); a shorter press is left alone so doors keep their click.
- * pointerup and pointercancel end the drag. Returns the unbind.
+ * pointerup and pointercancel end the drag. Only the pointer that pressed `el`
+ * drives or ends it, so a thumb held on the touch pad (another pointer id)
+ * neither moves the camera nor ends a canvas drag. Returns the unbind.
  */
 export function bindDragLook(el: EventTarget, win: EventTarget, onDrag: (dx: number, dy: number) => void): () => void {
   let start: ScreenPoint | null = null;
   let last: ScreenPoint | null = null;
   let dragging = false;
+  let owner: number | undefined;
+  const isOwner = (e: Event) => (e as unknown as PointerLike).pointerId === owner;
   const onDown = (e: Event) => {
     const p = e as unknown as PointerLike;
     start = last = { x: p.clientX, y: p.clientY };
+    owner = p.pointerId;
     dragging = false;
   };
   const onMove = (e: Event) => {
     const p = e as unknown as PointerLike;
-    if (!start || !last || p.buttons === 0) return;
+    if (!start || !last || p.buttons === 0 || !isOwner(e)) return;
     const now = { x: p.clientX, y: p.clientY };
     if (!dragging && !isLookDrag(start, now)) return;
     dragging = true;
     onDrag(now.x - last.x, now.y - last.y);
     last = now;
   };
-  const onEnd = () => {
+  const onEnd = (e: Event) => {
+    if (!isOwner(e)) return;
     start = last = null;
   };
   el.addEventListener("pointerdown", onDown);

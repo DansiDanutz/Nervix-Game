@@ -1,0 +1,75 @@
+/* CT4 touch pad. Replaces the old .touch rules in styles.css (the lead removes them). */
+.touchpad {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+  z-index: 12;
+}
+
+.touchpad__dpad,
+.touchpad__side {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  /* The pad owns every gesture on it: no scroll, zoom, text selection or callout. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.touchpad__side {
+  align-items: flex-end;
+}
+
+.touchpad__row {
+  display: flex;
+  gap: 6px;
+}
+
+.touchpad button {
+  min-width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(43, 33, 24, 0.82);
+  color: #f7efe2;
+  font-size: 18px;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touchpad button[data-held="true"],
+.touchpad__run[aria-pressed="true"] {
+  background: #c98a3d;
+  color: #2b2118;
+}
+
+.touchpad__run,
+.touchpad__action {
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.touchpad__action {
+  background: #2f6f6a !important;
+}
+
+.touchpad button:focus-visible {
+  outline: 2px solid #f7efe2;
+  outline-offset: 2px;
+}
+
+/* Keyboard and mouse: keep the old behaviour, the pad shows only while a door is in reach. */
+@media (hover: hover) and (pointer: fine) {
+  .touchpad:not(.touchpad--door) {
+    display: none;
+  }
+}

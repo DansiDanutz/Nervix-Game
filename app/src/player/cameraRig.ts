@@ -118,3 +118,99 @@ export function resolveMove(from: Vec2, to: Vec2, obstacles: Box[], radius: numb
   if (!blocked(zOnly)) return zOnly;
   return { ...from };
 }
+
+/* ---- CT5: camera pull-in against walls ------------------------------------
+ * The camera boom runs from the eye pivot (player position at eye height) to
+ * the unobstructed third-person camera. The scene casts that ray (a three.js
+ * Raycaster against wall meshes, or rayBoxDistance against the collision
+ * boxes) and hands the hit distance back; everything below is pure.
+ */
+
+export const CAMERA_COLLISION = Object.freeze({
+  /** Stop this far in front of the wall face (m), so the near plane never clips it. */
+  margin: 0.2,
+  /** Never closer to the eye pivot than this (m): the avatar stays readable. */
+  minDistance: 0.6,
+  /** Ease-out rate (1/s) when the wall is gone; pull-in is always instant. */
+  easeOutRate: 4,
+});
+
+/** The exponential follow base for the camera position lerp (per second). */
+export const CAMERA_FOLLOW_BASE = 0.0005;
+
+export interface BoomRay {
+  readonly origin: Vec3;
+  /** Unit vector from the eye pivot toward the camera. */
+  readonly direction: Vec3;
+  /** Unobstructed boom length (m). */
+  readonly length: number;
+}
+
+const pivotOf = (at: Vec2, view: ViewRig): Vec3 => ({ x: at.x, y: view.eye, z: at.z });
+
+/** The ray the scene casts to find the first wall between the eye and the camera. */
+export function boomRay(at: Vec2, look: Look, view: ViewRig): BoomRay {
+  const origin = pivotOf(at, view);
+  const { camera } = thirdPersonFrame(at, look, view);
+  const d = { x: camera.x - origin.x, y: camera.y - origin.y, z: camera.z - origin.z };
+  const length = Math.hypot(d.x, d.y, d.z);
+  const direction = length > 0 ? { x: d.x / length, y: d.y / length, z: d.z / length } : { x: 0, y: 0, z: 1 };
+  return Object.freeze({ origin: Object.freeze(origin), direction: Object.freeze(direction), length });
+}
+
+/** Boom length for a wall hit at `hit` metres along the ray (null: nothing hit). */
+export function pullInDistance(desired: number, hit: number | null): number {
+  if (hit === null || !Number.isFinite(hit) || hit - CAMERA_COLLISION.margin >= desired) return desired;
+  const floor = Math.min(desired, CAMERA_COLLISION.minDistance);
+  return Math.max(floor, hit - CAMERA_COLLISION.margin);
+}
+
+/** Next boom length: pull in at once (no frame with a wall in view), ease back out; reduced motion snaps. */
+export function easeBoom(current: number, target: number, delta: number, reducedMotion: boolean): number {
+  if (!Number.isFinite(current) || target <= current || reducedMotion) return target;
+  const k = 1 - Math.exp(-CAMERA_COLLISION.easeOutRate * Math.max(0, delta));
+  return Math.min(target, current + (target - current) * k);
+}
+
+/** The third-person frame with the camera slid in along the boom to `boom` metres (never longer than the rig). */
+export function frameAtBoom(at: Vec2, look: Look, view: ViewRig, boom: number): { camera: Vec3; target: Vec3 } {
+  const full = thirdPersonFrame(at, look, view);
+  const ray = boomRay(at, look, view);
+  if (!(boom < ray.length)) return full;
+  const d = Math.max(0, boom);
+  const { origin: o, direction: u } = ray;
+  return { camera: { x: o.x + u.x * d, y: o.y + u.y * d, z: o.z + u.z * d }, target: full.target };
+}
+
+/** Entry distance of a ray into one ground-plane box (walls are full height), or null. */
+function slabEntry(origin: Vec3, dir: Vec3, box: Box): number | null {
+  let near = -Infinity;
+  let far = Infinity;
+  for (const [o, d, lo, hi] of [[origin.x, dir.x, box.minX, box.maxX], [origin.z, dir.z, box.minZ, box.maxZ]] as const) {
+    if (d === 0) {
+      if (o <= lo || o >= hi) return null;
+      continue;
+    }
+    const t1 = (lo - o) / d;
+    const t2 = (hi - o) / d;
+    near = Math.max(near, Math.min(t1, t2));
+    far = Math.min(far, Math.max(t1, t2));
+  }
+  // near < 0: the pivot is inside this box (it cannot be, the player is kept out); ignore it.
+  return near >= 0 && near <= far ? near : null;
+}
+
+/** Nearest wall hit along the boom against the collision boxes, in metres along the 3D ray, or null. */
+export function rayBoxDistance(origin: Vec3, direction: Vec3, length: number, boxes: readonly Box[]): number | null {
+  let best: number | null = null;
+  for (const box of boxes) {
+    const t = slabEntry(origin, direction, box);
+    if (t !== null && t <= length && (best === null || t < best)) best = t;
+  }
+  return best;
+}
+
+/** Share of the gap the camera closes this frame: reduced motion snaps (no swoop). */
+export function cameraFollowAlpha(delta: number, reducedMotion: boolean): number {
+  return reducedMotion ? 1 : 1 - Math.pow(CAMERA_FOLLOW_BASE, delta);
+}
