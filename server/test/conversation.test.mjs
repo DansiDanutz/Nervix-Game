@@ -24,7 +24,7 @@ function makeCtx(overrides = {}) {
   const state = newState();
   return {
     config, knowledge, catalog, orders, state,
-    userId: "u1", merchantId: "mer_1",
+    userId: "u1", merchantId: "mer_1", merchant: { id: "mer_1", verified: true, suspended: false },
     context: buildContext({ config, knowledge, catalog }),
     ...overrides,
   };
