@@ -1,33 +1,45 @@
 import { useState } from "react";
-import { api, type AgentAction, type AgentReply } from "../net/api";
+import { api } from "../net/api";
+import {
+  appendTurn,
+  confirmPayload,
+  confirmedText,
+  pendingProposal,
+  proposalLabel,
+  supportRequest,
+  type ProposalAction,
+  type Turn,
+} from "./talkToMerchantModel";
 
-interface Turn {
-  role: "player" | "agent";
-  text: string;
-}
+const errorText = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback);
 
-// Merchant replies are captions only (decision D8): no browser or system voice.
-export function AgentPanel({ propertyId, agentName }: { propertyId: string; agentName: string }) {
-  const [turns, setTurns] = useState<Turn[]>([]);
+/**
+ * The chat with one property's merchant assistant. The server keeps the
+ * conversation per (property, signed-in user) (S3); this panel only shows the
+ * current viewer's own turns. Captions only (decision D8): no browser or system voice.
+ */
+export function AgentPanel({ propertyId, agentName, hint }: { propertyId: string; agentName: string; hint?: string }) {
+  const [turns, setTurns] = useState<readonly Turn[]>([]);
   const [input, setInput] = useState("");
-  const [pending, setPending] = useState<AgentAction | null>(null);
+  const [pending, setPending] = useState<ProposalAction | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function send() {
+  /** Sends the typed text; `asSupport` asks the server to propose a support request for it. */
+  async function send(asSupport = false) {
     const text = input.trim();
     if (!text || busy) return;
+    const request = asSupport ? supportRequest(text) : null;
     setBusy(true);
     setError(null);
     setInput("");
-    setTurns((t) => [...t, { role: "player", text }]);
+    setTurns((t) => appendTurn(t, "player", text));
     try {
-      const reply: AgentReply = await api.message(propertyId, text);
-      setTurns((t) => [...t, { role: "agent", text: reply.text }]);
-      const action = reply.actions[0];
-      if (action && !reply.denied) setPending(action);
+      const reply = request ? await api.message(propertyId, text, request.tool, request.args) : await api.message(propertyId, text);
+      setTurns((t) => appendTurn(t, "agent", reply.text));
+      setPending(pendingProposal(reply));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "request failed");
+      setError(errorText(e, "request failed"));
     } finally {
       setBusy(false);
     }
@@ -36,38 +48,41 @@ export function AgentPanel({ propertyId, agentName }: { propertyId: string; agen
   async function confirm() {
     if (!pending) return;
     setBusy(true);
+    setError(null);
     try {
-      await api.confirm(propertyId, { ...pending, acknowledged: true });
-      setTurns((t) => [...t, { role: "agent", text: "Confirmed — the merchant has it." }]);
+      const { result } = await api.confirm(propertyId, confirmPayload(pending));
+      setTurns((t) => appendTurn(t, "agent", confirmedText(pending.tool, result)));
       setPending(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "confirmation failed");
+      setError(errorText(e, "confirmation failed"));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section className="panel" aria-label={`AI employee ${agentName}`}>
+    <section className="panel" aria-label={agentName} data-testid="merchant-chat">
       <header className="panel__head">
         <strong>{agentName}</strong>
-        <span className="panel__tag">AI employee</span>
+        <span className="panel__tag">AI assistant</span>
       </header>
 
-      <div className="panel__log" role="log" aria-live="polite">
+      {hint && <p className="panel__hint talk__privacy" data-testid="merchant-chat-privacy">{hint}</p>}
+
+      <div className="panel__log" role="log" aria-live="polite" data-testid="merchant-chat-log">
         {turns.length === 0 && <p className="panel__hint">Ask about products, prices or how to order.</p>}
         {turns.map((turn, i) => (
-          <p key={i} className={turn.role === "player" ? "turn turn--player" : "turn"}>
+          <p key={i} className={turn.role === "player" ? "turn turn--player" : "turn"} data-role={turn.role}>
             {turn.text}
           </p>
         ))}
         {busy && <p className="panel__hint">…</p>}
-        {error && <p className="panel__error">{error}</p>}
+        {error && <p className="panel__error" role="alert">{error}</p>}
       </div>
 
       {pending && (
-        <div className="panel__confirm">
-          <span>Confirm: {pending.tool.replace(/_/g, " ")}</span>
+        <div className="panel__confirm" data-testid="merchant-chat-proposal">
+          <span>{proposalLabel(pending)}</span>
           <button type="button" onClick={confirm} disabled={busy}>
             Confirm
           </button>
@@ -89,11 +104,22 @@ export function AgentPanel({ propertyId, agentName }: { propertyId: string; agen
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask the merchant's assistant"
           aria-label="Message"
+          maxLength={4000}
         />
         <button type="submit" disabled={busy || input.trim().length === 0}>
           Send
         </button>
       </form>
+      {/* The server proposes; nothing reaches the merchant until the player confirms. */}
+      <button
+        type="button"
+        className="talk__support"
+        data-testid="merchant-chat-support"
+        onClick={() => void send(true)}
+        disabled={busy || input.trim().length === 0}
+      >
+        Send as a support request
+      </button>
     </section>
   );
 }

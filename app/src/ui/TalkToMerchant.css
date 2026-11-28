@@ -1,0 +1,25 @@
+/* CT2: talk to the merchant. Builds on the shared .panel styles in styles.css. */
+.talk {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.talk__privacy {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.talk__signin {
+  margin: 4px 0;
+}
+
+.talk__close {
+  align-self: flex-end;
+}
+
+.talk__support {
+  align-self: flex-start;
+  font-size: 0.8rem;
+}
