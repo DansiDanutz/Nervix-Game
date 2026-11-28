@@ -1,5 +1,4 @@
 import { Html } from "@react-three/drei";
-import * as THREE from "three";
 import { useNearFade } from "./useNearFade";
 import { isDeliberateClick } from "./clickGuard";
 
@@ -103,13 +102,4 @@ export function HouseDoors({
       ))}
     </group>
   );
-}
-
-export const HOUSE_INTERIORS: Record<string, { colour: string; accent: string; blurb: string }> = {
-  bld_dangg: { colour: "#2a1f2e", accent: "#c9a441", blurb: "A plum-and-gold salon with a single spade over the counter." },
-  bld_test: { colour: "#1f2a33", accent: "#b5486b", blurb: "A bright teal workshop with a long test bench." },
-};
-
-export function interiorFor(id: string) {
-  return HOUSE_INTERIORS[id] ?? { colour: "#26333d", accent: THREE.Color.NAMES.gold, blurb: "A merchant interior." };
 }

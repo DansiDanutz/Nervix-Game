@@ -1,7 +1,7 @@
 // Run from app/: node --test src/scene/materialGrade.test.ts
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ARRIVAL_MATERIAL_GRADE, gradeLinear, type LinearRgb } from "./materialGrade.ts";
+import { ARRIVAL_MATERIAL_GRADE, gradeLinear, polishedMetal, type LinearRgb } from "./materialGrade.ts";
 
 /** HSV saturation of a linear colour: enough to compare before/after. */
 const sat = ([r, g, b]: LinearRgb) => (Math.max(r, g, b) - Math.min(r, g, b)) / Math.max(r, g, b);
@@ -51,4 +51,12 @@ test("identity grade returns the same colour", () => {
 
 test("only named materials are graded; teal, limestone and plaster are untouched", () => {
   for (const name of ["ar_teal", "ar_limestone", "ar_plaster_warm", "ar_red_carpet"]) assert.equal(ARRIVAL_MATERIAL_GRADE[name], undefined);
+});
+
+test("gilding and brass are drawn polished: metalness 1, roughness in the polished band", () => {
+  assert.deepEqual(polishedMetal("ar_gold_lm", 0.4, 0.6), { metalness: 1, roughness: 0.25 });
+  assert.deepEqual(polishedMetal("ar_gold", 1, 0.22), { metalness: 1, roughness: 0.22 });
+  assert.deepEqual(polishedMetal("ar_brass_lm", 1, 0.05), { metalness: 1, roughness: 0.22 });
+  assert.deepEqual(polishedMetal("ar_teal", 0, 0.6), { metalness: 0, roughness: 0.6 });
+  assert.deepEqual(polishedMetal(undefined, 0.3, 0.5), { metalness: 0.3, roughness: 0.5 });
 });

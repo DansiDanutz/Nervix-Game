@@ -5,7 +5,7 @@
 import type { Place } from "../scene/slice";
 import type { Target } from "./targets";
 
-/** What a door in reach offers: "Enter OpenPoker", "Enter DanGG", "Exit to Plaza". */
+/** What a door in reach offers: "Enter OpenPoker", "Enter <merchant name>", "Exit to Plaza". */
 export function targetAnnouncement(t: Target | null): string | null {
   if (!t) return null;
   return t.kind === "exit" ? `Exit to ${t.label}` : `Enter ${t.label}`;

@@ -49,8 +49,9 @@ body,
   align-items: center;
   padding: 4px 6px 4px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 2px 10px rgba(43, 33, 24, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 10px rgba(43, 33, 24, 0.16);
+  backdrop-filter: blur(6px);
 }
 
 .hud__top strong {
@@ -184,6 +185,25 @@ body,
 .controls-hint.is-faded,
 .place-hint.is-faded {
   opacity: 0;
+}
+
+/*
+ * Wide screens: the arrival foreground is the paving compass-rose medallion (A01 lower centre), so
+ * the hints dock at the top centre over the sky band, between the title and the menu, and the
+ * nearby prompt drops lower. Narrow screens keep the bottom stack (no room between the top chips).
+ */
+@media (min-width: 1000px) {
+  .hint-stack {
+    top: 18px;
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: 44vw;
+  }
+  .hud__prompt {
+    margin-bottom: 24px;
+  }
 }
 
 @media (max-width: 640px) {

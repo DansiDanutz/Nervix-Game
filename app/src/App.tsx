@@ -20,6 +20,9 @@ import { useHintsSettled } from "./shell/useHintsSettled";
 import { useWorldSession } from "./shell/useWorldSession";
 import { useWorldKeys } from "./shell/useWorldKeys";
 import { HintStack } from "./shell/HintStack";
+import { A11yLayer } from "./ui/LiveRegion";
+import { useWorldDirectory } from "./world/useWorldDirectory";
+import { houseSnapshot } from "./world/useHouseSnapshot";
 
 const SceneView = lazy(() => import("./scene/SceneView"));
 
@@ -57,6 +60,7 @@ export function App() {
   // District markers were authored for the legacy plaza chunks: never shown outside the plaza,
   // and not on top of the Blender arrival square that supersedes those chunks.
   const districtMarkers = place.kind === "plaza" && !layout?.plaza ? markers : [];
+  const directory = useWorldDirectory(layout);
 
   useEffect(() => {
     loadSliceLayout()
@@ -71,10 +75,10 @@ export function App() {
   /** What the player can interact with from where they stand. */
   const onPosition = useCallback(
     (x: number, z: number) => {
-      setTarget(targetAt(place, layout, x, z));
+      setTarget(targetAt(place, layout, x, z, directory));
       if (!exploring && Math.hypot(x - spawn.x, z - spawn.z) > EXPLORE_DISTANCE) setExploring(true);
     },
-    [place, layout, exploring, spawn],
+    [place, layout, exploring, spawn, directory],
   );
 
   const go = useCallback(
@@ -127,6 +131,8 @@ export function App() {
 
   return (
     <div className="app">
+      {/* CT5: always mounted, so the live region exists before the first announcement ("Enter OpenPoker"). */}
+      <A11yLayer place={place} target={target} />
       {!entered && <AccessGate onEnter={() => setEntered(true)} />}
       {/* The scene mounts once the layout is known, so the first frame is the real arrival. */}
       {entered && (layout || layoutError) && <Suspense fallback={null}>
@@ -146,11 +152,12 @@ export function App() {
           spawn={spawn}
           onEnterHouse={(door) => activate({ kind: "house", door, label: door.label })}
           onEnterVenue={() => activate({ kind: "venue", label: "OpenPoker" })}
+          directory={directory}
           onArrivalError={setArrivalError}
         />
       </Suspense>}
 
-      {interior && <InteriorCatalog door={interior} />}
+      {interior && <InteriorCatalog door={interior} onHouse={houseSnapshot.set} />}
       {entered && <InteriorPanelHost ctx={shellCtx} />}
       {entered && <PlayerChat enterFocuses={target === null} />}
       {entered && <HintStack place={place} target={target} settled={hintsSettled} />}
@@ -161,9 +168,9 @@ export function App() {
           Arrival square not exported yet (no runtime_layout.plaza in /slice/manifest.json): showing the legacy district.
         </div>
       )}
-      {entered && target && (
-        <TouchControls interior={target.kind === "exit"} canEnter={target.kind !== "exit"} onEnter={() => activate(target)} onExit={() => activate(target)} />
-      )}
+      {/* CT4: always mounted; on a desktop mouse the pad shows only near a door (TouchControls.css). */}
+      {entered && <TouchControls interior={target?.kind === "exit"} canEnter={!!target && target.kind !== "exit"}
+        onEnter={() => target && activate(target)} onExit={() => target && activate(target)} />}
       {entered && !interior && <Hud
           session={session ?? NO_SESSION}
           nearby={place.kind === "plaza" ? nearby : null}

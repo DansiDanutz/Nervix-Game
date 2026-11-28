@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef, type KeyboardEvent } from "react";
 import { api, ApiError, AVATAR_PRESETS, type AvatarPreset } from "../net/api";
 import { INITIAL_PICKER, canSave, createPickerReducer, radioKeyTarget, radioTabIndex, type PickerState } from "./avatarPickerModel";
+import { myPresetStore } from "../player/useMyPreset";
 import "./AvatarPicker.css";
 
 const PRESET_IDS: readonly string[] = AVATAR_PRESETS.map((p) => p.id);
@@ -75,6 +76,8 @@ export function AvatarPicker({ onClose }: { onClose?: () => void }) {
     try {
       const saved = await api.saveAvatar(state.chosen);
       dispatch({ type: "saved", preset: saved.preset });
+      myPresetStore.set(saved.preset); // the local avatar wears it at once
+
     } catch (e) {
       dispatch({ type: "failed", error: message(e, "could not save") });
     }

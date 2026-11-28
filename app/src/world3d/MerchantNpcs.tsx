@@ -25,6 +25,8 @@ import {
 import { useK2Kit } from "./MerchantHouse";
 import { SkinnedAvatar, type LocomotionSource } from "./SkinnedAvatar";
 import { MerchantNpcLabel } from "./MerchantNpcsLabel";
+import { ContactShadow } from "../scene/ContactShadow";
+import { AVATAR_HEIGHT } from "../player/avatarShape";
 
 const PRESET_IDS = Object.freeze(AVATAR_PRESETS.map((p) => p.id));
 /** Fallback figure while the K1 kit loads or if it fails (m). */
@@ -57,6 +59,8 @@ function NpcFigure({ npc, pose }: { readonly npc: MerchantNpc; readonly pose: Np
     <group name={`merchant_npc_${npc.propertyId}`} position={pose.position as [number, number, number]} userData={{ role: npc.role }}>
       <SkinnedAvatar preset={npc.preset} source={STILL} initialHeading={pose.heading} fallback={fallback} />
       <MerchantNpcLabel npc={npc} />
+      {/* On the baked square only (no sun elsewhere): the figure must not float. */}
+      <ContactShadow height={AVATAR_HEIGHT} />
     </group>
   );
 }

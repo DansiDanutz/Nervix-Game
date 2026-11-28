@@ -214,3 +214,50 @@ export function rayBoxDistance(origin: Vec3, direction: Vec3, length: number, bo
 export function cameraFollowAlpha(delta: number, reducedMotion: boolean): number {
   return reducedMotion ? 1 : 1 - Math.pow(CAMERA_FOLLOW_BASE, delta);
 }
+
+/** Thickness of the virtual walls around a room's bounds (m); only their inner faces matter. */
+const ROOM_WALL_THICKNESS = 1;
+
+/** Four full-height wall boxes just outside `bounds`, for the boom ray inside a walled room. */
+export function roomWalls(bounds: Box, thickness = ROOM_WALL_THICKNESS): readonly Box[] {
+  const { minX, maxX, minZ, maxZ } = bounds;
+  const t = thickness;
+  return Object.freeze([
+    { minX: maxX, maxX: maxX + t, minZ: minZ - t, maxZ: maxZ + t },
+    { minX: minX - t, maxX: minX, minZ: minZ - t, maxZ: maxZ + t },
+    { minX: minX - t, maxX: maxX + t, minZ: maxZ, maxZ: maxZ + t },
+    { minX: minX - t, maxX: maxX + t, minZ: minZ - t, maxZ: minZ },
+  ].map((b) => Object.freeze(b)));
+}
+
+export interface CameraStepInput {
+  readonly at: Vec2;
+  readonly look: Look;
+  readonly view: ViewRig;
+  /** Collision boxes and room walls the boom must not pass through. */
+  readonly blockers: readonly Box[];
+  /** Last frame's boom length (NaN before the first frame). */
+  readonly boom: number;
+  readonly delta: number;
+  readonly reducedMotion: boolean;
+}
+
+export interface CameraStep {
+  readonly camera: Vec3;
+  readonly target: Vec3;
+  readonly boom: number;
+  /** Lerp share for this frame: 1 (snap) while pulled in, so the camera never lags behind a wall. */
+  readonly alpha: number;
+  readonly pulledIn: boolean;
+}
+
+/** One controller frame of the CT5 camera: pull in against blockers, ease back out, follow. */
+export function pulledInCamera(input: CameraStepInput): CameraStep {
+  const { at, look, view, blockers, delta, reducedMotion } = input;
+  const ray = boomRay(at, look, view);
+  const hit = rayBoxDistance(ray.origin, ray.direction, ray.length, blockers);
+  const boom = easeBoom(input.boom, pullInDistance(ray.length, hit), delta, reducedMotion);
+  const frame = frameAtBoom(at, look, view, boom);
+  const pulledIn = boom < ray.length - 1e-3;
+  return Object.freeze({ camera: frame.camera, target: frame.target, boom, alpha: pulledIn ? 1 : cameraFollowAlpha(delta, reducedMotion), pulledIn });
+}

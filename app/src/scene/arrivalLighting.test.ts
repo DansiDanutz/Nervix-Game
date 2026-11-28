@@ -59,10 +59,11 @@ test("warm key light: raised 15-25% over the exported sun, pulled toward amber, 
   assert.deepEqual(rig.sun.position, LIGHTING.sun.position);
 });
 
-test("fog is warmed toward peach and keeps its range", () => {
+test("fog is warmed toward peach and pushed back past the hill (Blender has no mist)", () => {
   const rig = arrivalRig(LIGHTING);
-  assert.equal(rig.fog.near, LIGHTING.fog.near);
-  assert.equal(rig.fog.far, LIGHTING.fog.far);
+  assert.equal(rig.fog.near, LIGHTING.fog.near * GRADE.fogNearScale);
+  assert.equal(rig.fog.far, LIGHTING.fog.far * GRADE.fogFarScale);
+  assert.ok(rig.fog.near >= 200, `fog starts beyond the hill (${rig.fog.near} m)`);
   const before = hsl(LIGHTING.fog.color);
   const after = hsl(rig.fog.color);
   assert.ok(after.h > before.h, `fog hue ${after.h} warmer than ${before.h}`);

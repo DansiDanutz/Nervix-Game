@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  CROWD_LIMITS, INTERP_MS, SNAP_DISTANCE, bodyYaw, emptyCrowd, ingestPlayers, lerpAngle, planCrowd, poseAt, wrapAngle,
+  CROWD_LIMITS, INTERP_MS, SNAP_DISTANCE, bodyYaw, contactShadowEntries, emptyCrowd, ingestPlayers, lerpAngle, planCrowd, poseAt, wrapAngle,
   type CrowdPlan, type CrowdTrack, type RemoteSample,
 } from "./remoteCrowd.ts";
 
@@ -208,4 +208,16 @@ test("plan entries carry the interpolated pose, preset and name for drawing", ()
   assert.equal(entry.preset, "sage");
   assert.equal(entry.name, "Ana");
   assert.ok(Object.isFrozen(entry));
+});
+
+test("every full-detail remote player (near and mid) lays a contact shadow on the baked square; impostors do not", () => {
+  // 40 players 0.8 m apart: the nearest fullCap are full detail, the rest impostors.
+  const plan = planCrowd(line(40, 0.8), 0, cam);
+  const shadowed = contactShadowEntries(plan);
+  assert.equal(shadowed.length, CROWD_LIMITS.fullCap);
+  assert.ok(shadowed.every((e) => e.tier === "full"));
+  assert.ok(shadowed.some((e) => !e.shadow), "mid-tier figures (no shadow-map caster) are included");
+  assert.deepEqual(shadowed.map((e) => e.id), plan.filter((e) => e.tier === "full").map((e) => e.id));
+  assert.ok(Object.isFrozen(shadowed));
+  assert.deepEqual(contactShadowEntries([]), []);
 });

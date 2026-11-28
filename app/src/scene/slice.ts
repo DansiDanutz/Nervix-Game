@@ -1,6 +1,6 @@
 /**
- * First playable slice: plaza → OpenPoker → DanGG → plaza, plus the
- * independent Test Builder house on the plaza.
+ * First playable slice: plaza → OpenPoker → the salon merchant house → plaza,
+ * plus the independent merchant house on the plaza.
  *
  * Geometry anchors (door positions, salon spawn, obstacles, the arrival square)
  * come from the Blender export manifest (/slice/manifest.json). Merchant
@@ -11,6 +11,8 @@
  */
 import type { Box } from "../player/cameraRig";
 import type { HouseDoor } from "./HouseDoors";
+import type { ToneMappingName } from "./postFx";
+import type { AgxLook } from "./agxLook";
 
 export interface Anchor {
   x: number;
@@ -28,6 +30,11 @@ export interface PlazaLighting {
   skyGradient?: { horizon: string; mid?: string; zenith: string };
   /** Optional low bounce light opposite the sun (lighting.fill); the client has a default. */
   fill?: { color: string; intensity: number };
+  /**
+   * Optional view transform the bake was graded under (lighting.view: {tone_mapping, exposure, look}).
+   * Absent fields fall back to the client default (ACES; AgX implies Blender's Punchy look, see postFx.ts).
+   */
+  view?: { toneMapping?: ToneMappingName; exposure?: number; look?: AgxLook };
 }
 
 /** Blender arrival square (A01): one GLB in the district frame, fountain at the origin. */
@@ -38,7 +45,7 @@ export interface PlazaLayout {
   fountain: { x: number; z: number; radius: number; topY: number };
   bounds: Box;
   obstacles: Box[];
-  /** Plaza-side threshold of the Test Builder house door; stepping back = +sin(yaw), +cos(yaw). */
+  /** Plaza-side threshold of the plaza merchant house door; stepping back = +sin(yaw), +cos(yaw). */
   testBuilderDoor: Required<Anchor>;
   /** District chunks the arrival square supersedes; never drawn together with it. */
   replacesChunks: string[];
@@ -66,26 +73,29 @@ export type Place =
   | { kind: "house"; door: HouseDoor; from: "plaza" | "openpoker" };
 
 /**
- * The independent Test Builder house stays on the plaza, untouched by the slice.
+ * The independent plaza merchant house stays on the plaza, untouched by the slice.
  * This is the legacy free-standing door; with the arrival square its position
- * comes from the manifest (see testBuilderDoor).
+ * comes from the manifest (see testBuilderDoor). The label is a placeholder:
+ * the world directory (useWorldDirectory) replaces it with the merchant name.
  */
+export const FALLBACK_DOOR_LABEL = "Merchant house";
+
 export const TEST_BUILDER_DOOR: HouseDoor = {
-  id: "bld_test", propertyId: "prop_test", owner: "usr_test", label: "Test Builder House",
+  id: "bld_test", propertyId: "prop_test", owner: "usr_test", label: FALLBACK_DOOR_LABEL,
   position: [6, 0, 4], colour: "#2f6f6a", trim: "#b5486b",
 };
 
-/** Test Builder door for this layout: the Blender house's threshold when the arrival square exists. */
+/** The plaza merchant door for this layout: the Blender house's threshold when the arrival square exists. */
 export function testBuilderDoor(layout: SliceLayout | null): HouseDoor {
   const d = layout?.plaza?.testBuilderDoor;
   if (!d) return TEST_BUILDER_DOOR;
   return { ...TEST_BUILDER_DOOR, position: [d.x, 0, d.z], yaw: d.yaw };
 }
 
-/** DanGG's house is reached from inside OpenPoker; its identity loads from the server. */
+/** The salon merchant house is reached from inside OpenPoker; its identity and label load from the server. */
 export function danggDoor(layout: SliceLayout): HouseDoor {
   return {
-    id: "bld_dangg", propertyId: "prop_dangg", owner: "usr_dangg", label: "DanGG",
+    id: "bld_dangg", propertyId: "prop_dangg", owner: "usr_dangg", label: FALLBACK_DOOR_LABEL,
     position: [layout.salon.danggDoor.x, 0, layout.salon.danggDoor.z], colour: "#5b3a5e", trim: "#c9a441",
   };
 }
@@ -115,7 +125,7 @@ export function stepBack(a: Anchor, back = STEP_BACK): Anchor {
   return { x: a.x + Math.sin(yaw) * back, z: a.z + Math.cos(yaw) * back, yaw };
 }
 
-/** Where a place-change puts the player. Exiting DanGG returns to the plaza at OpenPoker. */
+/** Where a place-change puts the player. Exiting the salon house returns to the plaza at OpenPoker. */
 export function arrival(next: Place, prev: Place, layout: SliceLayout): Anchor {
   if (next.kind === "venue") return layout.salon.spawn;
   if (next.kind === "house") return { x: 0, z: 3.2, yaw: 0 };
@@ -172,6 +182,28 @@ function inside(b: Box, x: number, z: number) {
   return x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ;
 }
 
+const TONE_MAPPINGS: readonly ToneMappingName[] = ["aces", "agx", "neutral"];
+const MAX_EXPOSURE = 8;
+/** Mirrors AGX_LOOKS in agxLook.ts (kept local: this module has no runtime imports). */
+const AGX_LOOKS: readonly AgxLook[] = ["none", "punchy"];
+
+function parseView(v: Obj, r: ReturnType<typeof reader>): NonNullable<PlazaLighting["view"]> {
+  const tm = v.tone_mapping;
+  if (tm !== undefined && !TONE_MAPPINGS.includes(tm as ToneMappingName)) r.fail("lighting.view.tone_mapping", `must be one of ${TONE_MAPPINGS.join(", ")}`);
+  let exposure: number | undefined;
+  if (v.exposure !== undefined) {
+    exposure = r.num(v.exposure, "lighting.view.exposure");
+    if (exposure <= 0 || exposure > MAX_EXPOSURE) r.fail("lighting.view.exposure", `must be in (0, ${MAX_EXPOSURE}]`);
+  }
+  const look = v.look;
+  if (look !== undefined && !AGX_LOOKS.includes(look as AgxLook)) r.fail("lighting.view.look", `must be one of ${AGX_LOOKS.join(", ")}`);
+  return {
+    ...(tm !== undefined && { toneMapping: tm as ToneMappingName }),
+    ...(exposure !== undefined && { exposure }),
+    ...(look !== undefined && { look: look as AgxLook }),
+  };
+}
+
 function parseLighting(v: unknown, r: ReturnType<typeof reader>): PlazaLighting {
   const l = r.obj(v, "lighting");
   const fog = r.obj(l.fog, "lighting.fog");
@@ -187,7 +219,9 @@ function parseLighting(v: unknown, r: ReturnType<typeof reader>): PlazaLighting 
   };
   const gradient = l.sky_gradient === undefined ? undefined : r.obj(l.sky_gradient, "lighting.sky_gradient");
   const fill = l.fill === undefined ? undefined : r.obj(l.fill, "lighting.fill");
+  const view = l.view === undefined ? undefined : parseView(r.obj(l.view, "lighting.view"), r);
   return {
+    ...(view && { view }),
     ...(gradient && {
       skyGradient: {
         horizon: r.hex(gradient.horizon, "lighting.sky_gradient.horizon"),

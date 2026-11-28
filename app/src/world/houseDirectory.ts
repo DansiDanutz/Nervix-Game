@@ -8,7 +8,7 @@
  *   houses with no manifest plot (e.g. the salon house) are unplaced.
  * - Without manifest plots: the legacy door list, kept only for listed
  *   houses and labelled from the directory.
- * - Directory not loaded yet (null): the legacy doors unchanged, every plot closed.
+ * - Directory not loaded yet (null): every door and every plot closed (fail closed).
  * - Directory failed to load: pass [] (loadWorldHouses does), so every door is
  *   closed. Fail closed: a suspended merchant's door never shows on an error.
  */
@@ -79,7 +79,8 @@ function joinFallback(houses: readonly WorldHouse[], fallbackDoors: readonly Hou
 
 export function joinHouseDirectory({ houses, plots, fallbackDoors }: HouseDirectoryInput): HouseDirectoryView {
   const usable = uniquePlots(plots ?? []);
-  if (houses === null) return view(fallbackDoors, usable.map((p) => p.id), []);
+  // Not loaded yet: fail closed, so an unlisted (suspended, unverified) merchant's door is never enterable.
+  if (houses === null) return view([], usable.map((p) => p.id), []);
   return usable.length ? joinPlots(houses, usable) : joinFallback(houses, fallbackDoors);
 }
 

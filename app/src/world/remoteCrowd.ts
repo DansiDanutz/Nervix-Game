@@ -203,3 +203,12 @@ export function crowdStats(plan: CrowdPlan) {
     shadows: plan.filter((e) => e.shadow).length,
   });
 }
+
+/**
+ * The entries that lay a ContactShadow on the baked arrival square, nearest first: every
+ * full-detail figure (near and mid), the same set writeCrowd draws in detail. Baked paving never
+ * receives the runtime shadow map, so without these the figures float. Impostors get none.
+ */
+export function contactShadowEntries(plan: CrowdPlan): CrowdPlan {
+  return Object.freeze(plan.filter((e) => e.tier === "full").slice(0, CROWD_LIMITS.fullCap));
+}

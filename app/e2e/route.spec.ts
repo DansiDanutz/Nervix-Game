@@ -207,7 +207,7 @@ test("Test Builder house stays independent on the plaza", async ({ page }) => {
   const L = await layout(page);
   const tb = testBuilderApproach(L);
   await walkRoute(page, tb.x, tb.z, 1.0, plazaObstacles(L));
-  await expect(page.getByTestId("place-hint")).toContainText("Enter Test Builder House");
+  await expect(page.getByTestId("place-hint")).toContainText("Enter Test Builder");
   await page.keyboard.press("e");
   await expect.poll(() => placeOf(page)).toBe("house:bld_test");
   await expect(page.getByTestId("house-name")).toHaveText("Test Builder");

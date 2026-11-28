@@ -150,3 +150,24 @@ test("optional sky mid stop and fill light are parsed; absent stays absent", () 
   assert.deepEqual(lit.lighting.skyGradient, { horizon: "#ffc892", mid: "#f2b0b2", zenith: "#8fb2e4" });
   assert.deepEqual(lit.lighting.fill, { color: "#b9c2e0", intensity: 0.35 });
 });
+
+test("lighting.view is optional and validated", () => {
+  assert.equal(parsePlaza(PLAZA, "test")!.lighting.view, undefined);
+  const aces = parsePlaza({ ...PLAZA, lighting: { ...PLAZA.lighting, view: { tone_mapping: "aces", exposure: 1.1 } } }, "test")!;
+  assert.deepEqual(aces.lighting.view, { toneMapping: "aces", exposure: 1.1 });
+  const agx = parsePlaza({ ...PLAZA, lighting: { ...PLAZA.lighting, view: { tone_mapping: "agx" } } }, "test")!;
+  assert.deepEqual(agx.lighting.view, { toneMapping: "agx" });
+  const punchy = parsePlaza({ ...PLAZA, lighting: { ...PLAZA.lighting, view: { tone_mapping: "agx", exposure: 1.2311, look: "punchy" } } }, "test")!;
+  assert.deepEqual(punchy.lighting.view, { toneMapping: "agx", exposure: 1.2311, look: "punchy" });
+  assert.throws(() => parsePlaza({ ...PLAZA, lighting: { ...PLAZA.lighting, view: { tone_mapping: "agx", look: "AgX - Punchy" } } }, "test"), /lighting\.view\.look must be one of none, punchy/);
+  assert.throws(() => parsePlaza({ ...PLAZA, lighting: { ...PLAZA.lighting, view: { tone_mapping: "filmic" } } }, "test"), /lighting\.view\.tone_mapping must be one of aces, agx, neutral/);
+  assert.throws(() => parsePlaza({ ...PLAZA, lighting: { ...PLAZA.lighting, view: { exposure: 0 } } }, "test"), /lighting\.view\.exposure must be in/);
+  assert.throws(() => parsePlaza({ ...PLAZA, lighting: { ...PLAZA.lighting, view: "aces" } }, "test"), /lighting\.view must be an object/);
+});
+
+test("the shipped manifest still parses", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const raw = JSON.parse(await readFile(new URL("../../public/slice/manifest.json", import.meta.url), "utf8"));
+  const layout = parseSliceManifest(raw, "public/slice/manifest.json");
+  assert.ok(layout.plaza, "runtime_layout.plaza");
+});

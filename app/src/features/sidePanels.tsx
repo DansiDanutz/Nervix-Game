@@ -6,6 +6,8 @@ import { AdsPanel } from "../ui/AdsPanel";
 import { AdminPanel } from "../ui/AdminPanel";
 import { createRegistry, register } from "./registry";
 import { avatarPanel } from "./avatarPanel";
+import { privacyPanel } from "./privacyPanel";
+import { controlSettingsPanel } from "./controlSettingsPanel";
 import type { PanelContext, PanelFeature, PanelRegistry } from "./panelContext";
 
 const MenuButton = ({ label, onClick }: { label: string; onClick: () => void }) => (
@@ -58,4 +60,4 @@ const admin: PanelFeature = {
  * Talk to the merchant and the owner's workspace (CT2) are house panels: see
  * features/interiorPanels.tsx and ui/InteriorPanelHost.tsx (the side column is
  * hidden inside houses). Milestones add a panel with one more `register` here (the lead holds the shell token). */
-export const sidePanels: PanelRegistry = [account, orders, guide, ads, admin, avatarPanel].reduce(register, createRegistry<PanelContext, ReactNode>());
+export const sidePanels: PanelRegistry = [account, orders, guide, ads, admin, avatarPanel, privacyPanel, controlSettingsPanel].reduce(register, createRegistry<PanelContext, ReactNode>());

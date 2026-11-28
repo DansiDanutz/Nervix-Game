@@ -3,7 +3,8 @@
  * drawn at three levels of detail (world/remoteCrowd.ts). Replaces scene/RemotePlayers.tsx.
  *
  * Draw calls do not grow with the room: 6 part meshes for near full detail (shadow casters),
- * 6 for mid full detail, 1 impostor mesh, plus at most CROWD_LIMITS.labelCap label sprites.
+ * 6 for mid full detail, 1 impostor mesh, plus at most CROWD_LIMITS.labelCap label sprites, and on
+ * the baked arrival square one contact-shadow decal per full-detail figure (RemoteCrowdShadows.tsx).
  * Positions update in the render loop; React re-renders only when the presence list changes.
  */
 import { useEffect, useMemo, useRef } from "react";
@@ -16,6 +17,7 @@ import {
   type CrowdPart,
 } from "./RemoteCrowdParts";
 import { CrowdLabels } from "./RemoteCrowdLabels";
+import { CrowdContactShadows, placeContactShadows, type ShadowSlots } from "./RemoteCrowdShadows";
 
 /** DEV hook refresh interval for E2E (ms). */
 const DEBUG_EVERY_MS = 500;
@@ -63,6 +65,7 @@ export function RemoteCrowd({ players }: { players: readonly RemotePlayer[] }) {
   const mid = useRef<(THREE.InstancedMesh | null)[]>([]);
   const far = useRef<THREE.InstancedMesh | null>(null);
   const labelGroup = useRef<THREE.Group | null>(null);
+  const shadowSlots = useRef<ShadowSlots>([]);
   const labels = useRef<CrowdLabels | null>(null);
   const lastDebug = useRef(0);
 
@@ -98,6 +101,7 @@ export function RemoteCrowd({ players }: { players: readonly RemotePlayer[] }) {
     const next = planCrowd(crowd.current, now, { x: camera.position.x, z: camera.position.z }, plan.current);
     plan.current = next;
     writeCrowd(next, parts, { near: near.current, mid: mid.current, impostor: far.current }, colours);
+    placeContactShadows(shadowSlots.current, next);
     labels.current?.update(next);
     if (now - lastDebug.current >= DEBUG_EVERY_MS) {
       lastDebug.current = now;
@@ -120,6 +124,7 @@ export function RemoteCrowd({ players }: { players: readonly RemotePlayer[] }) {
         }}
       />
       <group ref={labelGroup} name="crowd_labels" />
+      <CrowdContactShadows slots={shadowSlots.current} />
     </group>
   );
 }

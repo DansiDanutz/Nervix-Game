@@ -17,8 +17,11 @@ function useShadowed(url: string, grade?: typeof ARRIVAL_MATERIAL_GRADE) {
   return useLitClone(scene, REFLECT_SKY, REFLECT_GROUND, grade);
 }
 
-/** A17 salon from Blender. Lighting approximates the Blender render: warm sun from the left windows. */
-export function SalonScene({ exit, danggDoor }: { exit: Anchor; danggDoor: Anchor }) {
+/**
+ * A17 salon from Blender. Lighting approximates the Blender render: warm sun from the left windows.
+ * `houseLabel` is the salon merchant's name from the world directory; null (not listed) hides it.
+ */
+export function SalonScene({ exit, danggDoor, houseLabel }: { exit: Anchor; danggDoor: Anchor; houseLabel: string | null }) {
   const root = useShadowed(SALON_GLB);
   return (
     <group name="openpoker_salon">
@@ -27,12 +30,14 @@ export function SalonScene({ exit, danggDoor }: { exit: Anchor; danggDoor: Ancho
       <directionalLight position={[-12, 9, 2]} intensity={2.4} color="#ffc98a" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
       <pointLight position={[-4, 3, 4]} intensity={6} distance={9} color="#ffb766" />
       <pointLight position={[4, 3, -2]} intensity={6} distance={9} color="#ffb766" />
-      <Html position={[danggDoor.x, 3.1, danggDoor.z]} center distanceFactor={9}>
-        <div className="door-label" data-testid="label-dangg-door">
-          <strong>DanGG</strong>
-          <small>merchant house · E or click</small>
-        </div>
-      </Html>
+      {houseLabel && (
+        <Html position={[danggDoor.x, 3.1, danggDoor.z]} center distanceFactor={9}>
+          <div className="door-label" data-testid="label-dangg-door">
+            <strong>{houseLabel}</strong>
+            <small>merchant house · E or click</small>
+          </div>
+        </Html>
+      )}
       <Html position={[exit.x, 2.6, exit.z]} center distanceFactor={9}>
         <div className="door-label">
           <strong>Plaza</strong>

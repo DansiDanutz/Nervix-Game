@@ -28,7 +28,12 @@ export function InteriorCatalog({ door, onHouse }: { door: HouseDoor; onHouse?: 
         setError(null);
         onHouse?.(r.house);
       })
-      .catch((e) => alive && setError(e instanceof ApiError ? `${e.code}: ${e.message}` : "load failed"));
+      .catch((e) => {
+        if (!alive) return;
+        setError(e instanceof ApiError ? `${e.code}: ${e.message}` : "load failed");
+        // Fail closed: the 3D room must not keep drawing a previous visit's listings.
+        onHouse?.(null);
+      });
     return () => {
       alive = false;
     };
@@ -42,6 +47,8 @@ export function InteriorCatalog({ door, onHouse }: { door: HouseDoor; onHouse?: 
 
   // A selection never outlives the house it was made in.
   useEffect(() => () => productSelection.clear(), [door.propertyId]);
+  // Nor does the shared house snapshot the 3D room reads (useHouseSnapshot).
+  useEffect(() => () => onHouse?.(null), [door.propertyId, onHouse]);
   const selectedId = useSelectedProduct(door.propertyId);
 
   const profile = house?.profile;

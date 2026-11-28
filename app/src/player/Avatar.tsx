@@ -1,9 +1,16 @@
-import { AVATAR_BUILD as B, AVATAR_SCALE, type AvatarPalette } from "./avatarShape";
+import { AVATAR_BUILD as B, AVATAR_HEIGHT, AVATAR_SCALE, type AvatarPalette } from "./avatarShape";
+import { ContactShadow } from "../scene/ContactShadow";
 
-/** Stylised pedestrian: legs, tunic with belt, head with a hair cap. Local +z is the face. */
-export function Avatar({ palette }: { palette: Readonly<AvatarPalette> }) {
+/**
+ * Stylised pedestrian: legs, tunic with belt, head with a hair cap. Local +z is the face.
+ * On the baked arrival square it also lays a soft cast shadow (ContactShadow), since baked paving
+ * never receives the runtime shadow map.
+ */
+export function Avatar({ palette, shadow = true }: { palette: Readonly<AvatarPalette>; shadow?: boolean }) {
   return (
     <group scale={AVATAR_SCALE}>
+      {/* shadow=false when the parent already lays one (the local player's LocalAvatar). */}
+      {shadow && <ContactShadow height={AVATAR_HEIGHT} />}
       {[-B.legX, B.legX].map((x) => (
         <mesh key={`leg${x}`} position={[x, B.legY, 0]} castShadow>
           <capsuleGeometry args={[B.legRadius, B.legLength, 4, 8]} />

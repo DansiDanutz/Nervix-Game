@@ -5,7 +5,11 @@ import * as THREE from "three";
 import type { PlazaLayout, PlazaLighting } from "./slice";
 import { useLitClone } from "./metalReflection";
 import { arrivalRig } from "./arrivalLighting";
+import { skyMaterial } from "./skyShader";
+import { sunDirection } from "./fountainWater";
+import { useArrivalMaterials } from "./arrivalMaterials";
 import { ARRIVAL_MATERIAL_GRADE } from "./materialGrade";
+import { renderTier, rendererName } from "./renderTier";
 
 export const ARRIVAL_ROOT = "arrival_square";
 export const arrivalUrl = (plaza: PlazaLayout) => `/slice/${plaza.glb}`;
@@ -16,41 +20,20 @@ const SHADOW_MAP = 2048;
 const SKY_RADIUS_OF_FOG_FAR = 1.4;
 
 /**
- * Sky dome stop heights, in unit-sphere height (sin of elevation). The spawn frame tops out
- * near 0.45, where Blender's sky is still the pink mid stop; the blue zenith sits overhead.
+ * Blender's ArrivalWorld (six-stop ramp and cream cloud banks, skyRamp.ts) drawn as a tone-mapped
+ * shader dome (skyShader.ts): Blender's camera sees its sky through the same view transform as the
+ * buildings, while a scene background skips it.
  */
-const SKY_HORIZON_Y = 0.0;
-const SKY_MID_Y = 0.35;
-const SKY_ZENITH_Y = 0.8;
-
-/**
- * Blender's peach-to-lavender world gradient drawn as a tone-mapped dome: Blender's camera sees
- * its sky through the same AgX view transform as the buildings, while a scene background skips it.
- */
-function SkyDome({ horizon, mid, zenith, radius }: { horizon: string; mid: string | undefined; zenith: string; radius: number }) {
-  const geometry = useMemo(() => {
-    const g = new THREE.SphereGeometry(radius, 48, 24);
-    const low = new THREE.Color(horizon);
-    const high = new THREE.Color(zenith);
-    const middle = mid ? new THREE.Color(mid) : low.clone().lerp(high, 0.5);
-    const pos = g.attributes.position;
-    const colors = new Float32Array(pos.count * 3);
-    const c = new THREE.Color();
-    for (let i = 0; i < pos.count; i++) {
-      const y = pos.getY(i) / radius;
-      if (y <= SKY_MID_Y) c.copy(low).lerp(middle, THREE.MathUtils.smoothstep(y, SKY_HORIZON_Y, SKY_MID_Y));
-      else c.copy(middle).lerp(high, THREE.MathUtils.smoothstep(y, SKY_MID_Y, SKY_ZENITH_Y));
-      c.toArray(colors, i * 3);
-    }
-    g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    return g;
-  }, [horizon, mid, zenith, radius]);
+function SkyDome({ radius }: { radius: number }) {
+  const time = useMemo(() => ({ value: 0 }), []);
+  const geometry = useMemo(() => new THREE.SphereGeometry(radius, 48, 24), [radius]);
+  const material = useMemo(() => skyMaterial(time), [time]);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  return (
-    <mesh renderOrder={-1} frustumCulled={false} geometry={geometry}>
-      <meshBasicMaterial vertexColors side={THREE.BackSide} fog={false} depthWrite={false} />
-    </mesh>
-  );
+  useEffect(() => () => material.dispose(), [material]);
+  useFrame((_, delta) => {
+    time.value += delta;
+  });
+  return <mesh renderOrder={-1} frustumCulled={false} geometry={geometry} material={material} />;
 }
 
 /**
@@ -68,7 +51,8 @@ export function ArrivalLighting({ lighting }: { lighting: PlazaLighting }) {
     <>
       <color attach="background" args={[background]} />
       <fog attach="fog" args={[fog.color, fog.near, fog.far]} />
-      <SkyDome horizon={rig.sky.horizon} mid={rig.sky.mid} zenith={rig.sky.zenith} radius={fog.far * SKY_RADIUS_OF_FOG_FAR} />
+      {/* Sized from the exported fog range, like the camera far plane (SceneView), not the graded fog. */}
+      <SkyDome radius={lighting.fog.far * SKY_RADIUS_OF_FOG_FAR} />
       <hemisphereLight args={[rig.hemisphere.sky, rig.hemisphere.ground, rig.hemisphere.intensity]} />
       <directionalLight position={rig.fill.position} color={rig.fill.color} intensity={rig.fill.intensity} />
       <directionalLight
@@ -94,8 +78,22 @@ export function ArrivalLighting({ lighting }: { lighting: PlazaLighting }) {
 /** The Blender arrival square (A01), drawn exactly where Blender placed it (district frame). */
 export function ArrivalSquare({ plaza }: { plaza: PlazaLayout }) {
   const { scene } = useGLTF(arrivalUrl(plaza));
-  const { hemisphere } = arrivalRig(plaza.lighting);
-  const root = useLitClone(scene, hemisphere.sky, hemisphere.ground, ARRIVAL_MATERIAL_GRADE);
+  const gl = useThree((s) => s.gl);
+  // Surface detail over the bake is a per-pixel cost: GPU tier only (renderTier.ts).
+  const detail = useMemo(() => renderTier(rendererName(gl.getContext())) === "gpu", [gl]);
+  const { hemisphere, sky, sun } = arrivalRig(plaza.lighting);
+  const toSun = sunDirection(sun.position);
+  const [tx, ty, tz] = toSun;
+  const reflectionSun = useMemo(() => ({ direction: [tx, ty, tz] as const, color: sun.color }), [tx, ty, tz, sun.color]);
+  const root = useLitClone(scene, hemisphere.sky, hemisphere.ground, ARRIVAL_MATERIAL_GRADE, reflectionSun);
+  // Baked-lighting contract, surface detail over the bake and the animated fountain water (arrivalMaterials.ts).
+  useArrivalMaterials(root, {
+    center: [plaza.fountain.x, plaza.fountain.z],
+    sky: sky.mid ?? sky.horizon,
+    sunDirection: toSun,
+    sunColor: sun.color,
+    detail,
+  });
   return (
     <group name={ARRIVAL_ROOT}>
       <primitive object={root} />

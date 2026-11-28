@@ -1,33 +1,33 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { interiorFor, type HouseDoor } from "./HouseDoors";
+import type { HouseDoor } from "./HouseDoors";
+import type { WorldHouse } from "../net/api/world";
+import { useK2Kit } from "../world3d/MerchantHouse";
+import { ProductDisplays } from "../world3d/ProductDisplays";
+import { InteriorMerchantNpc } from "../world3d/MerchantNpcs";
+import { interiorTemplate, selectVariant, type InteriorTemplate } from "../world/interiorTemplate";
+import { interiorRoomLayout, ROOM_FRAME, type InteriorRoomLayout } from "../world/interiorLayout";
+import { useHouseSnapshot } from "../world/useHouseSnapshot";
+import { productSelection } from "../ui/ProductCardModel";
 
-const ROOM = { w: 12, d: 9, h: 4.2 };
+const ROOM = { w: ROOM_FRAME.width, d: ROOM_FRAME.depth, h: ROOM_FRAME.height };
+/** The room has no plot of its own yet (B2): every house uses the K2 medium template. */
+const ROOM_SIZE_CLASS = "medium";
+const FLOOR = "#24313a";
+const WALL = "#2f3f49";
+const WOOD = "#6b4423";
+const SHELF = "#8a6a48";
+const COUNTER_SIZE: [number, number, number] = [1.6, 1.0, 0.6];
 
-/** A physical walk-in room with its own floor, walls, door and furnishings. */
-export function InteriorRoom({ door }: { door: HouseDoor }) {
-  const look = interiorFor(door.id);
-  const [nearExit, setNearExit] = useState(false);
-
-  useFrame(({ scene }) => {
-    const player = scene.getObjectByName("player");
-    if (!player) return;
-    const d = Math.hypot(player.position.x, player.position.z - (-ROOM.d / 2 + 0.6));
-    setNearExit(d < 2.4);
-  });
-
-  const isDangg = door.id === "bld_dangg";
-
+/** The room shell: floor, walls, the exit door on the far wall and its label (unchanged behaviour). */
+function RoomShell({ accent, nearExit }: { accent: string; nearExit: boolean }) {
   return (
-    <group name="nervix_interior">
-      {/* floor + ceiling */}
+    <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[ROOM.w, ROOM.d]} />
-        <meshStandardMaterial color={isDangg ? "#3a2a3f" : "#24313a"} roughness={0.9} />
+        <meshStandardMaterial color={FLOOR} roughness={0.9} />
       </mesh>
-
-      {/* walls */}
       {[
         [0, ROOM.h / 2, -ROOM.d / 2, ROOM.w, 0.2],
         [0, ROOM.h / 2, ROOM.d / 2, ROOM.w, 0.2],
@@ -36,13 +36,12 @@ export function InteriorRoom({ door }: { door: HouseDoor }) {
       ].map(([x, y, z, w, d], i) => (
         <mesh key={i} position={[x, y, z]} receiveShadow>
           <boxGeometry args={[w, ROOM.h, d]} />
-          <meshStandardMaterial color={isDangg ? "#4a3550" : "#2f3f49"} roughness={0.95} />
+          <meshStandardMaterial color={WALL} roughness={0.95} />
         </mesh>
       ))}
-      {/* exit door on the far wall */}
       <mesh position={[0, 1.2, -ROOM.d / 2 + 0.15]}>
         <boxGeometry args={[1.8, 2.4, 0.12]} />
-        <meshStandardMaterial color={look.accent} roughness={0.6} />
+        <meshStandardMaterial color={accent} roughness={0.6} />
       </mesh>
       <Html position={[0, 3.0, -ROOM.d / 2 + 0.3]} center distanceFactor={9}>
         <div className="door-label">
@@ -50,97 +49,70 @@ export function InteriorRoom({ door }: { door: HouseDoor }) {
           <small>{nearExit ? "press E" : "walk here"}</small>
         </div>
       </Html>
+    </>
+  );
+}
 
-      {/* furnishings differ per house */}
-      {isDangg ? (
-        <group>
-          {/* clear central stone aisle toward the stairs */}
-          <mesh position={[0, 0.015, -0.6]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[2.4, 6.2]} />
-            <meshStandardMaterial color="#cfc6b4" roughness={0.9} />
-          </mesh>
-          {/* curved walnut reception, left */}
-          <mesh position={[-3.4, 0.55, 0.4]} rotation={[0, 0.5, 0]} castShadow>
-            <cylinderGeometry args={[1.5, 1.5, 1.1, 24, 1, false, 0, Math.PI]} />
-            <meshStandardMaterial color="#6b4423" roughness={0.55} />
-          </mesh>
-          <mesh position={[-3.4, 1.14, 0.4]} rotation={[0, 0.5, 0]}>
-            <cylinderGeometry args={[1.55, 1.55, 0.08, 24, 1, false, 0, Math.PI]} />
-            <meshStandardMaterial color="#c9a441" roughness={0.35} metalness={0.45} />
-          </mesh>
-          {/* roulette table: stout pedestal, broad walnut rim, recessed wheel, brass spindle */}
-          <mesh position={[-2.2, 0.45, -1.6]} castShadow>
-            <cylinderGeometry args={[0.42, 0.55, 0.9, 16]} />
-            <meshStandardMaterial color="#3a2a1e" roughness={0.75} />
-          </mesh>
-          <mesh position={[-2.2, 0.95, -1.6]} castShadow>
-            <cylinderGeometry args={[1.05, 1.05, 0.16, 28]} />
-            <meshStandardMaterial color="#5a3a22" roughness={0.45} />
-          </mesh>
-          <mesh position={[-2.2, 1.04, -1.6]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.92, 0.14, 12, 32]} />
-            <meshStandardMaterial color="#4a2f1c" roughness={0.4} />
-          </mesh>
-          <mesh position={[-2.2, 1.045, -1.6]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[0.78, 32]} />
-            <meshStandardMaterial color="#241610" roughness={0.85} />
-          </mesh>
-          <mesh position={[-2.2, 1.18, -1.6]}>
-            <cylinderGeometry args={[0.05, 0.05, 0.3, 10]} />
-            <meshStandardMaterial color="#c9a441" roughness={0.3} metalness={0.7} />
-          </mesh>
-          {/* green card-table alcove, right */}
-          <mesh position={[3.6, 0.75, 0.2]} castShadow>
-            <cylinderGeometry args={[1.1, 1.1, 0.12, 20]} />
-            <meshStandardMaterial color="#2f6f4a" roughness={0.9} />
-          </mesh>
-          <mesh position={[3.6, 0.38, 0.2]}>
-            <cylinderGeometry args={[0.16, 0.22, 0.75, 12]} />
-            <meshStandardMaterial color="#3a2a1e" roughness={0.8} />
-          </mesh>
-          {/* broad plum runner stairs to three limestone arches */}
-          {[0, 1, 2].map((i) => (
-            <mesh key={i} position={[0, 0.09 + i * 0.18, -2.6 - i * 0.55]} receiveShadow>
-              <boxGeometry args={[4.6, 0.18, 0.6]} />
-              <meshStandardMaterial color="#d9d2c0" roughness={0.9} />
-            </mesh>
-          ))}
-          <mesh position={[0, 0.02, -3.4]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[2.2, 3.2]} />
-            <meshStandardMaterial color="#5b3a5e" roughness={0.95} />
-          </mesh>
-          {[-2.6, 0, 2.6].map((x) => (
-            <mesh key={x} position={[x, 2.0, -4.2]} rotation={[0, 0, 0]}>
-              <torusGeometry args={[1.0, 0.22, 10, 20, Math.PI]} />
-              <meshStandardMaterial color="#efe4cf" roughness={0.9} />
-            </mesh>
-          ))}
-          {/* curtained room, right */}
-          <mesh position={[4.3, 1.6, 1.6]}>
-            <boxGeometry args={[0.12, 3.0, 2.6]} />
-            <meshStandardMaterial color="#7d2f4a" roughness={1} />
-          </mesh>
-          <pointLight position={[-3, 3.4, 1]} intensity={10} distance={10} color="#ffcf8a" />
-          <pointLight position={[3.4, 3.2, 0]} intensity={8} distance={9} color="#ffb877" />
-        </group>
-      ) : (
-        <group>
-          <mesh position={[0, 0.5, 0]} castShadow>
-            <boxGeometry args={[4.4, 1.0, 1.4]} />
-            <meshStandardMaterial color="#2f6f6a" roughness={0.8} />
-          </mesh>
-          {[-3.2, -1.6, 0, 1.6, 3.2].map((x) => (
-            <mesh key={x} position={[x, 1.35, 0]}>
-              <boxGeometry args={[0.7, 0.7, 0.7]} />
-              <meshStandardMaterial color="#b5486b" roughness={0.7} />
-            </mesh>
-          ))}
-        </group>
-      )}
+/** K2 template furniture in template coordinates: shelf boards under the display slots and the counter. */
+function TemplateFurniture({ layout }: { layout: InteriorRoomLayout }) {
+  return (
+    <>
+      {layout.shelfBoards.map((b) => (
+        <mesh key={b.id} name={`interior_${b.id}`} position={b.position as [number, number, number]} castShadow receiveShadow>
+          <boxGeometry args={b.size as [number, number, number]} />
+          <meshStandardMaterial color={SHELF} roughness={0.7} />
+        </mesh>
+      ))}
+      <mesh
+        name="interior_counter"
+        position={[layout.counter.position[0], layout.counter.position[1] + COUNTER_SIZE[1] / 2, layout.counter.position[2]]}
+        rotation={[0, layout.counter.yaw, 0]}
+        castShadow>
+        <boxGeometry args={COUNTER_SIZE} />
+        <meshStandardMaterial color={WOOD} roughness={0.55} />
+      </mesh>
+    </>
+  );
+}
 
-      {/* live catalogue, server-authorised browse data */}
+/** Products from the house panel's snapshot on the template slots, and the merchant's NPC at the station. */
+function TemplateContents({ door, house, template }: { door: HouseDoor; house: WorldHouse | null; template: InteriorTemplate }) {
+  const layout = useMemo(() => interiorRoomLayout(template), [template]);
+  const listings = useHouseSnapshot(door.propertyId);
+  const onSelect = useCallback((id: string) => productSelection.select(door.propertyId, id), [door.propertyId]);
+  return (
+    <group name="interior_template" position={layout.origin as [number, number, number]} userData={{ variant: template.variantId }}>
+      <TemplateFurniture layout={layout} />
+      <ProductDisplays house={listings} slots={template.displaySlots} onSelect={onSelect} />
+      <InteriorMerchantNpc house={house} station={template.npcStation} />
+    </group>
+  );
+}
 
-      <pointLight position={[0, ROOM.h - 0.6, 0]} intensity={12} distance={14} color={look.accent} />
+/**
+ * A physical walk-in room: the shell keeps its frame, bounds and exits; the furnishings come from
+ * the K2 interior template (B4) with live listings (P3/P4) and the AI representative (C8).
+ * `house` is the world-directory entry (null: not listed, so no NPC). Identity is never baked here.
+ */
+export function InteriorRoom({ door, house }: { door: HouseDoor; house: WorldHouse | null }) {
+  const [nearExit, setNearExit] = useState(false);
+  const kit = useK2Kit();
+  const template = useMemo(() => (kit ? interiorTemplate(selectVariant(kit, door.propertyId, ROOM_SIZE_CLASS)) : null), [kit, door.propertyId]);
+  const accent = house?.accent ?? door.trim;
+
+  useFrame(({ scene }) => {
+    const player = scene.getObjectByName("player");
+    if (!player) return;
+    const d = Math.hypot(player.position.x, player.position.z - (-ROOM.d / 2 + 0.6));
+    setNearExit(d < 2.4);
+  });
+
+  return (
+    <group name="nervix_interior">
+      <RoomShell accent={accent} nearExit={nearExit} />
+      {template && <TemplateContents door={door} house={house} template={template} />}
+      <pointLight position={[0, ROOM.h - 0.6, 0]} intensity={12} distance={14} color={accent} />
+      <pointLight position={[0, 3.2, 1.5]} intensity={8} distance={10} color="#ffcf8a" />
     </group>
   );
 }

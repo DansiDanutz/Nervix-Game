@@ -61,3 +61,23 @@ export function gradeLinear(rgb: LinearRgb, grade: ColorGrade): [number, number,
   const tint = grade.tint ?? [1, 1, 1];
   return rgb.map((c, i) => clamp01((lum + (c - lum) * grade.saturation) * grade.value * tint[i])) as [number, number, number];
 }
+
+/**
+ * Polished gilding and brass (fidelity r2 Materials and Right casino: "gold reads as flat ochre
+ * paint with no specular"). Keyed by Blender material name without the exporter's `_lm` suffix:
+ * fully metallic, roughness held in a narrow polished band so the sky and sun glints in the
+ * reflection map (metalReflection.ts) read as highlights rather than a blurred tint.
+ */
+export const POLISHED_METALS: Readonly<Record<string, { roughnessMin: number; roughnessMax: number }>> = Object.freeze({
+  ar_gold: Object.freeze({ roughnessMin: 0.2, roughnessMax: 0.25 }),
+  ar_brass: Object.freeze({ roughnessMin: 0.22, roughnessMax: 0.3 }),
+  oc_gold: Object.freeze({ roughnessMin: 0.2, roughnessMax: 0.25 }),
+  oc_brass: Object.freeze({ roughnessMin: 0.22, roughnessMax: 0.3 }),
+});
+
+/** Metalness and roughness a material is drawn with: polished metals are clamped, others unchanged. */
+export function polishedMetal(materialName: string | undefined, metalness: number, roughness: number): { metalness: number; roughness: number } {
+  const band = materialName ? POLISHED_METALS[materialName.replace(/#.*$/, "").replace(/_lm$/i, "")] : undefined;
+  if (!band) return { metalness, roughness };
+  return { metalness: 1, roughness: Math.min(band.roughnessMax, Math.max(band.roughnessMin, roughness)) };
+}

@@ -58,6 +58,13 @@ export const GRADE = Object.freeze({
   /** Fog warmed slightly toward peach so the skyline sits in golden haze. */
   fogTint: "#f8c890",
   fogMix: 0.3,
+  /**
+   * Fidelity r2: Blender's world has no mist, and the exported 70-460 m linear fog veiled the hill,
+   * aqueduct and temple (the "milky far field"). The fog now starts beyond the hill (~3x) and
+   * thins out (~2.5x), leaving only a light aerial haze on the far mountains.
+   */
+  fogNearScale: 3,
+  fogFarScale: 2.5,
 });
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -107,7 +114,7 @@ export function arrivalRig(lighting: PlazaLighting): ArrivalRig {
   const { fog } = lighting;
   return {
     sky: { horizon, mid, zenith },
-    fog: { color: mixHex(fog.color, GRADE.fogTint, GRADE.fogMix), near: fog.near, far: fog.far },
+    fog: { color: mixHex(fog.color, GRADE.fogTint, GRADE.fogMix), near: round3(fog.near * GRADE.fogNearScale), far: round3(fog.far * GRADE.fogFarScale) },
     hemisphere: {
       sky: mixHex(lighting.hemisphere.sky, GRADE.hemisphereSkyTint, GRADE.hemisphereSkyMix),
       ground: mixHex(lighting.hemisphere.ground, GRADE.groundTint, GRADE.groundMix),

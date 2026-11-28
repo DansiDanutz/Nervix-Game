@@ -116,7 +116,7 @@ export async function walkToTestBuilderDoor(page: Page, L: Layout) {
   const d = L.plaza?.test_builder_door;
   const at = d ? { x: d.x + Math.sin(d.yaw) * 1.2, z: d.z + Math.cos(d.yaw) * 1.2 } : { x: 6, z: 6.2 };
   await walkRoute(page, at.x, at.z, 1.0, L);
-  await expect(page.getByTestId("place-hint")).toContainText("Enter Test Builder House");
+  await expect(page.getByTestId("place-hint")).toContainText("Enter Test Builder");
 }
 
 export async function walkIntoOpenPoker(page: Page, L: Layout) {

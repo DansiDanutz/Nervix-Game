@@ -55,7 +55,8 @@ export function Hud({
           </div>
           <QuestCard open={questOpen} seals={seals} onToggle={onToggleQuest} />
         </div>
-        <div className="hud__seals">Seals {seals}/3</div>
+        {/* The collapsed quest chip already shows the seal count; the separate chip only joins the open card. */}
+        {questOpen && <div className="hud__seals">Seals {seals}/3</div>}
       </header>
 
       {nearby && (

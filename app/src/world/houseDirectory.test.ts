@@ -58,11 +58,15 @@ test("without manifest plots, the legacy doors are kept only for listed houses, 
   }
 });
 
-test("a directory that has not loaded (null) keeps the legacy doors unchanged and places nothing on plots", () => {
-  const fallbackDoors = [legacy("bld_test", "prop_a")];
+test("a directory that has not loaded (null) opens no door: nothing can be entered before the listing is known", () => {
+  // A suspended or unlisted merchant's legacy door must not be enterable while GET /world/houses is in flight.
+  const fallbackDoors = [legacy("bld_test", "prop_a"), legacy("bld_dangg", "prop_dangg")];
   const view = joinHouseDirectory({ houses: null, plots: [plot("plot_a")], fallbackDoors });
-  assert.deepEqual(view.doors, fallbackDoors);
+  assert.deepEqual(view.doors, []);
   assert.deepEqual(view.closedPlots, ["plot_a"]);
+  assert.ok(Object.isFrozen(view.doors));
+  const salon = joinHouseDirectory({ houses: null, plots: [], fallbackDoors });
+  assert.deepEqual(salon.doors, []);
 });
 
 test("an empty directory closes every plot and every legacy door (suspend, reload, door gone)", () => {
