@@ -1,4 +1,11 @@
-/** Properties (houses), their appearance and house profiles. Methods run with `this` bound to a PostgresStore. */
+/**
+ * Properties (houses), their appearance and house profiles. Methods run with
+ * `this` bound to a PostgresStore; the exported plain functions are B1 house
+ * bindings, kept off the class so its snapshot-tested API is unchanged.
+ */
+
+import { OFFERING_COLUMNS, listingFromRow } from "./offerings.mjs";
+import { arrangeListings } from "../listing-display.mjs";
 
 export const houseMethods = Object.freeze({
   async saveProperty(property) {
@@ -19,10 +26,11 @@ export const houseMethods = Object.freeze({
   },
 
   async getProperty(propertyId) {
-    const { rows } = await this.pool.query("SELECT id, owner_id, merchant_id, slot_id, template, palette, address FROM properties WHERE id = $1", [propertyId]);
+    const { rows } = await this.pool.query(
+      "SELECT id, owner_id, merchant_id, plot_id, slot_id, template, palette, address, published FROM properties WHERE id = $1", [propertyId]);
     if (!rows.length) return null;
-    // owner_id is kept for existing callers; ownerId/merchantId are the mapped forms.
-    return { ...rows[0], ownerId: rows[0].owner_id, merchantId: rows[0].merchant_id };
+    // owner_id is kept for existing callers; ownerId/merchantId/plotId are the mapped forms.
+    return { ...rows[0], ownerId: rows[0].owner_id, merchantId: rows[0].merchant_id, plotId: rows[0].plot_id };
   },
 
   async updateAppearance(propertyId, { template, palette }) {
@@ -56,18 +64,22 @@ export const houseMethods = Object.freeze({
     return this.getHouseProfile(propertyId);
   },
 
+  /**
+   * One house and its catalogue: the builder bound to the house's merchant
+   * (unique since 017). Listings include inactive ones, arranged (P1); routes
+   * show visitors only `visibleListings`.
+   */
   async getHouse(propertyId) {
     const { rows } = await this.pool.query(
-      `SELECT p.id, p.owner_id, p.merchant_id, u.display_name, b.id AS builder_id, b.app_url
+      `SELECT p.id, p.owner_id, p.merchant_id, p.published, u.display_name, b.id AS builder_id, b.app_url
          FROM properties p
          JOIN users u ON u.id = p.owner_id
-         LEFT JOIN builders b ON b.owner_id = p.owner_id
+         LEFT JOIN builders b ON b.merchant_id = p.merchant_id
         WHERE p.id = $1`, [propertyId]);
     if (!rows.length) return null;
     const r = rows[0];
     const listings = r.builder_id
-      ? (await this.pool.query(
-          "SELECT id, name, price_minor, currency FROM builder_offerings WHERE builder_id = $1 ORDER BY name", [r.builder_id])).rows
+      ? (await this.pool.query(`SELECT ${OFFERING_COLUMNS} FROM builder_offerings WHERE builder_id = $1`, [r.builder_id])).rows
       : [];
     return {
       propertyId: r.id,
@@ -76,7 +88,8 @@ export const houseMethods = Object.freeze({
       builderId: r.builder_id,
       ownerName: r.display_name,
       appUrl: r.app_url,
-      listings: listings.map((l) => ({ id: l.id, name: l.name, priceMinor: l.price_minor, currency: l.currency })),
+      published: r.published,
+      listings: arrangeListings(listings.map(listingFromRow)),
     };
   },
 
@@ -89,3 +102,49 @@ export const houseMethods = Object.freeze({
     }));
   },
 });
+
+/** The house bound to a catalogue's merchant, or null (an unbound catalogue has no house). */
+export async function houseOfBuilder(store, builderId) {
+  const { rows } = await store.pool.query(
+    `SELECT p.id, p.owner_id, p.merchant_id FROM builders b
+       JOIN properties p ON p.merchant_id = b.merchant_id
+      WHERE b.id = $1`, [builderId]);
+  return rows[0] ? Object.freeze({ id: rows[0].id, ownerId: rows[0].owner_id, merchantId: rows[0].merchant_id }) : null;
+}
+
+/**
+ * Catalogues a viewer may browse: those bound to a published house, plus the
+ * viewer's own. An unpublished or unbound catalogue is hidden from everyone else.
+ */
+export async function listVisibleBuilders(store, viewerId) {
+  const { rows } = await store.pool.query(
+    `SELECT b.id, b.owner_id, b.name, b.app_url FROM builders b
+       LEFT JOIN properties p ON p.merchant_id = b.merchant_id
+      WHERE (b.merchant_id IS NOT NULL AND p.published) OR b.owner_id = $1
+      ORDER BY b.name`, [viewerId]);
+  return Object.freeze(rows.map((r) => Object.freeze({ id: r.id, ownerId: r.owner_id, name: r.name, appUrl: r.app_url })));
+}
+
+/** The caller's own house (one per owner, D4), or null. */
+export async function houseOfOwner(store, ownerId) {
+  const { rows } = await store.pool.query("SELECT id, owner_id, merchant_id FROM properties WHERE owner_id = $1", [ownerId]);
+  return rows[0] ? Object.freeze({ id: rows[0].id, ownerId: rows[0].owner_id, merchantId: rows[0].merchant_id }) : null;
+}
+
+/**
+ * Binds an unbound catalogue to its owner's merchant, unless that merchant
+ * already has one (one catalogue per merchant). Returns whether it bound.
+ */
+export async function bindBuilderMerchant(store, builderId, merchantId) {
+  try {
+    const { rowCount } = await store.pool.query(
+      `UPDATE builders b SET merchant_id = $2
+        WHERE b.id = $1 AND b.merchant_id IS NULL
+          AND EXISTS (SELECT 1 FROM merchants m WHERE m.id = $2 AND m.owner_id = b.owner_id)
+          AND NOT EXISTS (SELECT 1 FROM builders o WHERE o.merchant_id = $2)`, [builderId, merchantId]);
+    return rowCount > 0;
+  } catch (error) {
+    if (error.code === "23505") return false; // a concurrent bind won
+    throw error;
+  }
+}

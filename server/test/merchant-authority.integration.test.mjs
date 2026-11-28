@@ -42,7 +42,9 @@ async function seedExtras(q) {
   await merchant("mer_s1_nohouse", EXTRA.nohouse.user, true);
   await q(`INSERT INTO properties (id, owner_id, merchant_id, slot_id, district, template, address, published)
            VALUES ('prop_s1_split', $1, 'mer_s1_split_bound', 'slot-14', 'merchant-quarter', 'merchant_house', 'slot-14', true)`, [EXTRA.split.user]);
-  await q("INSERT INTO builders (id, owner_id, name) VALUES ('bld_s1_split', $1, 'Split'), ('bld_s1_nohouse', $2, 'No House')",
+  // Catalogues bind to a merchant (B1, migration 017).
+  await q(`INSERT INTO builders (id, owner_id, name, merchant_id)
+           VALUES ('bld_s1_split', $1, 'Split', 'mer_s1_split_bound'), ('bld_s1_nohouse', $2, 'No House', 'mer_s1_nohouse')`,
     [EXTRA.split.user, EXTRA.nohouse.user]);
   await q(`INSERT INTO builder_offerings (id, builder_id, name, description, price_minor, currency)
            VALUES ('off_s1_split', 'bld_s1_split', 'Split Item', 'S1 test listing.', 100, 'EUR')`);

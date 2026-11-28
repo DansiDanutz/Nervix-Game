@@ -1,10 +1,10 @@
 /** Published businesses, provisioning by the session user, and their catalogues. */
 
-import { provisionProperty } from "../provision.mjs";
-import { LEVELS, requireLevel, safeAppUrl } from "../entitlement.mjs";
-import { authorizeMerchantEdit, authorizeHouseEdit } from "../house-authority.mjs";
+import { LEVELS, requireLevel, safeAppUrl, AccessError } from "../entitlement.mjs";
+import { authorizeMerchantEdit, authorizeHouseEdit, canEditHouse } from "../house-authority.mjs";
 import { validateProduct } from "../merchants.mjs";
-import { saveMerchantProperty } from "../store/merchants.mjs";
+import { allocateHouse } from "../store/plots.mjs";
+import { houseOfOwner } from "../store/houses.mjs";
 import { caller, requireStore, houseEditContext } from "./guards.mjs";
 import { readMe } from "./me.mjs";
 
@@ -18,27 +18,29 @@ export function chooseMerchant(merchants, boundMerchantId = null) {
 
 /**
  * Provisions (or returns) the session user's house, bound to their verified
- * merchant. Any userId in the body is ignored. Shared by POST /businesses and
- * POST /merchants/provision.
+ * merchant, on a plot allocated in one database transaction. Any userId in
+ * the body is ignored. Shared by POST /businesses and POST /merchants/provision.
  */
 export async function provisionForCaller(ctx, params, body) {
-  const { db, slots } = ctx;
+  const { db } = ctx;
   const { user, level } = await caller(ctx, params);
   requireLevel(level, LEVELS.BUILD);
   requireStore(ctx);
-  const existing = db.properties.find((p) => p.ownerId === user.id) ?? null;
-  const bound = existing ? await db.store.getProperty(existing.id) : null;
+  const bound = await houseOfOwner(db.store, user.id);
   const merchant = chooseMerchant(await db.store.listMerchantsByOwner(user.id), bound?.merchantId);
   authorizeMerchantEdit({ user, level, merchant });
 
-  const result = provisionProperty({
-    userId: user.id, merchantId: merchant.id, businessType: body.businessType ?? "merchant", slots, existing: db.properties,
-  });
-  if (!result.property) return result;
-  const merchantId = await saveMerchantProperty(db.store, { ...result.property, merchantId: merchant.id });
-  const property = Object.freeze({ ...result.property, merchantId });
-  if (result.created) db.properties = [...db.properties, property];
-  return { property, created: result.created };
+  const result = await allocateHouse(db.store, { userId: user.id, merchantId: merchant.id, businessType: body.businessType ?? "merchant" });
+  if (result.property && result.property.merchantId !== merchant.id) {
+    throw new AccessError("this house is bound to another merchant", "cross_owner");
+  }
+  return result;
+}
+
+/** A catalogue is visible when its house is published, or to whoever may edit that house. */
+async function catalogVisible(ctx, params, property) {
+  if (property.published) return true;
+  return canEditHouse(await houseEditContext(ctx, params, property.id));
 }
 
 export function createBusinessRoutes(ctx) {
@@ -56,7 +58,7 @@ export function createBusinessRoutes(ctx) {
       const me = await readMe(ctx, params);
       requireLevel(me.level, LEVELS.BROWSE);
       const property = db.store ? await db.store.getProperty(params.id) : null;
-      if (!property) return { error: "not_found" };
+      if (!property || !(await catalogVisible(ctx, params, property))) return { error: "not_found" };
       // Products live under the house's merchant, the same key the owner writes with.
       const items = property.merchantId ? await db.store.listProducts(property.merchantId) : [];
       return { items: items.map((i) => ({ ...i, appUrl: i.appUrl ?? null })) };

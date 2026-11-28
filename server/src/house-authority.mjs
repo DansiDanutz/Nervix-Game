@@ -103,7 +103,8 @@ function cleanDisplay(raw) {
 /** Whitelists and bounds the editable profile. Unknown fields are dropped. */
 export function validateHouseProfile(body) {
   const profile = {};
-  if (body.welcome !== undefined) profile.welcome = cleanText(body.welcome, WELCOME_MAX, "welcome");
+  // null clears the welcome; String(null) used to store the literal "null".
+  if (body.welcome !== undefined) profile.welcome = body.welcome === null ? null : cleanText(body.welcome, WELCOME_MAX, "welcome");
   if (body.decor !== undefined) profile.decor = cleanDecor(body.decor);
   if (body.display !== undefined) profile.display = cleanDisplay(body.display);
   if (body.websiteUrl !== undefined) {
@@ -112,4 +113,14 @@ export function validateHouseProfile(body) {
     profile.websiteUrl = safe;
   }
   return profile;
+}
+
+/** Throws HouseProfileError unless every featured id is one of this house's own listings. */
+export function checkFeaturedListings(display, ownListingIds) {
+  const featured = display?.featuredListingIds;
+  if (!featured) return true;
+  const own = new Set(ownListingIds);
+  const foreign = featured.filter((id) => !own.has(id));
+  if (foreign.length) throw new HouseProfileError("featured listings must belong to this house");
+  return true;
 }

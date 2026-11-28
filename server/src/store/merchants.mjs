@@ -72,20 +72,23 @@ export const merchantMethods = Object.freeze({
 });
 
 /**
- * Persists a provisioned house together with its merchant binding. An existing
- * row keeps its merchant; one with none is bound, but only for the same owner.
+ * Persists a provisioned house together with its merchant binding and plot.
+ * An existing row keeps its merchant; one with none is bound, but only for the
+ * same owner (migration 017 also rejects a merchant of another owner). `q` is
+ * anything with `query` (a pool or a transaction client). Returns the stored
+ * merchant id, which the caller must compare with the authorised merchant.
  * A plain function, not a PostgresStore method, so the store's public API
- * (snapshot-tested since F0) is unchanged; B1 takes this over with plots.
+ * (snapshot-tested since F0) is unchanged.
  */
-export async function saveMerchantProperty(store, property) {
-  await store.pool.query(
-    `INSERT INTO properties (id, owner_id, merchant_id, slot_id, district, template, address, published)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+export async function saveMerchantProperty(q, property) {
+  await q.query(
+    `INSERT INTO properties (id, owner_id, merchant_id, plot_id, slot_id, district, template, address, published)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (id) DO UPDATE SET merchant_id = COALESCE(properties.merchant_id, excluded.merchant_id)
        WHERE properties.owner_id = excluded.owner_id`,
-    [property.id, property.ownerId, property.merchantId, property.slotId, property.district,
+    [property.id, property.ownerId, property.merchantId, property.plotId ?? null, property.slotId, property.district,
       property.template, property.address, property.published],
   );
-  const stored = await store.getProperty(property.id);
-  return stored ? stored.merchantId : null;
+  const { rows } = await q.query("SELECT merchant_id FROM properties WHERE id = $1", [property.id]);
+  return rows[0]?.merchant_id ?? null;
 }

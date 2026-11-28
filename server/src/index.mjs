@@ -27,9 +27,8 @@ attachPresence(server, { resolveSession: presenceSessionResolver(ctx) });
 async function boot() {
   const { db } = ctx;
   if (db.store) {
-    db.properties = await db.store.listProperties();
     db.campaigns = await db.store.listCampaigns();
-    console.log(`loaded ${db.properties.length} properties, ${db.campaigns.length} campaigns from Postgres`);
+    console.log(`loaded ${db.campaigns.length} campaigns from Postgres`);
   }
   server.listen(PORT, () => console.log(`nervix-world demo API on :${PORT} (demo=${DEMO_MODE})`));
 }

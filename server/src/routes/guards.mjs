@@ -43,18 +43,6 @@ export async function requireMerchantOwner(ctx, params) {
   return { user, merchant };
 }
 
-/** Caller must be the verified merchant owning the house bound to this builder catalogue. */
-export async function requireBuilderOwner(ctx, params, builderId) {
-  requireStore(ctx);
-  const { user, level } = await caller(ctx, params);
-  const builder = await ctx.db.store.getBuilder(builderId);
-  if (!builder) throw new AccessError("unknown catalogue", "not_found");
-  const merchants = await ctx.db.store.listMerchantsByOwner(user?.id);
-  authorizeMerchantEdit({ user, level, merchant: merchants.find((m) => m.verified) ?? merchants[0] ?? null });
-  if (builder.ownerId !== user.id) throw new AccessError("not your catalogue", "cross_owner");
-  return { user, builder };
-}
-
 export async function requireAdmin(ctx, params) {
   requireStore(ctx);
   const { user } = await caller(ctx, params);

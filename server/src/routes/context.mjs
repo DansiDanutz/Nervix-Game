@@ -1,6 +1,7 @@
 /**
- * Shared server state for the route modules: the in-memory demo db, the slot
- * table and the link registry. Built once per process by src/index.mjs.
+ * Shared server state for the route modules: the in-memory demo db and the
+ * link registry. Built once per process by src/index.mjs. Plots (the former
+ * slot table) live in the database since migration 017 (store/plots.mjs).
  */
 
 import { linkRegistry } from "../link-registry.mjs";
@@ -10,32 +11,9 @@ import { TOOLS } from "../agent.mjs";
 import { createProvider, createSpeechProvider } from "../provider.mjs";
 import { PostgresStore } from "../store.mjs";
 
-const MERCHANT_HOUSES = 8;
-const CAFES = 4;
-const VENUES = 2;
-
-export const SLOTS = Object.freeze([
-  ...Array.from({ length: MERCHANT_HOUSES }, (_, i) => ({
-    id: `slot-${String(i + 1).padStart(2, "0")}`,
-    template: "merchant_house",
-    district: "merchant-quarter",
-  })),
-  ...Array.from({ length: CAFES }, (_, i) => ({
-    id: `cafe-${i + 1}`,
-    template: "cafe_shop",
-    district: "coffee-courtyard",
-  })),
-  ...Array.from({ length: VENUES }, (_, i) => ({
-    id: `venue-${i + 1}`,
-    template: "casino_venue",
-    district: "entertainment-district",
-  })),
-]);
-
 function createDb(env) {
   return {
     orders: new Map(),
-    properties: [],
     campaigns: [],
     conversations: new Map(),
     provider: createProvider(env),
@@ -61,7 +39,6 @@ function createDb(env) {
 export function createContext({ env = process.env } = {}) {
   return Object.freeze({
     db: createDb(env),
-    slots: SLOTS,
     registry: linkRegistry(env.WORLD_REGISTRY_URL),
   });
 }

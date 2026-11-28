@@ -195,14 +195,24 @@
           {
             "id": "off_dangg_2",
             "name": "DanGG Starter Bundle",
+            "description": "Sample bundle (demo listing).",
             "priceMinor": 3999,
-            "currency": "EUR"
+            "currency": "EUR",
+            "category": "bundle",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
           },
           {
             "id": "off_dangg_1",
             "name": "DanGG Table Seat",
+            "description": "Sample seating (demo listing).",
             "priceMinor": 1750,
-            "currency": "EUR"
+            "currency": "EUR",
+            "category": "seat",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
           }
         ],
         "merchantName": "DanGG",
@@ -235,14 +245,24 @@
           {
             "id": "off_dangg_2",
             "name": "DanGG Starter Bundle",
+            "description": "Sample bundle (demo listing).",
             "priceMinor": 3999,
-            "currency": "EUR"
+            "currency": "EUR",
+            "category": "bundle",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
           },
           {
             "id": "off_dangg_1",
             "name": "DanGG Table Seat",
+            "description": "Sample seating (demo listing).",
             "priceMinor": 1750,
-            "currency": "EUR"
+            "currency": "EUR",
+            "category": "seat",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
           }
         ],
         "merchantName": "DanGG",
@@ -275,8 +295,13 @@
           {
             "id": "off_test_1",
             "name": "Test Builder Widget",
+            "description": "Local test listing (demo).",
             "priceMinor": 750,
-            "currency": "EUR"
+            "currency": "EUR",
+            "category": "merch",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
           }
         ],
         "merchantName": "Test Builder",
@@ -346,6 +371,10 @@
               "description": "Sample bundle (demo listing).",
               "priceMinor": 3999,
               "currency": "EUR",
+              "category": "bundle",
+              "slot": null,
+              "sortOrder": 0,
+              "active": true,
               "appUrl": null
             },
             {
@@ -354,6 +383,10 @@
               "description": "Sample seating (demo listing).",
               "priceMinor": 1750,
               "currency": "EUR",
+              "category": "seat",
+              "slot": null,
+              "sortOrder": 0,
+              "active": true,
               "appUrl": null
             }
           ]
@@ -370,6 +403,10 @@
               "description": "Local test listing (demo).",
               "priceMinor": 750,
               "currency": "EUR",
+              "category": "merch",
+              "slot": null,
+              "sortOrder": 0,
+              "active": true,
               "appUrl": null
             }
           ]
@@ -904,7 +941,11 @@
         "description": null,
         "priceMinor": 500,
         "currency": "EUR",
-        "appUrl": null
+        "appUrl": null,
+        "category": null,
+        "slot": null,
+        "sortOrder": 0,
+        "active": true
       }
     }
   },
@@ -928,7 +969,11 @@
         "description": null,
         "price_minor": 650,
         "currency": "EUR",
-        "app_url": null
+        "app_url": null,
+        "category": null,
+        "display_slot": null,
+        "sort_order": 0,
+        "active": true
       }
     }
   },
@@ -987,7 +1032,11 @@
         "description": "Edited by snapshot.",
         "price_minor": 1750,
         "currency": "EUR",
-        "app_url": null
+        "app_url": null,
+        "category": "seat",
+        "display_slot": null,
+        "sort_order": 0,
+        "active": true
       }
     }
   },
@@ -1511,20 +1560,35 @@
           {
             "id": "off_dangg_2",
             "name": "DanGG Starter Bundle",
+            "description": "Sample bundle (demo listing).",
             "priceMinor": 3999,
-            "currency": "EUR"
+            "currency": "EUR",
+            "category": "bundle",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
           },
           {
             "id": "off_dangg_1",
             "name": "DanGG Table Seat",
+            "description": "Edited by snapshot.",
             "priceMinor": 1750,
-            "currency": "EUR"
+            "currency": "EUR",
+            "category": "seat",
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
           },
           {
             "id": "<OFFERING>",
             "name": "Snap Pass",
+            "description": null,
             "priceMinor": 650,
-            "currency": "EUR"
+            "currency": "EUR",
+            "category": null,
+            "slot": null,
+            "sortOrder": 0,
+            "active": true
           }
         ],
         "merchantName": "DanGG",

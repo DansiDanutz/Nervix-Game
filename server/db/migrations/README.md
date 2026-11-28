@@ -27,8 +27,8 @@ after checking this table, and add your row in the same change.
 | 014 | `014_builders.sql` | applied | Builders and offerings |
 | 015 | `015_house_authority.sql` | applied | House authority and profiles |
 | 016 | `016_conversations_per_user.sql` | **reserved: S3** | Conversations keyed by (property_id, user_id); old table kept |
-| 017 | `017_plots.sql` | **reserved: B1** | Plot registry tied to Blender doors |
-| 018 | `018_listing_display.sql` | **reserved: P1** | Listing category, slot and active fields |
+| 017 | `017_plots.sql` | applied (reserved: B1) | Plot registry tied to Blender doors: `plots`, `properties.plot_id` UNIQUE FK, one house per merchant, owner checks on house and catalogue bindings, `builders.merchant_id` |
+| 018 | `018_listing_display.sql` | applied (reserved: P1) | Listing display on `builder_offerings`: `category` (CHECK against `shared/contracts/product-categories.json` ids, NULL = generic), `display_slot` 0-31, `sort_order` ±10000, `active` (false hides from visitors) |
 | 019 | `019_presence_settings.sql` | **reserved: C9** | Presence settings |
 | 020 | `020_district_plots.sql` | **reserved: B5** | District plots |
 

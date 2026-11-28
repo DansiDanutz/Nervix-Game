@@ -2,6 +2,7 @@
 
 import { LEVELS, requireLevel, safeAppUrl, AccessError } from "../entitlement.mjs";
 import { authorizeMerchantEdit, authorizeHouseEdit } from "../house-authority.mjs";
+import { houseOfBuilder, houseOfOwner, bindBuilderMerchant, listVisibleBuilders } from "../store/houses.mjs";
 import { caller, requireStore, pickMerchant } from "./guards.mjs";
 import { newOffering, offeringPatch } from "./offering-input.mjs";
 import { readMe } from "./me.mjs";
@@ -9,23 +10,18 @@ import { readMe } from "./me.mjs";
 const BUILDER_ID_SUFFIX = 8;
 const NAME_MAX = 80;
 
-/** The house of a catalogue's owner (one house per owner, D4), with its bound merchant. */
-async function houseOfOwner(store, ownerId) {
-  const owned = (await store.listProperties()).find((p) => p.ownerId === ownerId);
-  return owned ? store.getProperty(owned.id) : null;
-}
-
 /**
  * Caller must own this catalogue AND be the verified, unsuspended owner of the
- * merchant bound to the catalogue's house. Another verified merchant record of
- * the same user does not grant authority over a house bound elsewhere.
+ * merchant bound to the catalogue's house. The house is found through the
+ * catalogue's merchant (017), so it is exactly one. Another verified merchant
+ * record of the same user does not grant authority over a house bound elsewhere.
  */
 async function requireBuilderOwner(ctx, params, builderId) {
   requireStore(ctx);
   const { user, level } = await caller(ctx, params);
   const builder = await ctx.db.store.getBuilder(builderId);
   if (!builder) throw new AccessError("unknown catalogue", "not_found");
-  const house = await houseOfOwner(ctx.db.store, builder.ownerId);
+  const house = await houseOfBuilder(ctx.db.store, builderId);
   const merchant = pickMerchant(await ctx.db.store.listMerchantsByOwner(user?.id), house);
   authorizeMerchantEdit({ user, level, merchant });
   if (builder.ownerId !== user.id) throw new AccessError("not your catalogue", "cross_owner");
@@ -34,13 +30,28 @@ async function requireBuilderOwner(ctx, params, builderId) {
   return { user, builder, house };
 }
 
+/**
+ * The merchant a new catalogue binds to. With a house, only the house's own
+ * merchant (a binding is permanent, so binding elsewhere would strand the
+ * catalogue); authorizeMerchantEdit then denies it precisely if unusable.
+ * Without a house, a usable merchant, else the first (for a precise denial).
+ */
+function catalogueMerchant(merchants, house) {
+  if (house) {
+    if (!house.merchantId) throw new AccessError("your house is not bound to a merchant", "unknown_house");
+    return merchants.find((m) => m.id === house.merchantId) ?? null;
+  }
+  return merchants.find((m) => m.verified && !m.suspended) ?? merchants[0] ?? null;
+}
+
 export function createBuilderRoutes(ctx) {
   const { db } = ctx;
   return {
     "GET /builders": async (_b, params) => {
       const me = await readMe(ctx, params);
       requireLevel(me.level, LEVELS.BROWSE);
-      const builders = await db.store.listBuilders();
+      // Only catalogues of published houses, plus the caller's own (drafts, unbound).
+      const builders = await listVisibleBuilders(db.store, me.userId ?? null);
       const withOfferings = [];
       for (const b of builders) withOfferings.push({ ...b, offerings: await db.store.listOfferings(b.id) });
       return { builders: withOfferings, platform: "OpenPoker", note: "OpenPoker is an open platform; each builder owns their own catalogue." };
@@ -51,11 +62,13 @@ export function createBuilderRoutes(ctx) {
       const me = await readMe(ctx, params);
       const { user, level } = await caller(ctx, params);
       const merchants = await db.store.listMerchantsByOwner(user?.id);
-      authorizeMerchantEdit({ user, level, merchant: merchants.find((m) => m.verified) ?? merchants[0] ?? null });
+      const merchant = catalogueMerchant(merchants, await houseOfOwner(db.store, user?.id));
+      authorizeMerchantEdit({ user, level, merchant });
       const appUrl = body.appUrl ? safeAppUrl(body.appUrl) : null;
       if (body.appUrl && !appUrl) return { error: "unsafe_app_url" };
       const id = `bld_${me.userId.slice(-BUILDER_ID_SUFFIX)}`;
       await db.store.createBuilder({ id, ownerId: me.userId, name: String(body.name ?? "My studio").slice(0, NAME_MAX), appUrl });
+      await bindBuilderMerchant(db.store, id, merchant.id);
       return { builder: await db.store.getBuilder(id) };
     },
 
