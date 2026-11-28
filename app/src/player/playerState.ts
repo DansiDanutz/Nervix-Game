@@ -17,13 +17,23 @@ export type PlayerSample = Omit<PlayerSnapshot, "speed">;
 export const INITIAL_PLAYER: PlayerSnapshot = Object.freeze({ x: 0, z: 0, yaw: 0, speed: 0, tMs: 0 });
 
 const MS_PER_S = 1000;
+/**
+ * Faster than any ground movement (run is about 7 m/s): a step this fast is a
+ * teleport or door transition, reported as speed 0 rather than a run burst.
+ */
+export const MAX_GROUND_SPEED = 20;
+
+function derivedSpeed(prev: PlayerSnapshot, x: number, z: number, dt: number): number {
+  if (prev === INITIAL_PLAYER) return 0;
+  if (dt <= 0) return prev.speed;
+  const speed = Math.hypot(x - prev.x, z - prev.z) / dt;
+  return speed > MAX_GROUND_SPEED ? 0 : speed;
+}
 
 export function nextSnapshot(prev: PlayerSnapshot, sample: PlayerSample): PlayerSnapshot {
   const { x, z, yaw, tMs } = sample;
   if (![x, z, yaw, tMs].every(Number.isFinite)) return prev;
-  const dt = (tMs - prev.tMs) / MS_PER_S;
-  const first = prev === INITIAL_PLAYER;
-  const speed = first ? 0 : dt > 0 ? Math.hypot(x - prev.x, z - prev.z) / dt : prev.speed;
+  const speed = derivedSpeed(prev, x, z, (tMs - prev.tMs) / MS_PER_S);
   return Object.freeze({ x, z, yaw, speed, tMs });
 }
 

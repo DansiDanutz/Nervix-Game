@@ -50,3 +50,13 @@ test("publishing returns a new snapshot and leaves the old one unchanged", () =>
   assert.equal(before.x, 1);
   assert.equal(state.ref.current.speed, 1);
 });
+
+test("a teleport or door jump reads as standing still, not a one-frame run burst", () => {
+  const state = createPlayerState();
+  state.publish({ x: 0, z: 0, yaw: 0, tMs: 1000 });
+  state.publish({ x: 0.07, z: 0, yaw: 0, tMs: 1010 }); // a normal run step: 7 m/s
+  assert.ok(Math.abs(state.ref.current.speed - 7) < 1e-9);
+  state.publish({ x: 40, z: 0, yaw: 0, tMs: 1026 }); // a 40 m jump in 16 ms
+  assert.equal(state.ref.current.speed, 0);
+  assert.equal(state.ref.current.x, 40);
+});
