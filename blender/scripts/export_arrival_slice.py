@@ -10,10 +10,15 @@ Every runtime anchor is computed from named Blender objects:
   fountain        <- fountain_basin (radius) and fountain_tiers (top_y), centred on their bbox
   obstacles       <- objects tagged arrival_obstacle: AABB per connected part in the walkable
                      height band, overlapping parts merged
+  obstacle top_y  <- highest point (runtime y) of the merged parts, so the camera can ignore low ones
   test_builder_door <- empty arrival_test_builder_door (+ its outward direction)
+  plots           <- runtime_layout.plots[]: the plot_<district>_<n> door empties (arrival_plots.py)
   spawn           <- empty arrival_spawn
   lighting        <- arrival_sun and the ArrivalWorld constants used for the Blender render
 The district .blend is never opened; the slice file is not saved.
+Pass `-- --manifest-only` to merge the manifests without re-exporting the GLB (geometry unchanged):
+the shipped plaza fields are kept as they are, obstacles gain top_y from the shipped GLB, and the
+plots are read from the open scene.
 """
 
 import json
@@ -29,9 +34,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from arrival_bake import LM_JPG, LM_META  # noqa: E402
 from arrival_glb_lightmap import inject  # noqa: E402
+from arrival_obstacle_top import with_top_y  # noqa: E402
+from arrival_plots import read_plots, validate_plots  # noqa: E402
 from arrival_skyline import SKY_LIGHT_STRENGTH  # noqa: E402
 from build_arrival_slice import ARRIVAL, EXPOSURE, SUN, sha256  # noqa: E402
 from openpoker_common import APP_SLICE_DIR, DISTRICT_BLEND, EXPORT_DIR, ROOT  # noqa: E402
+
+CONTRACT = os.path.join(ROOT, "shared", "contracts", "house-plots.json")
 
 GLB = "nervix_arrival_square.glb"
 MAX_BYTES = 20 * 1024 * 1024     # fidelity r1 budget: GLB incl. the embedded lightmap atlas
@@ -120,28 +129,30 @@ def _overlap(a, b, gap):
 
 
 def _merge(boxes, gap):
-    boxes = [list(b) for b in boxes]
+    """Merge parts overlapping in plan into (x0, x1, y0, y1, top) boxes; top is the highest z."""
+    boxes = [b[:4] + [b[5]] for b in boxes]
     changed = True
     while changed:
         changed = False
         out = []
         for b in boxes:
-            for o in out:
+            for i, o in enumerate(out):
                 if _overlap(o, b, gap):
-                    o[:] = [min(o[0], b[0]), max(o[1], b[1]), min(o[2], b[2]), max(o[3], b[3])]
+                    out[i] = [min(o[0], b[0]), max(o[1], b[1]), min(o[2], b[2]), max(o[3], b[3]), max(o[4], b[4])]
                     changed = True
                     break
             else:
-                out.append(b[:4])
+                out.append(b)
         boxes = out
     return boxes
 
 
-def obstacles(depsgraph):
-    """Merge per object (so a wall and the chair next to it stay separate), then convert."""
+def obstacles(depsgraph, meshes=None):
+    """Merge per object (so a wall and the chair next to it stay separate), then convert.
+    `meshes` defaults to the ARRIVAL meshes of the open scene."""
     x0, x1, y0, y1 = BOUNDS_BLENDER
     result = []
-    for o in arrival_meshes():
+    for o in arrival_meshes() if meshes is None else meshes:
         if not o.get("arrival_obstacle"):
             continue
         parts = [b for b in _parts(o, depsgraph) if b[5] > WALK_BAND[0] and b[4] < WALK_BAND[1]]
@@ -149,9 +160,31 @@ def obstacles(depsgraph):
             if b[1] < x0 or b[0] > x1 or b[3] < y0 or b[2] > y1:
                 continue
             result.append({"minX": round(b[0], 2), "maxX": round(b[1], 2),
-                           "minZ": round(-b[3], 2), "maxZ": round(-b[2], 2)})
+                           "minZ": round(-b[3], 2), "maxZ": round(-b[2], 2), "top_y": round(b[4], 2)})
     result.sort(key=lambda r: (r["minX"], r["minZ"]))
     return result
+
+
+def shipped_obstacles(path):
+    """Obstacles of the GLB the client actually draws: import it in memory (node extras carry
+    arrival_obstacle), run the same AABB pass, then remove what was imported."""
+    known = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=path)
+    imported = [o for o in bpy.data.objects if o not in known]
+    try:
+        bpy.context.view_layer.update()
+        return obstacles(bpy.context.evaluated_depsgraph_get(), [o for o in imported if o.type == "MESH"])
+    finally:
+        for o in imported:
+            bpy.data.objects.remove(o, do_unlink=True)
+
+
+def shipped_plaza():
+    """--manifest-only: keep every shipped plaza field; obstacles gain top_y from the shipped GLB."""
+    with open(os.path.join(APP_SLICE_DIR, "manifest.json")) as fh:
+        plaza = json.load(fh)["runtime_layout"]["plaza"]
+    bare = [{k: v for k, v in b.items() if k != "top_y"} for b in plaza["obstacles"]]
+    return {**plaza, "obstacles": with_top_y(bare, shipped_obstacles(os.path.join(APP_SLICE_DIR, GLB)))}
 
 
 def replaces_chunks():
@@ -235,17 +268,31 @@ def triangles(depsgraph):
     return total
 
 
-def merge_manifest(path, plaza, asset):
+def merge_manifest(path, plaza, plots, asset):
     with open(path) as fh:
         manifest = json.load(fh)
     layout = manifest.setdefault("runtime_layout", {})
     layout["plaza"] = {**layout.get("plaza", {}), **plaza}          # merge: never drop other fields
-    old = next((a for a in manifest.get("assets", []) if a.get("id") == asset["id"]), {})
-    assets = [a for a in manifest.get("assets", []) if a.get("id") != asset["id"]]
-    manifest["assets"] = assets + [{**old, **asset}]
+    layout["plots"] = plots
+    if asset is not None:
+        _merge_asset(manifest, asset)
     with open(path, "w") as fh:
         json.dump(manifest, fh, indent=2)
         fh.write("\n")
+
+
+def _merge_asset(manifest, asset):
+    old = next((a for a in manifest.get("assets", []) if a.get("id") == asset["id"]), {})
+    assets = [a for a in manifest.get("assets", []) if a.get("id") != asset["id"]]
+    manifest["assets"] = assets + [{**old, **asset}]
+
+
+def check_plots(plots, plaza):
+    with open(CONTRACT) as fh:
+        contract_ids = [p["id"] for p in json.load(fh)["plots"]]
+    errors = validate_plots(plots, plaza["obstacles"], plaza["bounds"], plaza["spawn"], plaza["fountain"],
+                            contract_ids)
+    assert not errors, "invalid plots: " + "; ".join(errors)
 
 
 def check(plaza):
@@ -263,21 +310,8 @@ def check(plaza):
     assert 0 <= fog["near"] < fog["far"]
 
 
-def main():
-    before = sha256(DISTRICT_BLEND)
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    x0, x1, y0, y1 = BOUNDS_BLENDER
-    plaza = {
-        "glb": GLB,
-        "spawn": spawn_anchor(),
-        "fountain": fountain(depsgraph),
-        "bounds": {"minX": x0, "maxX": x1, "minZ": -y1, "maxZ": -y0},
-        "obstacles": obstacles(depsgraph),
-        "test_builder_door": door_anchor(),
-        "replaces_chunks": replaces_chunks(),
-        "lighting": lighting(),
-    }
-    check(plaza)
+def export_asset(depsgraph):
+    """Export the GLB (+ baked lightmap) and return its manifest asset entry."""
     tris = triangles(depsgraph)
     app_glb = os.path.join(APP_SLICE_DIR, GLB)
     size = export_glb(app_glb)
@@ -297,16 +331,44 @@ def main():
     shutil.copyfile(app_glb, os.path.join(EXPORT_DIR, GLB))
     assert size < MAX_BYTES, f"GLB too large: {size}"
     assert tris < MAX_TRIS, f"too many triangles: {tris}"
+    print("ARRIVAL_EXPORT", os.path.relpath(app_glb, ROOT), "bytes", size, "tris", tris)
     asset = {"id": "nervix_arrival_square", "file": GLB, "bytes": size, "triangles": tris, "frame": "district",
              "placement_runtime": [0.0, 0.0, 0.0], "draco": False}
-    if lightmap is not None:
-        asset["baked_lighting"] = lightmap
+    return asset if lightmap is None else {**asset, "baked_lighting": lightmap}
+
+
+def live_plaza(depsgraph):
+    x0, x1, y0, y1 = BOUNDS_BLENDER
+    return {
+        "glb": GLB,
+        "spawn": spawn_anchor(),
+        "fountain": fountain(depsgraph),
+        "bounds": {"minX": x0, "maxX": x1, "minZ": -y1, "maxZ": -y0},
+        "obstacles": obstacles(depsgraph),
+        "test_builder_door": door_anchor(),
+        "replaces_chunks": replaces_chunks(),
+        "lighting": lighting(),
+    }
+
+
+def main():
+    manifest_only = "--manifest-only" in sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else False
+    before = sha256(DISTRICT_BLEND)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    plaza = shipped_plaza() if manifest_only else live_plaza(depsgraph)
+    check(plaza)
+    plots = read_plots(bpy.data.collections[ARRIVAL])
+    check_plots(plots, plaza)
+    live = obstacles(bpy.context.evaluated_depsgraph_get())
+    check_plots(plots, {**plaza, "obstacles": live})   # also clear of the scene props not exported yet
+    asset = None if manifest_only else export_asset(depsgraph)
     for d in (APP_SLICE_DIR, EXPORT_DIR):
-        merge_manifest(os.path.join(d, "manifest.json"), plaza, asset)
+        merge_manifest(os.path.join(d, "manifest.json"), plaza, plots, asset)
     assert sha256(DISTRICT_BLEND) == before, "district file changed"
-    print("ARRIVAL_EXPORT", os.path.relpath(app_glb, ROOT), "bytes", size, "tris", tris,
-          "obstacles", len(plaza["obstacles"]))
+    print("ARRIVAL_MANIFEST", "glb_exported", asset is not None, "obstacles", len(plaza["obstacles"]),
+          "plots", [p["id"] for p in plots])
     print("PLAZA_JSON", json.dumps(plaza))
+    print("PLOTS_JSON", json.dumps(plots))
     return 0
 
 

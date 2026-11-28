@@ -24,6 +24,8 @@ LEFT_ROW = [(22.8, 30.0, 4), (30.0, 37.5, 3), (37.5, 46.0, 5), (46.0, 54.0, 4), 
             (62.0, 72.0, 4)]
 RIGHT_ROW = [(19.2, 22.4, 3), (22.4, 29.5, 4), (29.5, 38.0, 3), (38.0, 45.5, 5), (45.5, 54.0, 4),
              (54.0, 62.0, 3), (62.0, 72.0, 4)]
+RIGHT_IDX_OFFSET = 3     # the right row's style index starts here (skins, door column, awnings)
+DOOR_COL_WIDTH = 2.7      # metres of frontage per ground-floor bay
 SKINS = ("plaster", "ashlar", "limestone", "plaster_rose", "ashlar")
 AWNINGS = ("teal_light", "plum", "teal_light", "cloth_cream")
 
@@ -32,11 +34,18 @@ def build_street(kit, m):
     for i, (x0, x1, n) in enumerate(LEFT_ROW):
         _facade(kit, m, f"street_left_{i + 1:02d}", x0, x1, LEFT_FRONT, 1.0, n, i)
     for i, (x0, x1, n) in enumerate(RIGHT_ROW):
-        _facade(kit, m, f"street_right_{i + 1:02d}", x0, x1, RIGHT_FRONT, -1.0, n, i + 3)
+        _facade(kit, m, f"street_right_{i + 1:02d}", x0, x1, RIGHT_FRONT, -1.0, n, i + RIGHT_IDX_OFFSET)
     _facade(kit, m, "corner_left", 3.4, 13.6, -10.5, 1.0, 2, 1, door=True)   # A01 cottage scale
     _facade(kit, m, "corner_right", 8.2, 17.0, 13.0, -1.0, 3, 2, door=False)
     _facade(kit, m, "flare_right", 17.0, 19.2, 11.0, -1.0, 3, 4, door=False)   # setback, outside the frame
     _street_props(kit, m)
+
+
+def ground_bays(x0, x1, idx):
+    """Ground-floor bay centres of a facade and the column of its door (pure; B2 plots use it)."""
+    w = x1 - x0
+    cols = max(2, int(w / DOOR_COL_WIDTH))
+    return tuple(x0 + (k + 0.5) * w / cols for k in range(cols)), idx % cols
 
 
 def _facade(kit, m, name, x0, x1, fy, face, storeys, idx, door=True):
@@ -61,9 +70,8 @@ def _facade(kit, m, name, x0, x1, fy, face, storeys, idx, door=True):
     for k in range(int((x1 - x0) / 0.8)):   # timber corbels under the deep eave
         kit.box(name + "_corbels", m["wood_dark"], (0.16, 0.75, 0.2), (x0 + 0.4 + k * 0.8, fy + face * 0.4, h - 0.15))
     w = x1 - x0
-    cols = max(2, int(w / 2.7))
-    xs = [x0 + (k + 0.5) * w / cols for k in range(cols)]
-    door_col = idx % cols
+    xs, door_col = ground_bays(x0, x1, idx)
+    cols = len(xs)
     for s in range(storeys):
         z = s * STOREY + (0.9 if s else 0.0)
         for k, x in enumerate(xs):

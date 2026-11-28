@@ -22,6 +22,7 @@ from arrival_frontage import HOUSE_DOOR_X, HOUSE_Y, build_frontage  # noqa: E402
 from arrival_kit import Kit  # noqa: E402
 from arrival_materials import build_materials  # noqa: E402
 from arrival_people import build_people  # noqa: E402
+from arrival_plots import build_plots  # noqa: E402
 from arrival_dressing import build_dressing  # noqa: E402
 from arrival_skyline import build_skyline, build_world  # noqa: E402
 from arrival_skyline_far import build_skyline_far  # noqa: E402
@@ -161,6 +162,7 @@ def main():
     cam = add_camera(coll)
     add_sun(coll)
     add_markers(coll)
+    print("ARRIVAL_PLOTS", [o.name for o in build_plots(coll)])
     configure_scene(bpy.context.scene, cam)
     tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in objs.values())
     bpy.ops.wm.save_as_mainfile(filepath=SLICE_BLEND)

@@ -19,6 +19,7 @@ CAFE_FRONT = -10.5
 ARCADE_X = (-42.0, -8.5)
 ARCADE_PLANE = -8.5
 ARCADE_BAYS = 8
+ARCADE_STEP = (ARCADE_X[1] - ARCADE_X[0]) / ARCADE_BAYS
 SHOP_PLANE = -12.5
 
 
@@ -258,7 +259,7 @@ def _cafe_terrace(kit, m):
 def _arcade(kit, m):
     x0, x1 = ARCADE_X
     p = ARCADE_PLANE
-    step = (x1 - x0) / ARCADE_BAYS
+    step = ARCADE_STEP
     w = step - 0.9
     for i in range(ARCADE_BAYS + 1):
         x = x0 + i * step
@@ -268,7 +269,7 @@ def _arcade(kit, m):
         kit.box_mm(name, m["limestone_pale"], x - 0.55, x + 0.55, p - 0.55, p + 0.55, 2.85, 3.05)
         kit.tag(name, arrival_obstacle=True)
         if i < ARCADE_BAYS:
-            cx = x + step / 2
+            cx = arcade_bay_x(i)
             kit.arch_bay("arcade_arches", m["ashlar"], "x", cx - w / 2, cx + w / 2, w, 3.05, 5.0, p, 0.9,
                          z0=3.05, soffit=m["limestone_pale"])
             _shop_interior(kit, m, cx, step)
@@ -289,6 +290,11 @@ def _arcade(kit, m):
     for i in range(ARCADE_BAYS):
         window(kit, "arcade_upper_windows", m, x0 + (i + 0.5) * step, p + 0.45, 6.1, w=1.0, h=1.9, glow=i % 3 == 1)
     gable_roof_x(kit, "arcade_roof", m, x0, x1, -18.0, p + 0.45, 9.4, 2.4)
+
+
+def arcade_bay_x(i):
+    """Centre x of arcade bay i (0 = west end); the same float the arcade builder uses."""
+    return ARCADE_X[0] + i * ARCADE_STEP + ARCADE_STEP / 2
 
 
 def _shop_interior(kit, m, cx, step):
