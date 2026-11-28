@@ -13,6 +13,12 @@ Improve this skill after every milestone: add what worked and what failed, and d
 - **Geometry and look:** Blender is the source of truth. The browser renders the exports.
 - **Identity:** merchant names, catalogues and profiles load at runtime from the server. Never bake them into Blender.
 
+## Quality bar and pipeline
+- Fidelity target: `docs/art-direction/target-quality-reference.md` (David: "exactly the result I want"). Design target is still A01–A18.
+- Pipeline per area: plan → gray box approved at the game camera → asset kit (each asset checked against its A-reference by a reviewer) → assemble → playtest on foot (fps, hitches) → judged reference | Blender | game comparison.
+- For browser fidelity: PBR textures and bevels; lighting and AO baked in Cycles to lightmaps; HDRI/sky; ACES tone mapping; light SSAO and bloom; instancing; KTX2.
+- Higgsfield or other paid generation only when David starts that job.
+
 ## Blender rules
 - Never save `blender/scenes/nervix_city_district_01.blend`; check its sha256 before and after. Work in `blender/scenes/nervix_city_slice_01.blend` or another copy.
 - Keep the scene reproducible: modular scripts in `blender/scripts/` (`arrival_*.py`, `openpoker_*.py`), each under 400 lines, with idempotent builders that delete and rebuild only their own collection.
