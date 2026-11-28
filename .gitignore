@@ -36,3 +36,4 @@ Thumbs.db
 # Local pnpm store (worktree installs)
 .pnpm-store/
 app/test-results/
+docs/evidence/slice/iterations/
