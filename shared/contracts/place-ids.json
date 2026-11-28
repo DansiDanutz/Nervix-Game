@@ -1,0 +1,13 @@
+{
+  "contract": "place-ids",
+  "version": 1,
+  "frozen": true,
+  "note": "Stable ids for places a player can be in. Shared by server (presence rooms, plots) and client (Place). Add new ids in a new version; never rename or reuse an id.",
+  "places": [
+    { "id": "plaza", "kind": "plaza", "label": "Fountain Square" },
+    { "id": "openpoker", "kind": "venue", "label": "OpenPoker" },
+    { "id": "prop_dangg", "kind": "house", "label": "DanGG", "via": "openpoker" },
+    { "id": "prop_test", "kind": "house", "label": "Test Builder House", "via": "plaza" },
+    { "id": "prop_unverified", "kind": "house", "label": "Unverified Shop", "via": "plaza" }
+  ]
+}
