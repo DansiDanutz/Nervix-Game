@@ -1,0 +1,10 @@
+{
+  "contract": "avatar-presets",
+  "version": 1,
+  "frozen": true,
+  "note": "Avatar appearance presets by id. Values mirror app/src/player/avatarShape.ts (LOCAL_PALETTE, REMOTE_PALETTE). Players store a preset id, never raw colours.",
+  "presets": [
+    { "id": "teal", "label": "Teal tunic", "palette": { "tunic": "#2f7a76", "trim": "#c9993f", "legs": "#5a2a44", "skin": "#e2b08a", "hair": "#3b2418", "eyes": "#2b2118" } },
+    { "id": "terracotta", "label": "Terracotta tunic", "palette": { "tunic": "#b5651d", "trim": "#e0c07a", "legs": "#4a3328", "skin": "#f0c9a0", "hair": "#5b3a22", "eyes": "#2b2118" } }
+  ]
+}
