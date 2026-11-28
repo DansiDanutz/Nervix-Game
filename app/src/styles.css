@@ -384,3 +384,376 @@ body,
   text-decoration: underline;
   cursor: pointer;
 }
+
+.guide__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f6efe2;
+}
+
+.guide__name {
+  font-weight: 600;
+}
+
+.guide__where {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.65;
+}
+
+.guide__hint {
+  font-size: 12px;
+}
+
+.panel__close {
+  background: transparent !important;
+  color: var(--teal) !important;
+  padding: 0 !important;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.gate {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(160deg, #f7efe2, #e3d3ba);
+  overflow: auto;
+}
+
+.gate__card {
+  width: min(560px, 100%);
+  padding: 28px;
+  border-radius: 18px;
+  background: #fffdf8;
+  box-shadow: 0 12px 40px rgba(43, 33, 24, 0.18);
+}
+
+.gate__card h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  color: var(--plum);
+}
+
+.gate__lead {
+  margin: 0 0 18px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.gate__levels {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gate__level {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f6efe2;
+}
+
+.gate__badge {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--teal);
+  color: #fff;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  height: fit-content;
+}
+
+.gate__level p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.gate__signin {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gate__signin label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.gate__signin input {
+  padding: 9px 10px;
+  border: 1px solid #d8cdb8;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.gate__signin button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--teal);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.gate__error,
+.gate__hint {
+  margin: 0;
+  font-size: 12px;
+}
+
+.gate__error {
+  color: #a33;
+}
+
+.door-label {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(43, 33, 24, 0.82);
+  color: #f7efe2;
+  font-size: 11px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.door-label small {
+  display: block;
+  opacity: 0.7;
+  font-size: 9px;
+}
+
+.interior {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 20;
+}
+
+.interior__card {
+  width: min(520px, 100%);
+  padding: 24px;
+  border-radius: 18px;
+  border: 2px solid;
+  background: rgba(255, 253, 248, 0.97);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.interior__badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.interior__card h2 { margin: 8px 0 2px; }
+.interior__owner { margin: 0; font-size: 12px; opacity: 0.65; }
+.interior__blurb { margin: 10px 0 14px; font-size: 13px; }
+
+.interior__list {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.interior__list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f6efe2;
+  font-size: 13px;
+}
+
+.interior__app,
+.interior__exit {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.interior__exit {
+  background: #2b2118;
+}
+
+.interior__note { margin: 12px 0 0; font-size: 11px; opacity: 0.6; }
+.interior__error { color: #a33; font-size: 12px; }
+.interior__hint { font-size: 12px; opacity: 0.6; }
+
+.app__notice {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #a33;
+  color: #fff;
+  font-size: 12px;
+  z-index: 30;
+}
+
+.catalog {
+  width: 210px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 253, 248, 0.95);
+  font-size: 11px;
+  color: #2b2118;
+}
+
+.catalog small {
+  display: block;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+
+.catalog__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid #eee4d2;
+}
+
+.catalog__app {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #2f6f6a;
+  color: #fff;
+  font-size: 10px;
+}
+
+.catalog-overlay {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255, 253, 248, 0.9);
+  font-size: 12px;
+  z-index: 15;
+}
+
+.catalog-overlay small {
+  opacity: 0.6;
+}
+
+
+.catalog-overlay ul {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.catalog-overlay li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.catalog-overlay a {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #2f6f6a;
+}
+
+.touch {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+  z-index: 12;
+}
+
+.touch__pad,
+.touch__actions {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.touch__row {
+  display: flex;
+  gap: 6px;
+}
+
+.touch button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(43, 33, 24, 0.82);
+  color: #f7efe2;
+  font-size: 16px;
+  touch-action: none;
+}
+
+.touch__actions button {
+  width: auto;
+  padding: 0 18px;
+  background: #2f6f6a;
+}
+
+.gate__link {
+  background: none !important;
+  color: #2f6f6a !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  text-decoration: underline;
+  cursor: pointer;
+}

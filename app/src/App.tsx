@@ -7,6 +7,11 @@ import { MerchantPanel } from "./ui/MerchantPanel";
 import { CheckoutPanel } from "./ui/CheckoutPanel";
 import { AdsPanel } from "./ui/AdsPanel";
 import { AdminPanel } from "./ui/AdminPanel";
+import { GuidePanel } from "./ui/GuidePanel";
+import { AccessGate } from "./ui/AccessGate";
+import { InteriorCatalog } from "./ui/InteriorCatalog";
+import { TouchControls } from "./ui/TouchControls";
+import { HOUSE_DOORS, type HouseDoor } from "./scene/HouseDoors";
 import { usePresence } from "./net/presence";
 
 const SceneView = lazy(() => import("./scene/SceneView"));
@@ -22,13 +27,27 @@ export function App() {
   const [quest, setQuest] = useState<QuestProgress | null>(null);
   const [fps, setFps] = useState(0);
   const params = new URLSearchParams(window.location.search);
-  const [entered, setEntered] = useState(() => params.has("enter"));
+  const [entered, setEntered] = useState(false);
   const sceneMode = params.get("scene") === "full" ? "full" : "chunks";
   const [showAuth, setShowAuth] = useState(false);
   const [showMerchant, setShowMerchant] = useState(false);
   const [showOrders, setShowOrders] = useState(false);
   const [showAds, setShowAds] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [nearDoor, setNearDoor] = useState<HouseDoor | null>(null);
+  const [interior, setInterior] = useState<HouseDoor | null>(null);
+  const [teleport, setTeleport] = useState<{ x: number; z: number; key: number } | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const onMarkers = useCallback((m: Marker[]) => setMarkers(m), []);
+  const onPosition = useCallback((x: number, z: number) => {
+    let best: HouseDoor | null = null;
+    let bestD = 2.8;
+    for (const d of HOUSE_DOORS) {
+      const dist = Math.hypot(d.position[0] - x, d.position[2] - z);
+      if (dist < bestD) { bestD = dist; best = d; }
+    }
+    setNearDoor(best);
+  }, []);
   const { players, status: presence, sendMove } = usePresence({
     userId: session?.userId ?? "guest",
     name: session?.displayName ?? "Traveler",
@@ -36,6 +55,16 @@ export function App() {
   });
 
   useEffect(() => {
+    // Resume an existing verified session; never enter on a client flag.
+    void api
+      .me()
+      .then((me) => {
+        if (me.level === "signed_out") return;
+        setSession({ userId: me.userId ?? "", displayName: me.displayName ?? "Traveler", role: me.level === "build" ? "merchant_owner" : "player", demo: true });
+        setEntered(true);
+      })
+      .catch(() => {});
+
     let alive = true;
     (async () => {
       try {
@@ -57,6 +86,29 @@ export function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "g") setShowGuide((v) => !v);
+      if (e.key === "Escape") {
+        setShowGuide(false);
+        setInterior(null);
+      }
+      if (interior && (e.key.toLowerCase() === "e" || e.key === "Enter" || e.key === "Escape")) {
+        setInterior(null);
+        setTeleport({ x: interior.position[0], z: interior.position[2] + 2.8, key: Date.now() });
+        return;
+      }
+      if (!interior && (e.key.toLowerCase() === "e" || e.key === "Enter") && nearDoor) {
+        void api
+          .me()
+          .then((me) => {
+            if (me.level !== "browse" && me.level !== "build") {
+              setAuthError("A completed profile is required to enter a business.");
+              return;
+            }
+            setInterior(nearDoor);
+            setTeleport({ x: 0, z: 3.2, key: Date.now() });
+          })
+          .catch(() => setAuthError("Could not verify your access."));
+      }
       if (e.key.toLowerCase() !== "e") return;
       if (!session || !nearby) return;
       if (!nearby.id.toLowerCase().includes("seal") || quest?.seals.includes(nearby.id)) return;
@@ -64,15 +116,11 @@ export function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [session, nearby, quest]);
+  }, [session, nearby, quest, interior, nearDoor]);
 
   return (
     <div className="app">
-      {!entered && (
-        <button type="button" className="app__enter" onClick={() => setEntered(true)}>
-          Enter the city
-        </button>
-      )}
+      {!entered && <AccessGate onEnter={() => setEntered(true)} />}
       {entered && <Suspense fallback={null}>
         <SceneView
           markers={markers}
@@ -83,12 +131,37 @@ export function App() {
           players={players}
           selfId={session?.userId ?? ""}
           mode={sceneMode}
+          teleportTo={teleport}
+          onNearDoor={setNearDoor}
+          onPosition={onPosition}
+          interior={interior}
+          onExitInterior={() => {
+            setInterior(null);
+            if (interior) setTeleport({ x: interior.position[0], z: interior.position[2] + 2.8, key: Date.now() });
+          }}
         />
       </Suspense>}
 
-      <Hud session={session ?? { userId: "", displayName: "", role: "player", demo: true }} nearby={nearby} seals={quest?.seals.length ?? 0} />
 
-      <div className="app__side">
+      {interior && <InteriorCatalog door={interior} />}
+      {entered && !interior && nearDoor && (
+        <TouchControls interior={false} canEnter onEnter={() => setInterior(nearDoor)} onExit={() => {}} />
+      )}
+      {interior && (
+        <TouchControls
+          interior
+          canEnter={false}
+          onEnter={() => {}}
+          onExit={() => {
+            setInterior(null);
+            setTeleport({ x: interior.position[0], z: interior.position[2] + 2.8, key: Date.now() });
+          }}
+        />
+      )}
+
+      {entered && !interior && <Hud session={session ?? { userId: "", displayName: "", role: "player", demo: true }} nearby={nearby} seals={quest?.seals.length ?? 0} />}
+
+      <div className="app__side" style={!entered || interior ? { display: "none" } : undefined}>
         <div className="app__status" role="status">
           {status === "connected" ? "demo API connected" : status === "connecting" ? "connecting…" : "API offline — blockout only"}
           {" · fps "}{fps || "—"}{" · presence "}
@@ -122,6 +195,13 @@ export function App() {
           </button>
         )}
         {showOrders && session && <CheckoutPanel userId={session.userId} />}
+        {entered && !showGuide && (
+          <button type="button" className="app__account" onClick={() => setShowGuide(true)}>
+            District guide (G)
+          </button>
+        )}
+        {entered && showGuide && <GuidePanel markers={markers} onClose={() => setShowGuide(false)} />}
+        {authError && <div className="app__notice">{authError}</div>}
         {!showAds && session && (
           <button type="button" className="app__account" onClick={() => setShowAds(true)}>
             Advertising

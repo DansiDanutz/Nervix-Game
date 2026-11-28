@@ -14,6 +14,7 @@ import { provisionProperty } from "./provision.mjs";
 import { createCheckout as demoCheckout, verifyWebhook as demoVerify, DEMO_MODE } from "./nervixpay.demo.mjs";
 import { createLiveAdapter } from "./nervixpay.live.mjs";
 import { createEmailer, verificationEmail } from "./email.mjs";
+import { LEVELS, resolveLevel, requireLevel, safeAppUrl, AccessError } from "./entitlement.mjs";
 import { buildContext, TOOLS } from "./agent.mjs";
 import { createProvider, createSpeechProvider } from "./provider.mjs";
 import { PostgresStore } from "./store.mjs";
@@ -98,6 +99,22 @@ function readRaw(req) {
   });
 }
 
+function cookie(req, name) {
+  const raw = req.headers.cookie ?? "";
+  for (const part of raw.split(";")) {
+    const [k, ...v] = part.trim().split("=");
+    if (k === name) return decodeURIComponent(v.join("="));
+  }
+  return null;
+}
+
+async function resolveUser(params) {
+  const token = (params.req.headers.authorization ?? "").replace(/^Bearer /i, "").trim()
+    || cookie(params.req, "nervix_session");
+  if (!token || !db.store) return null;
+  return db.store.getSession(token);
+}
+
 const routes = {
   "GET /health": () => ({ ok: true, demo: DEMO_MODE, uptime: process.uptime() }),
 
@@ -112,7 +129,9 @@ const routes = {
     return session;
   },
 
-  "POST /merchants/provision": async (body) => {
+  "POST /merchants/provision": async (body, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BUILD);
     await db.store?.ensureUser(body.userId);
     const result = provisionProperty({ userId: body.userId, businessType: body.businessType ?? "merchant", slots, existing: db.properties });
     if (result.created) {
@@ -167,6 +186,10 @@ const routes = {
     const user = await db.store.findUserByEmail(email);
     if (!user) return { error: "no_such_user" };
     await db.store.markVerified(user.id);
+    if (db.store) {
+      const sid = await db.store.createSession(user.id, new Date(Date.now() + 7 * 86400000).toISOString());
+      params.res.setHeader("set-cookie", `nervix_session=${sid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`);
+    }
     return { userId: user.id, displayName: user.displayName, role: user.role, verified: true, demo: true };
   },
 
@@ -331,6 +354,156 @@ const routes = {
     return { ok: true, order: next.id, state: next.state };
   },
 
+  "GET /me": async (_b, params) => {
+    const user = await resolveUser(params);
+    const level = resolveLevel({ user });
+    return {
+      userId: user?.id ?? null,
+      displayName: user?.displayName ?? null,
+      emailVerified: user?.emailVerified ?? false,
+      profileCompleted: user?.profileCompleted ?? false,
+      level,
+      subscription: { active: level === "build", source: "unavailable" },
+    };
+  },
+
+  "POST /me/profile": async (body, params) => {
+    const user = await resolveUser(params);
+    if (!user) return { error: "unauthorized" };
+    await db.store.completeProfile(user.id, body.displayName);
+    return { ok: true, level: resolveLevel({ user: { ...user, profileCompleted: true } }) };
+  },
+
+  "POST /auth/logout": async (_b, params) => {
+    const token = cookie(params.req, "nervix_session");
+    if (token) await db.store.deleteSession(token);
+    params.res.setHeader("set-cookie", "nervix_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+    return { ok: true };
+  },
+
+  "GET /businesses": async (_b, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BROWSE);
+    return { businesses: await db.store.listPublishedProperties() };
+  },
+
+  "POST /businesses": async (body, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BUILD);
+    const result = provisionProperty({ userId: me.userId, businessType: body.businessType ?? "merchant", slots, existing: db.properties });
+    if (result.created) {
+      db.properties.push(result.property);
+      await db.store?.saveProperty(result.property);
+    }
+    return result;
+  },
+
+  "GET /businesses/:id/catalog": async (_b, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BROWSE);
+    const property = db.store ? await db.store.getProperty(params.id) : null;
+    if (!property) return { error: "not_found" };
+    const items = await db.store.listProducts(property.ownerId);
+    return { items: items.map((i) => ({ ...i, appUrl: i.appUrl ?? null })) };
+  },
+
+  "POST /businesses/:id/products": async (body, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BUILD);
+    const property = db.store ? await db.store.getProperty(params.id) : null;
+    if (!property || property.ownerId !== me.userId) {
+      throw new AccessError("not your property", "cross_owner");
+    }
+    const product = validateProduct(body);
+    if (body.appUrl) {
+      const safe = safeAppUrl(body.appUrl);
+      if (!safe) return { error: "unsafe_app_url" };
+      product.appUrl = safe;
+    }
+    await db.store.upsertProduct(property.ownerId, product);
+    return { product };
+  },
+
+  "GET /builders": async (_b, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BROWSE);
+    const builders = await db.store.listBuilders();
+    const withOfferings = [];
+    for (const b of builders) withOfferings.push({ ...b, offerings: await db.store.listOfferings(b.id) });
+    return { builders: withOfferings, platform: "OpenPoker", note: "OpenPoker is an open platform; each builder owns their own catalogue." };
+  },
+
+  "POST /builders": async (body, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BUILD);
+    const appUrl = body.appUrl ? safeAppUrl(body.appUrl) : null;
+    if (body.appUrl && !appUrl) return { error: "unsafe_app_url" };
+    const id = `bld_${me.userId.slice(-8)}`;
+    await db.store.createBuilder({ id, ownerId: me.userId, name: String(body.name ?? "My studio").slice(0, 80), appUrl });
+    return { builder: await db.store.getBuilder(id) };
+  },
+
+  "POST /builders/:id/offerings": async (body, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BUILD);
+    const builder = await db.store.getBuilder(params.id);
+    if (!builder || builder.ownerId !== me.userId) throw new AccessError("not your catalogue", "cross_owner");
+    const appUrl = body.appUrl ? safeAppUrl(body.appUrl) : null;
+    if (body.appUrl && !appUrl) return { error: "unsafe_app_url" };
+    const offering = {
+      id: `off_${Date.now().toString(36)}`,
+      builderId: builder.id,
+      name: String(body.name ?? "").slice(0, 80),
+      description: body.description ? String(body.description).slice(0, 400) : null,
+      priceMinor: Number(body.priceMinor),
+      currency: String(body.currency ?? "EUR"),
+      appUrl,
+    };
+    if (!offering.name) return { error: "name_required" };
+    await db.store.addOffering(offering);
+    return { offering };
+  },
+
+  "PATCH /builders/:id/offerings/:offeringId": async (body, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BUILD);
+    const builder = await db.store.getBuilder(params.id);
+    if (!builder) return { error: "not_found" };
+    if (builder.ownerId !== me.userId) throw new AccessError("not your catalogue", "cross_owner");
+    const patch = {};
+    if (body.name !== undefined) patch.name = String(body.name).slice(0, 80);
+    if (body.description !== undefined) patch.description = String(body.description).slice(0, 400);
+    if (body.priceMinor !== undefined) {
+      if (!Number.isSafeInteger(Number(body.priceMinor)) || Number(body.priceMinor) < 0) return { error: "invalid_price" };
+      patch.priceMinor = Number(body.priceMinor);
+    }
+    if (body.currency !== undefined) patch.currency = String(body.currency).toUpperCase();
+    if (body.appUrl !== undefined) {
+      const safe = safeAppUrl(body.appUrl);
+      if (!safe) return { error: "unsafe_app_url" };
+      patch.appUrl = safe;
+    }
+    // Bind to BOTH the listing and the builder: the offering must live in :id.
+    const updated = await db.store.updateOffering({ offeringId: params.offeringId, builderId: params.id, patch });
+    if (!updated) throw new AccessError("not your listing", "cross_owner");
+    return { offering: updated };
+  },
+
+  "GET /houses/:propertyId": async (body, params) => {
+    const me = await routes["GET /me"]({}, params);
+    requireLevel(me.level, LEVELS.BROWSE);
+    const house = await db.store.getHouse(params.propertyId);
+    if (!house) return { error: "unknown_house" };
+    // Reject mismatched listing/app ids instead of falling back.
+    if (params.listing && !house.listings.some((l) => l.id === params.listing)) {
+      return { error: "listing_mismatch", propertyId: house.propertyId };
+    }
+    if (params.app && params.app !== house.ownerId) {
+      return { error: "app_mismatch", propertyId: house.propertyId };
+    }
+    return { house, demo: false };
+  },
+
   "GET /quests/lost-seals": () => ({ quest: QUEST }),
 
   "GET /progress": async (_b, params) => {
@@ -415,6 +588,8 @@ const routes = {
   },
 
   "POST /agent/:propertyId/message": async (body, params) => {
+    const me = await routes["GET /me"]({}, params);
+    if (me.level === LEVELS.SIGNED_OUT || me.level === LEVELS.EXPLORE) return { error: "insufficient_level" };
     if (!db.properties.some((p) => p.id === params.propertyId)) return { error: "unknown_property" };
     let state = db.conversations.get(params.propertyId);
     if (!state && db.store) state = await db.store.getConversation(params.propertyId);
@@ -529,16 +704,6 @@ const routes = {
 };
 
 const server = http.createServer(async (req, res) => {
-  // The Vite dev server runs on another origin; the API is public demo data.
-  res.setHeader("access-control-allow-origin", "*");
-  res.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
-  res.setHeader("access-control-allow-headers", "content-type");
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-
   const url = new URL(req.url, `http://${req.headers.host}`);
   const path = url.pathname.replace(/\/$/, "") || "/";
   const key = `${req.method} ${path}`;
@@ -560,7 +725,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   const rawBodyRoute = req.method === "POST" && path === "/webhooks/nervixpay";
-  params = { ...Object.fromEntries(url.searchParams.entries()), ...params };
+  params = { ...Object.fromEntries(url.searchParams.entries()), ...params, req, res };
   if (rawBodyRoute) {
     const raw = await readRaw(req);
     return send(res, 200, await handler({ raw, headers: req.headers }, params));

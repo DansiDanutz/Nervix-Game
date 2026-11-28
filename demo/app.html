@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Test Builder App</title>
+    <style>
+      body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #1f2a33; color: #eef3f6; display: flex; min-height: 100vh; align-items: center; justify-content: center; }
+      main { max-width: 460px; padding: 28px; border-radius: 16px; background: #26333d; text-align: center; }
+      h1 { margin: 0 0 6px; font-size: 22px; }
+      p { opacity: .75; }
+      button { margin-top: 12px; padding: 10px 18px; border: 0; border-radius: 10px; background: #b5486b; color: #fff; font: inherit; cursor: pointer; }
+      output { display: block; margin-top: 12px; font-size: 24px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Test Builder App</h1>
+      <p>A distinct working local app belonging to usr_test. Not DanGG, not shared.</p>
+      <button id="b">Count</button>
+      <output id="o">0</output>
+    </main>
+    <script>
+      let n = 0;
+      document.getElementById("b").addEventListener("click", () => {
+        n += 1;
+        document.getElementById("o").textContent = String(n);
+      });
+    </script>
+  </body>
+</html>

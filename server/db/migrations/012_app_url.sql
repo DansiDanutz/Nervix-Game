@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS app_url text;
+COMMIT;

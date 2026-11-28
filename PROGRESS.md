@@ -119,6 +119,14 @@ Omit secrets. Record evidence, not intentions.
 6. Measure frame time on the desktop and mobile profiles; code-split the three.js bundle.
 7. Add indexes/backups and move the remaining demo-only bits (session) behind real identity.
 
+## Two walk-in houses (in progress)
+
+- Authoritative bindings (Postgres): `prop_dangg` → `usr_dangg` → **DanGG Studio** → `https://dangg.live/` (2 listings); `prop_test` → `usr_test` → **Test Builder** → `http://localhost:8790/app` (2 listings).
+- Server route `GET /houses/:propertyId` resolves owner, app and listings; rejects `listing_mismatch` / `app_mismatch` (verified by curl).
+- Walking verified: plaza → OpenPoker door (9, -8.4) → interior (owner name shown) → exit (9, -5.6); plaza → Test Builder door (6, 4) → interior → exit (6, 6.8).
+- **Open:** browser catalogue still shows “Loading…” (page fetch of `/api/houses/...` unresolved); app link therefore not yet rendered. No transaction requests observed (only a Vite `.tsx` source URL, not an API call).
+- Blender scene and exports untouched.
+
 ## Conventions
 
 - Metres. Character 1.8 m, doorway 2.1 m, street 6 m, 1 m snap grid.

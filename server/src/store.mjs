@@ -371,6 +371,114 @@ export class PostgresStore {
     return rows[0]?.role === "admin";
   }
 
+  async createSession(userId, expiresAt) {
+    const id = `sess_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+    await this.pool.query("INSERT INTO sessions (id, user_id, expires_at) VALUES ($1,$2,$3)", [id, userId, expiresAt]);
+    return id;
+  }
+
+  async getSession(id) {
+    if (!id) return null;
+    const { rows } = await this.pool.query(
+      "SELECT s.user_id, u.display_name, u.email_verified, u.profile_completed, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = $1 AND s.expires_at > now()", [id]);
+    if (!rows.length) return null;
+    const r = rows[0];
+    return { id: r.user_id, displayName: r.display_name, emailVerified: r.email_verified, profileCompleted: r.profile_completed };
+  }
+
+  async deleteSession(id) {
+    await this.pool.query("DELETE FROM sessions WHERE id = $1", [id]);
+  }
+
+  async completeProfile(userId, displayName) {
+    await this.pool.query("UPDATE users SET profile_completed = true, display_name = COALESCE($2, display_name) WHERE id = $1", [userId, displayName ?? null]);
+  }
+
+  async findUser(userId) {
+    if (!userId) return null;
+    const { rows } = await this.pool.query(
+      "SELECT id, display_name, email_verified, role FROM users WHERE id = $1", [userId]);
+    if (!rows.length) return null;
+    const r = rows[0];
+    return { id: r.id, displayName: r.display_name, emailVerified: r.email_verified, role: r.role };
+  }
+
+  async createBuilder({ id, ownerId, name, appUrl = null }) {
+    await this.pool.query(
+      "INSERT INTO builders (id, owner_id, name, app_url) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO NOTHING",
+      [id, ownerId, name, appUrl]);
+  }
+
+  async listBuilders() {
+    const { rows } = await this.pool.query(
+      "SELECT id, owner_id, name, app_url FROM builders ORDER BY name");
+    return rows.map((r) => ({ id: r.id, ownerId: r.owner_id, name: r.name, appUrl: r.app_url }));
+  }
+
+  async getBuilder(id) {
+    const { rows } = await this.pool.query("SELECT id, owner_id, name, app_url FROM builders WHERE id = $1", [id]);
+    return rows[0] ? { id: rows[0].id, ownerId: rows[0].owner_id, name: rows[0].name, appUrl: rows[0].app_url } : null;
+  }
+
+  async listOfferings(builderId) {
+    const { rows } = await this.pool.query(
+      "SELECT id, name, description, price_minor, currency, app_url FROM builder_offerings WHERE builder_id = $1 ORDER BY name", [builderId]);
+    return rows.map((r) => ({ id: r.id, name: r.name, description: r.description, priceMinor: r.price_minor, currency: r.currency, appUrl: r.app_url }));
+  }
+
+  async addOffering({ id, builderId, name, description = null, priceMinor, currency, appUrl = null }) {
+    await this.pool.query(
+      `INSERT INTO builder_offerings (id, builder_id, name, description, price_minor, currency, app_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [id, builderId, name, description, priceMinor, currency, appUrl]);
+  }
+
+  async updateOffering({ offeringId, builderId, patch }) {
+    const { rows } = await this.pool.query(
+      `UPDATE builder_offerings
+         SET name = COALESCE($3, name),
+             description = COALESCE($4, description),
+             price_minor = COALESCE($5, price_minor),
+             currency = COALESCE($6, currency),
+             app_url = COALESCE($7, app_url)
+       WHERE id = $1 AND builder_id = $2
+       RETURNING id, builder_id, name, description, price_minor, currency, app_url`,
+      [offeringId, builderId, patch.name ?? null, patch.description ?? null,
+       patch.priceMinor ?? null, patch.currency ?? null, patch.appUrl ?? null]);
+    return rows[0] ?? null;
+  }
+
+  async getHouse(propertyId) {
+    const { rows } = await this.pool.query(
+      `SELECT p.id, p.owner_id, u.display_name, b.id AS builder_id, b.app_url
+         FROM properties p
+         JOIN users u ON u.id = p.owner_id
+         LEFT JOIN builders b ON b.owner_id = p.owner_id
+        WHERE p.id = $1`, [propertyId]);
+    if (!rows.length) return null;
+    const r = rows[0];
+    const listings = r.builder_id
+      ? (await this.pool.query(
+          "SELECT id, name, price_minor, currency FROM builder_offerings WHERE builder_id = $1 ORDER BY name", [r.builder_id])).rows
+      : [];
+    return {
+      propertyId: r.id,
+      ownerId: r.owner_id,
+      ownerName: r.display_name,
+      appUrl: r.app_url,
+      listings: listings.map((l) => ({ id: l.id, name: l.name, priceMinor: l.price_minor, currency: l.currency })),
+    };
+  }
+
+  async listPublishedProperties() {
+    const { rows } = await this.pool.query(
+      "SELECT id, owner_id, slot_id, district, template, address FROM properties WHERE published = true ORDER BY slot_id");
+    return rows.map((r) => ({
+      id: r.id, ownerId: r.owner_id, slotId: r.slot_id,
+      district: r.district, template: r.template, address: r.address,
+    }));
+  }
+
   async listMerchants() {
     const { rows } = await this.pool.query(
       "SELECT id, name, business_type, suspended FROM merchants ORDER BY name",

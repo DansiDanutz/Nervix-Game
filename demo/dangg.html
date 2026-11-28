@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DanGG house — demo preview</title>
+    <style>
+      body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #f7efe2; color: #2b2118; }
+      main { max-width: 720px; margin: 0 auto; padding: 32px 20px; }
+      h1 { margin: 0 0 4px; color: #5b3a5e; }
+      .owner { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; opacity: .65; }
+      .card { background: #fffdf8; border-radius: 16px; padding: 20px; margin-top: 18px; box-shadow: 0 8px 28px rgba(43,33,24,.14); }
+      .row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #eee4d2; }
+      .row:last-child { border-bottom: 0; }
+      .price { font-variant-numeric: tabular-nums; }
+      a.button { display: inline-block; margin-top: 14px; padding: 10px 16px; border-radius: 10px; background: #2f6f6a; color: #fff; text-decoration: none; }
+      .note { font-size: 12px; opacity: .7; margin-top: 14px; }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #5b3a5e; color: #fff; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="badge">demo fixture</span>
+      <h1>{{NAME}}</h1>
+      <div class="owner">Owner: {{OWNER}}</div>
+
+      <div class="card">
+        {{ROWS}}
+        <p class="note">Clearly labelled sample assets with prices. No purchase is possible here.</p>
+        <a class="button" href="{{APP_URL}}" target="_blank" rel="noopener noreferrer">Open DanGGApp (dangg.live)</a>
+      </div>
+      <p class="note">Builder app: https://dangg.live/ · this preview is served by the isolated demo server, not the game.</p>
+    </main>
+  </body>
+</html>

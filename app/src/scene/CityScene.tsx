@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useGLTF } from "@react-three/drei";
+import { applyPlacement, placeMarker } from "./placement";
 
 export interface Marker {
   id: string;
@@ -43,6 +44,7 @@ export function useManifest() {
 
 function AssetModel({ file }: { file: string }) {
   const { scene } = useGLTF(file);
+  applyPlacement(scene);
   return <primitive object={scene} />;
 }
 
@@ -89,7 +91,12 @@ export function CityScene({ onMarkers, mode = "chunks" }: { onMarkers: (m: Marke
   const assets = pickAssets(manifest, mode);
 
   useEffect(() => {
-    onMarkers(manifest?.markers ?? []);
+    const placed = (manifest?.markers ?? []).map((m) => ({
+      ...m,
+      position: placeMarker(m.position, m.id),
+    }));
+    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__nervixMarkers = placed;
+    onMarkers(placed);
   }, [manifest, onMarkers]);
 
   if (missing || !manifest || assets.length === 0) {

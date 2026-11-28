@@ -3,7 +3,9 @@
  * here and no authoritative amount is ever taken from the client.
  */
 
-const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8787";
+// Same-origin: Vite proxies /api to the local backend, so the session cookie
+// is first-party and no credentialed CORS is needed.
+const BASE = "/api";
 
 export interface Session {
   userId: string;
@@ -51,6 +53,21 @@ export interface AuditEvent {
   action: string;
   subject: string;
   createdAt: string;
+}
+
+export interface House {
+  propertyId: string;
+  ownerId: string;
+  ownerName: string;
+  appUrl: string | null;
+  listings: { id: string; name: string; priceMinor: number; currency: string }[];
+}
+
+export interface Builder {
+  id: string;
+  name: string;
+  appUrl: string | null;
+  offerings: { id: string; name: string; priceMinor: number; currency: string; appUrl: string | null }[];
 }
 
 export interface Placement {
@@ -107,6 +124,7 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export const api = {
+  me: () => call<{ userId: string | null; displayName: string | null; emailVerified: boolean; profileCompleted: boolean; level: string; subscription: { active: boolean; source: string } }>("/me"),
   health: () => call<{ ok: boolean; demo: boolean }>("/health"),
   authSignup: (email: string, displayName: string) =>
     call<{ userId: string; devCode: string; verified: boolean }>("/auth/signup", { email, displayName }),
@@ -129,6 +147,9 @@ export const api = {
   adminReinstate: (userId: string, merchantId: string) =>
     call<{ suspended: boolean }>(`/admin/merchants/${merchantId}/reinstate`, { userId }),
   adminAudit: (userId: string) => call<{ events: AuditEvent[] }>(`/admin/audit?userId=${encodeURIComponent(userId)}`),
+  house: (propertyId: string, listing?: string, app?: string) =>
+    call<{ house: House }>(`/houses/${propertyId}${listing ? `?listing=${encodeURIComponent(listing)}` : app ? `?app=${encodeURIComponent(app)}` : ""}`),
+  builders: () => call<{ builders: Builder[] }>("/builders"),
   placements: () => call<{ placements: Placement[] }>("/placements"),
   campaigns: () => call<{ campaigns: Campaign[] }>("/campaigns"),
   createCampaign: (input: Record<string, unknown>) => call<{ campaign: Campaign }>("/campaigns", input),
