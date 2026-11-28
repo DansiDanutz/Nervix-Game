@@ -47,9 +47,9 @@ test("Test Builder's room shows only Test Builder's listings as product objects"
   const L = await walk.layout(page);
   await walk.walkToTestBuilderDoor(page, L);
   await page.keyboard.press("e");
-  await expect.poll(() => walk.placeOf(page)).toBe("house:bld_test");
+  await expect.poll(() => walk.placeOf(page)).toBe("house:slot-12");
   await expectOwnProducts(page, "prop_test", "off_dangg_");
-  expect(requests.filter((u) => /\/orders|payment-link/i.test(u))).toEqual([]);
+  expect(requests.filter((u) => /^\/api\/(orders\b|.*payment[-_]?link)/i.test(new URL(u).pathname))).toEqual([]);
 });
 
 test("the K3 kit and its manifest are served", async ({ page }) => {

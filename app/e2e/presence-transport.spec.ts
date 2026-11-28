@@ -60,8 +60,10 @@ test("deltas keep a two-player room in sync and a closed tab leaves it", async (
     expect(mine.players).not.toContain(mine.self);
     expect(await shows(a, b)).toBe(true);
 
+    const bSelf = (await presence(b))!.self;
     await ctxB.close();
-    await expect.poll(async () => (await presence(a))?.players.length ?? -1, { timeout: 10_000 }).toBe(0);
+    // B's own entry leaves A's room (other specs' players may share the plaza).
+    await expect.poll(async () => (await presence(a))?.players.includes(bSelf!) ?? true, { timeout: 10_000 }).toBe(false);
   } finally {
     await ctxA.close();
     await ctxB.close().catch(() => {});

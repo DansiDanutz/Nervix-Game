@@ -15,9 +15,15 @@ type WorldHouses = { houses: { propertyId: string; plotId: string }[] };
 const reports = (page: Page) =>
   page.evaluate(() => (window as unknown as { __nervixHouses?: Record<string, HouseReport> }).__nervixHouses ?? {});
 
+/** Manifest plots marked built: false: street lots a runtime K2 house may stand on (B2 plots on modelled facades are not). */
+const streetLots = (page: Page) =>
+  page.evaluate(async () =>
+    ((await (await fetch("/slice/manifest.json")).json()).runtime_layout?.plots ?? []).filter((p: { built?: boolean }) => p.built === false).length as number);
+
 test("each listed merchant house is drawn once with exactly one painted sign mesh", async ({ page }) => {
   test.setTimeout(180_000);
   await walk.signInAs(page, "sess_fixture_visitor");
+  test.skip((await streetLots(page)) === 0, "every B2 manifest plot is a facade Blender modelled: no runtime K2 house is drawn");
   const res = await page.request.get("/api/world/houses");
   expect(res.ok()).toBe(true);
   const listed = ((await res.json()) as WorldHouses).houses;

@@ -38,7 +38,7 @@ async function enterTestBuilder(page: Page) {
   const L = await layout(page);
   await walkToTestBuilderDoor(page, L);
   await page.keyboard.press("e");
-  await expect.poll(() => placeOf(page)).toBe("house:bld_test");
+  await expect.poll(() => placeOf(page)).toBe("house:slot-12");
 }
 
 async function openTalk(page: Page) {
@@ -70,7 +70,7 @@ test("a visitor walks into Test Builder, talks, and gets a grounded, private rep
   // Typing in the chat never moves the player or leaves the house.
   await ask(page, QUESTION);
   await expect(page.getByTestId("merchant-chat-log").locator('[data-role="agent"]').last()).toContainText("opens at nine");
-  await expect.poll(() => placeOf(page)).toBe("house:bld_test");
+  await expect.poll(() => placeOf(page)).toBe("house:slot-12");
 
   // A second player in the same house sees none of the first one's transcript.
   const other = await browser.newContext();
@@ -108,7 +108,7 @@ test("Esc closes the chat first and the player stays in the house; a second Esc 
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("talk-merchant")).toHaveCount(0);
   await expect(page.getByTestId("talk-open")).toBeVisible();
-  await expect.poll(() => placeOf(page)).toBe("house:bld_test");
+  await expect.poll(() => placeOf(page)).toBe("house:slot-12");
   await page.keyboard.press("Escape");
   await expect.poll(() => placeOf(page)).toBe("plaza");
 });

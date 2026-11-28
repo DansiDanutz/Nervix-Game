@@ -119,6 +119,8 @@ test("holding Forward while dragging the canvas turns smoothly and the pad lift 
     await padMove(i);
     await canvas.dispatchEvent("pointermove", { ...look, buttons: 1, clientX: x + i * 10, clientY: y });
   }
+  // Hold Forward for a fixed time: the dispatches above take only tens of ms on the GPU runner.
+  await page.waitForTimeout(400);
   await release();
   for (let i = 6; i <= 10; i++) await canvas.dispatchEvent("pointermove", { ...look, buttons: 1, clientX: x + i * 10, clientY: y });
   await canvas.dispatchEvent("pointerup", { ...look, buttons: 0, clientX: x + 100, clientY: y });

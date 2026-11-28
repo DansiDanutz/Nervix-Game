@@ -13,15 +13,23 @@ import { fileURLToPath } from "node:url";
 
 type WorldHouse = { plotId: string; propertyId: string; merchantName: string; verified: boolean; theme: string; accent: string };
 
+/** Door labels appear once the scene and the directory have loaded; a cold page under full-suite load can take >5 s. */
+const DOOR_MS = 20_000;
 const ADMIN = "sess_fixture_admin";
 const FIXTURE_NAMES = ["DanGG", "Test Builder", "Unverified Shop", "Lantern Books", "Copper Kettle", "Juniper Florist", "Atlas Map Room"];
+
+/** Pages opened with openAs hold live presence sockets; close them so no player lingers into later specs. */
+test.afterEach(async ({ browser, context }) => {
+  await Promise.all(browser.contexts().filter((c) => c !== context).map((c) => c.close()));
+});
 
 async function openAs(browser: Browser, session?: string): Promise<Page> {
   const context = await browser.newContext();
   if (session) await context.addCookies([{ name: "nervix_session", value: session, domain: "127.0.0.1", path: "/" }]);
   const page = await context.newPage();
   await page.goto("/");
-  await page.locator("canvas").waitFor();
+  // Signed out, the gate shows no canvas; the directory API is still public.
+  if (session) await page.locator("canvas").waitFor();
   return page;
 }
 
@@ -37,19 +45,15 @@ test("the directory lists at least 6 verified houses, never the unverified one, 
   for (const h of houses) expect(Object.keys(h).sort()).toEqual(["accent", "merchantName", "plotId", "propertyId", "theme", "verified"]);
 });
 
-/**
- * The door of a directory entry: with manifest plots the join uses the plot id
- * as the door id; before B2 the legacy test-builder door id is the fallback.
- */
-const doorOf = (page: Page, house: WorldHouse) =>
-  page.getByTestId(`label-${house.plotId}`).or(page.getByTestId("label-bld_test"));
+/** The door of a directory entry: with the B2 manifest plots the join uses the plot id as the door id. */
+const doorOf = (page: Page, house: WorldHouse) => page.getByTestId(`label-${house.plotId}`);
 
 test("suspend, reload: the house leaves the directory and its door is gone; reinstate brings it back", async ({ browser }) => {
   const admin = await openAs(browser, ADMIN);
   const before = await openAs(browser, "sess_fixture_visitor");
   const target = (await directory(before)).find((h) => h.propertyId === "prop_test");
   expect(target, "prop_test must be listed before the suspension").toBeTruthy();
-  await expect(doorOf(before, target!)).toHaveCount(1);
+  await expect(doorOf(before, target!)).toHaveCount(1, { timeout: DOOR_MS });
   expect((await setSuspended(admin, "mer_test", true)).ok()).toBe(true);
   try {
     const visitor = await openAs(browser, "sess_fixture_visitor");
@@ -60,7 +64,7 @@ test("suspend, reload: the house leaves the directory and its door is gone; rein
   }
   const again = await openAs(browser, "sess_fixture_visitor");
   expect((await directory(again)).map((h) => h.propertyId)).toContain("prop_test");
-  await expect(doorOf(again, target!)).toHaveCount(1);
+  await expect(doorOf(again, target!)).toHaveCount(1, { timeout: DOOR_MS });
 });
 
 function sourceFiles(dir: string): string[] {

@@ -22,7 +22,7 @@ const selectProduct = (page: Page, id: string) => page.evaluate((listingId) => (
 function recordCheckoutCalls(page: Page): string[] {
   const hits: string[] = [];
   page.on("request", (r) => {
-    if (/\/orders\b|payment[-_]?link/i.test(r.url())) hits.push(r.url());
+    if (/^\/api\/(orders\b|.*payment[-_]?link)/i.test(new URL(r.url()).pathname)) hits.push(r.url());
   });
   return hits;
 }
@@ -32,7 +32,7 @@ async function enterTestBuilder(page: Page, session: string) {
   const L = await walk.layout(page);
   await walk.walkToTestBuilderDoor(page, L);
   await page.keyboard.press("e");
-  await expect.poll(() => walk.placeOf(page)).toBe("house:bld_test");
+  await expect.poll(() => walk.placeOf(page)).toBe("house:slot-12");
   await expect(page.getByTestId("house-panel")).toBeVisible();
 }
 

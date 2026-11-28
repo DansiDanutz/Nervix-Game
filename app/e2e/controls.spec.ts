@@ -114,7 +114,7 @@ test("Enter on a focused menu button does not enter the door; E still does", asy
   expect(await placeOf(page)).toBe("plaza");
   await menu.blur();
   await page.keyboard.press("e");
-  await expect.poll(() => placeOf(page)).toBe("house:bld_test");
+  await expect.poll(() => placeOf(page)).toBe("house:slot-12");
 });
 
 test("Esc while typing in the house editor does not leave the house", async ({ page }) => {
@@ -123,13 +123,13 @@ test("Esc while typing in the house editor does not leave the house", async ({ p
   const L = await layout(page);
   await walkToTestBuilderDoor(page, L);
   await page.keyboard.press("e");
-  await expect.poll(() => placeOf(page)).toBe("house:bld_test");
+  await expect.poll(() => placeOf(page)).toBe("house:slot-12");
   const field = page.getByTestId("edit-welcome");
   await expect(field).toBeVisible();
   await field.click();
   await page.keyboard.press("Escape");
   await page.waitForTimeout(500);
-  expect(await placeOf(page)).toBe("house:bld_test");
+  expect(await placeOf(page)).toBe("house:slot-12");
   await field.blur();
   await page.keyboard.press("Escape");
   await expect.poll(() => placeOf(page)).toBe("plaza");

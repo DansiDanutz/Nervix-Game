@@ -20,6 +20,11 @@ const ROLE = "AI representative";
 const npcs = (page: Page) => page.evaluate(() => (window as unknown as { __nervixNpcs?: NpcEntry[] }).__nervixNpcs ?? null);
 const directory = async (page: Page) => ((await (await page.request.get("/api/world/houses")).json()) as { houses: WorldHouse[] }).houses;
 
+/** Pages opened with openAs hold live presence sockets; close them so no player lingers into later specs. */
+test.afterEach(async ({ browser, context }) => {
+  await Promise.all(browser.contexts().filter((c) => c !== context).map((c) => c.close()));
+});
+
 async function openAs(browser: Browser, session: string) {
   const page = await (await browser.newContext()).newPage();
   await signInAs(page, session);
@@ -48,9 +53,11 @@ test("one AI representative per directory house, named from the API, never for t
 
 test("every street house with a manifest plot has its NPC in the scene at the station", async ({ browser }) => {
   const page = await openAs(browser, VISITOR);
+  // Only street lots (built: false) get a runtime K2 house and its NPC; B2 plots on modelled facades do not.
   const plots: string[] = await page.evaluate(async () =>
-    ((await (await fetch("/slice/manifest.json")).json()).runtime_layout?.plots ?? []).map((p: { id: string }) => p.id));
-  test.skip(plots.length === 0, "the slice manifest has no runtime_layout.plots yet (B2)");
+    ((await (await fetch("/slice/manifest.json")).json()).runtime_layout?.plots ?? [])
+      .filter((p: { built?: boolean }) => p.built === false).map((p: { id: string }) => p.id));
+  test.skip(plots.length === 0, "every B2 manifest plot is a facade Blender modelled: no street NPC is placed");
   const houses = (await directory(page)).filter((h) => plots.includes(h.plotId));
   await expect.poll(async () => (await npcs(page))!.filter((n) => n.placed).map((n) => n.propertyId).sort(), { timeout: 30_000 })
     .toEqual(houses.map((h) => h.propertyId).sort());

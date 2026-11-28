@@ -209,7 +209,7 @@ test("Test Builder house stays independent on the plaza", async ({ page }) => {
   await walkRoute(page, tb.x, tb.z, 1.0, plazaObstacles(L));
   await expect(page.getByTestId("place-hint")).toContainText("Enter Test Builder");
   await page.keyboard.press("e");
-  await expect.poll(() => placeOf(page)).toBe("house:bld_test");
+  await expect.poll(() => placeOf(page)).toBe("house:slot-12");
   await expect(page.getByTestId("house-name")).toHaveText("Test Builder");
 
   // Leaving puts the player back on the plaza in front of the Test Builder door.
