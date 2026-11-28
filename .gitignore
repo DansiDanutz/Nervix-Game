@@ -31,4 +31,7 @@ Thumbs.db
 # Editors
 .vscode/
 .idea/
-*.swp.pnpm-store/
+*.swp
+
+# Local pnpm store (worktree installs)
+.pnpm-store/
