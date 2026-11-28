@@ -15,6 +15,7 @@ import { createCheckout as demoCheckout, verifyWebhook as demoVerify, DEMO_MODE 
 import { createLiveAdapter } from "./nervixpay.live.mjs";
 import { createEmailer, verificationEmail } from "./email.mjs";
 import { LEVELS, resolveLevel, requireLevel, safeAppUrl, AccessError } from "./entitlement.mjs";
+import { authorizeHouseEdit, authorizeMerchantEdit, canEditHouse, validateHouseProfile, HouseProfileError } from "./house-authority.mjs";
 import { buildContext, TOOLS } from "./agent.mjs";
 import { createProvider, createSpeechProvider } from "./provider.mjs";
 import { PostgresStore } from "./store.mjs";
@@ -115,6 +116,92 @@ async function resolveUser(params) {
   return db.store.getSession(token);
 }
 
+/** The authenticated caller and their eligibility level, from the session only. */
+async function caller(params) {
+  const user = await resolveUser(params);
+  return { user, level: resolveLevel({ user }) };
+}
+
+function requireStore() {
+  if (!db.store) throw new AccessError("merchant authority requires the database", "requires_database");
+}
+
+/** Picks the caller's merchant bound to this house, else their first record (for a precise denial). */
+function pickMerchant(merchants, house) {
+  return merchants.find((m) => m.id === house?.merchantId) ?? merchants[0] ?? null;
+}
+
+async function houseEditContext(params, propertyId) {
+  requireStore();
+  const { user, level } = await caller(params);
+  const house = await db.store.getHouse(propertyId);
+  const merchant = pickMerchant(await db.store.listMerchantsByOwner(user?.id), house);
+  return { user, level, house, merchant };
+}
+
+/** Caller must be the verified owner of :merchantId. Client-supplied owner ids are ignored. */
+async function requireMerchantOwner(params) {
+  requireStore();
+  const { user, level } = await caller(params);
+  const merchant = await db.store.getMerchant(params.merchantId);
+  authorizeMerchantEdit({ user, level, merchant });
+  return { user, merchant };
+}
+
+/** Caller must be the verified merchant owning the house bound to this builder catalogue. */
+async function requireBuilderOwner(params, builderId) {
+  requireStore();
+  const { user, level } = await caller(params);
+  const builder = await db.store.getBuilder(builderId);
+  if (!builder) throw new AccessError("unknown catalogue", "not_found");
+  const merchants = await db.store.listMerchantsByOwner(user?.id);
+  authorizeMerchantEdit({ user, level, merchant: merchants.find((m) => m.verified) ?? merchants[0] ?? null });
+  if (builder.ownerId !== user.id) throw new AccessError("not your catalogue", "cross_owner");
+  return { user, builder };
+}
+
+async function requireAdmin(params) {
+  requireStore();
+  const { user } = await caller(params);
+  if (!user || !(await db.store.isAdmin(user.id))) throw new AccessError("admin only", "forbidden");
+  return user;
+}
+
+function offeringPatch(body) {
+  const patch = {};
+  if (body.name !== undefined) patch.name = String(body.name).slice(0, 80);
+  if (body.description !== undefined) patch.description = String(body.description).slice(0, 400);
+  if (body.priceMinor !== undefined) {
+    if (!Number.isSafeInteger(Number(body.priceMinor)) || Number(body.priceMinor) < 0) return { error: "invalid_price" };
+    patch.priceMinor = Number(body.priceMinor);
+  }
+  if (body.currency !== undefined) patch.currency = String(body.currency).toUpperCase();
+  if (body.appUrl !== undefined) {
+    const safe = safeAppUrl(body.appUrl);
+    if (!safe) return { error: "unsafe_app_url" };
+    patch.appUrl = safe;
+  }
+  return { patch };
+}
+
+function newOffering(body, builderId) {
+  const appUrl = body.appUrl ? safeAppUrl(body.appUrl) : null;
+  if (body.appUrl && !appUrl) return { error: "unsafe_app_url" };
+  const priceMinor = Number(body.priceMinor);
+  if (!Number.isSafeInteger(priceMinor) || priceMinor < 0) return { error: "invalid_price" };
+  const offering = {
+    id: `off_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    builderId,
+    name: String(body.name ?? "").trim().slice(0, 80),
+    description: body.description ? String(body.description).slice(0, 400) : null,
+    priceMinor,
+    currency: String(body.currency ?? "EUR").toUpperCase(),
+    appUrl,
+  };
+  if (!offering.name) return { error: "name_required" };
+  return { offering };
+}
+
 const routes = {
   "GET /health": () => ({ ok: true, demo: DEMO_MODE, uptime: process.uptime() }),
 
@@ -176,7 +263,7 @@ const routes = {
     return { userId: user.id, email, devCode: sent ? null : record.code, emailed: sent };
   },
 
-  "POST /auth/verify": async (body) => {
+  "POST /auth/verify": async (body, params) => {
     if (!db.store) return { error: "identity_requires_database" };
     const email = normalizeEmail(body.email);
     const record = await db.store.latestCode(email);
@@ -201,32 +288,29 @@ const routes = {
   },
 
   "POST /merchants/:merchantId/products": async (body, params) => {
+    await requireMerchantOwner(params);
     const product = validateProduct(body);
-    await db.store?.ensureMerchant(params.merchantId, body.ownerId ?? "demo_user");
-    await db.store?.upsertProduct(params.merchantId, product);
-    if (!db.store) {
-      const i = db.catalog.findIndex((p) => p.merchantId === params.merchantId && p.sku === product.sku);
-      if (i >= 0) db.catalog[i] = { ...product, merchantId: params.merchantId };
-      else db.catalog.push({ ...product, merchantId: params.merchantId });
-    }
+    await db.store.upsertProduct(params.merchantId, product);
     return { product };
   },
 
   "PATCH /merchants/:merchantId/agent": async (body, params) => {
+    await requireMerchantOwner(params);
     const config = validateAgentConfig(body);
-    if (!db.store) return { error: "requires_database" };
     const property = await db.store.getProperty(body.propertyId);
     if (!property) return { error: "unknown_property" };
+    if (property.merchantId !== params.merchantId) throw new AccessError("not your property", "cross_owner");
     await db.store.updateAgent(body.propertyId, config);
     db.agent.config = { ...db.agent.config, ...config };
     return { config };
   },
 
   "PATCH /merchants/:merchantId/appearance": async (body, params) => {
+    await requireMerchantOwner(params);
     const appearance = validateAppearance(body);
-    if (!db.store) return { error: "requires_database" };
     const property = await db.store.getProperty(body.propertyId);
     if (!property) return { error: "unknown_property" };
+    if (property.merchantId !== params.merchantId) throw new AccessError("not your property", "cross_owner");
     await db.store.updateAppearance(body.propertyId, appearance);
     return { appearance };
   },
@@ -237,9 +321,9 @@ const routes = {
   },
 
   "POST /merchants/:merchantId/knowledge": async (body, params) => {
+    await requireMerchantOwner(params);
     const content = String(body.content ?? "").trim();
     if (!content) return { error: "content_required" };
-    if (!db.store) return { error: "requires_database" };
     const id = await db.store.addKnowledge(params.merchantId, {
       kind: String(body.kind ?? "faq").slice(0, 20),
       content: content.slice(0, 8000),
@@ -249,32 +333,44 @@ const routes = {
   },
 
   "POST /merchants/:merchantId/knowledge/:id/approve": async (_b, params) => {
-    if (!db.store) return { error: "requires_database" };
+    await requireMerchantOwner(params);
+    const own = await db.store.listKnowledge(params.merchantId);
+    if (!own.some((k) => String(k.id) === String(params.id))) throw new AccessError("not your knowledge source", "cross_owner");
     await db.store.approveKnowledge(params.id);
     return { approved: true };
   },
 
+  // Admin identity comes from the session, never from a body or query userId.
   "GET /admin/merchants": async (_b, params) => {
-    if (!(await db.store?.isAdmin(params.userId))) return { error: "forbidden" };
+    await requireAdmin(params);
     return { merchants: await db.store.listMerchants() };
   },
 
-  "POST /admin/merchants/:merchantId/suspend": async (body, params) => {
-    if (!(await db.store?.isAdmin(body.userId))) return { error: "forbidden" };
+  "POST /admin/merchants/:merchantId/suspend": async (_b, params) => {
+    const admin = await requireAdmin(params);
     await db.store.setSuspended(params.merchantId, true);
-    await db.store.addAudit({ actorId: body.userId, action: "merchant.suspend", subject: params.merchantId });
+    await db.store.addAudit({ actorId: admin.id, action: "merchant.suspend", subject: params.merchantId });
     return { merchant: params.merchantId, suspended: true };
   },
 
-  "POST /admin/merchants/:merchantId/reinstate": async (body, params) => {
-    if (!(await db.store?.isAdmin(body.userId))) return { error: "forbidden" };
+  "POST /admin/merchants/:merchantId/reinstate": async (_b, params) => {
+    const admin = await requireAdmin(params);
     await db.store.setSuspended(params.merchantId, false);
-    await db.store.addAudit({ actorId: body.userId, action: "merchant.reinstate", subject: params.merchantId });
+    await db.store.addAudit({ actorId: admin.id, action: "merchant.reinstate", subject: params.merchantId });
     return { merchant: params.merchantId, suspended: false };
   },
 
+  // Verification is an audited platform decision; no live NervixPay verification source is wired.
+  "POST /admin/merchants/:merchantId/verify": async (body, params) => {
+    const admin = await requireAdmin(params);
+    const verified = body.verified !== false;
+    if (!(await db.store.setMerchantVerified(params.merchantId, verified))) return { error: "unknown_merchant" };
+    await db.store.addAudit({ actorId: admin.id, action: verified ? "merchant.verify" : "merchant.unverify", subject: params.merchantId });
+    return { merchant: params.merchantId, verified };
+  },
+
   "GET /admin/audit": async (_b, params) => {
-    if (!(await db.store?.isAdmin(params.userId))) return { error: "forbidden" };
+    await requireAdmin(params);
     return { events: await db.store.listAudit() };
   },
 
@@ -286,17 +382,18 @@ const routes = {
   },
 
   "POST /merchants/:merchantId/apps/:appId/connect": async (body, params) => {
+    await requireMerchantOwner(params);
     const app = findApp(params.appId);
     if (!app) return { error: "unknown_app" };
     const config = validateConfig(app, body.config ?? {});
-    await db.store?.ensureMerchant(params.merchantId, body.ownerId ?? "demo_user");
-    await db.store?.connectApp(params.merchantId, app.id, config);
+    await db.store.connectApp(params.merchantId, app.id, config);
     return { app: app.id, connected: true, health: healthFor(app), config };
   },
 
   "DELETE /merchants/:merchantId/apps/:appId/connect": async (_b, params) => {
+    await requireMerchantOwner(params);
     if (!findApp(params.appId)) return { error: "unknown_app" };
-    await db.store?.disconnectApp(params.merchantId, params.appId);
+    await db.store.disconnectApp(params.merchantId, params.appId);
     return { app: params.appId, connected: false, health: "not_connected" };
   },
 
@@ -434,8 +531,11 @@ const routes = {
   },
 
   "POST /builders": async (body, params) => {
+    requireStore();
     const me = await routes["GET /me"]({}, params);
-    requireLevel(me.level, LEVELS.BUILD);
+    const { user, level } = await caller(params);
+    const merchants = await db.store.listMerchantsByOwner(user?.id);
+    authorizeMerchantEdit({ user, level, merchant: merchants.find((m) => m.verified) ?? merchants[0] ?? null });
     const appUrl = body.appUrl ? safeAppUrl(body.appUrl) : null;
     if (body.appUrl && !appUrl) return { error: "unsafe_app_url" };
     const id = `bld_${me.userId.slice(-8)}`;
@@ -444,55 +544,28 @@ const routes = {
   },
 
   "POST /builders/:id/offerings": async (body, params) => {
-    const me = await routes["GET /me"]({}, params);
-    requireLevel(me.level, LEVELS.BUILD);
-    const builder = await db.store.getBuilder(params.id);
-    if (!builder || builder.ownerId !== me.userId) throw new AccessError("not your catalogue", "cross_owner");
-    const appUrl = body.appUrl ? safeAppUrl(body.appUrl) : null;
-    if (body.appUrl && !appUrl) return { error: "unsafe_app_url" };
-    const offering = {
-      id: `off_${Date.now().toString(36)}`,
-      builderId: builder.id,
-      name: String(body.name ?? "").slice(0, 80),
-      description: body.description ? String(body.description).slice(0, 400) : null,
-      priceMinor: Number(body.priceMinor),
-      currency: String(body.currency ?? "EUR"),
-      appUrl,
-    };
-    if (!offering.name) return { error: "name_required" };
-    await db.store.addOffering(offering);
-    return { offering };
+    const { builder } = await requireBuilderOwner(params, params.id);
+    const made = newOffering(body, builder.id);
+    if (made.error) return made;
+    await db.store.addOffering(made.offering);
+    return { offering: made.offering };
   },
 
   "PATCH /builders/:id/offerings/:offeringId": async (body, params) => {
-    const me = await routes["GET /me"]({}, params);
-    requireLevel(me.level, LEVELS.BUILD);
-    const builder = await db.store.getBuilder(params.id);
-    if (!builder) return { error: "not_found" };
-    if (builder.ownerId !== me.userId) throw new AccessError("not your catalogue", "cross_owner");
-    const patch = {};
-    if (body.name !== undefined) patch.name = String(body.name).slice(0, 80);
-    if (body.description !== undefined) patch.description = String(body.description).slice(0, 400);
-    if (body.priceMinor !== undefined) {
-      if (!Number.isSafeInteger(Number(body.priceMinor)) || Number(body.priceMinor) < 0) return { error: "invalid_price" };
-      patch.priceMinor = Number(body.priceMinor);
-    }
-    if (body.currency !== undefined) patch.currency = String(body.currency).toUpperCase();
-    if (body.appUrl !== undefined) {
-      const safe = safeAppUrl(body.appUrl);
-      if (!safe) return { error: "unsafe_app_url" };
-      patch.appUrl = safe;
-    }
+    await requireBuilderOwner(params, params.id);
+    const { patch, error } = offeringPatch(body);
+    if (error) return { error };
     // Bind to BOTH the listing and the builder: the offering must live in :id.
     const updated = await db.store.updateOffering({ offeringId: params.offeringId, builderId: params.id, patch });
     if (!updated) throw new AccessError("not your listing", "cross_owner");
     return { offering: updated };
   },
 
-  "GET /houses/:propertyId": async (body, params) => {
+  "GET /houses/:propertyId": async (_b, params) => {
     const me = await routes["GET /me"]({}, params);
     requireLevel(me.level, LEVELS.BROWSE);
-    const house = await db.store.getHouse(params.propertyId);
+    const ctx = await houseEditContext(params, params.propertyId);
+    const house = ctx.house;
     if (!house) return { error: "unknown_house" };
     // Reject mismatched listing/app ids instead of falling back.
     if (params.listing && !house.listings.some((l) => l.id === params.listing)) {
@@ -501,7 +574,44 @@ const routes = {
     if (params.app && params.app !== house.ownerId) {
       return { error: "app_mismatch", propertyId: house.propertyId };
     }
-    return { house, demo: false };
+    const owner = house.merchantId ? await db.store.getMerchant(house.merchantId) : null;
+    const profile = await db.store.getHouseProfile(house.propertyId);
+    return {
+      house: { ...house, merchantName: owner?.name ?? null, merchantVerified: owner?.verified ?? false, profile },
+      canEdit: canEditHouse(ctx),
+      demo: false,
+    };
+  },
+
+  "PATCH /houses/:propertyId/profile": async (body, params) => {
+    const ctx = await houseEditContext(params, params.propertyId);
+    authorizeHouseEdit(ctx);
+    const patch = validateHouseProfile(body);
+    const profile = await db.store.saveHouseProfile(ctx.house.propertyId, patch, ctx.user.id);
+    await db.store.addAudit({ actorId: ctx.user.id, action: "house.profile", subject: ctx.house.propertyId, detail: { fields: Object.keys(patch) } });
+    return { profile };
+  },
+
+  "POST /houses/:propertyId/listings": async (body, params) => {
+    const ctx = await houseEditContext(params, params.propertyId);
+    authorizeHouseEdit(ctx);
+    if (!ctx.house.builderId) return { error: "no_catalogue" };
+    const made = newOffering(body, ctx.house.builderId);
+    if (made.error) return made;
+    await db.store.addOffering(made.offering);
+    await db.store.addAudit({ actorId: ctx.user.id, action: "house.listing.add", subject: ctx.house.propertyId, detail: { listing: made.offering.id } });
+    return { offering: made.offering };
+  },
+
+  "PATCH /houses/:propertyId/listings/:listingId": async (body, params) => {
+    const ctx = await houseEditContext(params, params.propertyId);
+    authorizeHouseEdit(ctx);
+    const { patch, error } = offeringPatch(body);
+    if (error) return { error };
+    const updated = await db.store.updateOffering({ offeringId: params.listingId, builderId: ctx.house.builderId, patch });
+    if (!updated) throw new AccessError("not your listing", "cross_owner");
+    await db.store.addAudit({ actorId: ctx.user.id, action: "house.listing.edit", subject: ctx.house.propertyId, detail: { listing: params.listingId } });
+    return { offering: updated };
   },
 
   "GET /quests/lost-seals": () => ({ quest: QUEST }),
@@ -736,6 +846,8 @@ const server = http.createServer(async (req, res) => {
     const body = ["POST", "PATCH", "PUT"].includes(req.method) && !rawBodyRoute ? await readJson(req) : {};
     return send(res, 200, await handler(body, params));
   } catch (error) {
+    if (error instanceof AccessError) return send(res, error.code === "unauthorized" ? 401 : 403, { error: error.code, message: error.message });
+    if (error instanceof HouseProfileError) return send(res, 400, { error: "invalid_profile", message: error.message });
     return send(res, 400, { error: error.name ?? "error", message: error.message });
   }
 });
