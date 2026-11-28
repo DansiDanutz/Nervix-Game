@@ -57,3 +57,88 @@ are ignored):
 | Emote token bucket | burst 3, 1/s | option only |
 | Origin allow-list | same host and loopback | `PRESENCE_ALLOWED_ORIGINS` (comma list) |
 | Unread backlog per socket (past it, the socket is terminated, even if it keeps sending) | 1 MB | option only (`maxBufferedBytes`) |
+
+## Crowd rendering (C6) — budget, 2026-11-28
+
+Status: logic and components written and unit-tested; **not yet mounted and not yet measured**. The
+GPU numbers below are the budget the C6 E2E (`app/e2e/crowd.spec.ts`, unrun) must confirm and record.
+
+Code: `app/src/world/remoteCrowd.ts` (pure: interpolation and LOD plan, 21 unit tests) and
+`app/src/world3d/RemoteCrowd.tsx` with `RemoteCrowdParts.tsx` and `RemoteCrowdLabels.tsx` (three.js).
+
+Interpolation:
+- Each presence sample (10 Hz tick) starts a tween from the pose drawn now to the sample, lasting one
+  tick (`INTERP_MS` = 100 ms). Motion is continuous and never jumps back; the cost is up to one tick of
+  extra display latency on top of the C4 echo latency.
+- Yaw takes the shortest arc (170° → −170° turns 20°). There is no `seq` on the wire (C9 `PUBLIC_FIELDS`:
+  id, name, preset, place, x, z, yaw), so the crowd relies on in-order arrival on the one socket: the latest
+  sample wins, and a repeated pose keeps the running tween.
+- Facing: presence `yaw` is the look yaw (forward = (−sin, −cos), yaw 0 looks toward −z). The crowd figure
+  looks along local +z, so the body rotation is `bodyYaw = yaw + π`, converted once on ingest (unit-tested).
+- A jump over `SNAP_DISTANCE` (6 m) or a place change snaps instead of sliding. Non-finite samples are dropped.
+
+Level of detail, decided every frame from the camera position, nearest first:
+
+| Tier | Who | Draw calls | Shadows |
+|---|---|---|---|
+| Full detail, near | the full-detail players within 8 m, at most 8 | 6 instanced part meshes (legs, tunic, belt, head, hair, eyes) | yes (the only crowd shadow casters) |
+| Full detail, mid | the rest of the 30 nearest within 25 m | 6 instanced part meshes | no |
+| Impostor | everyone else (beyond 25 m, or past the 30 cap) | 1 instanced capsule tinted with the tunic colour | no |
+| Labels | full-detail players within 15 m, at most 12 | 1 sprite each (canvas text, one texture per name) | — |
+
+- Thresholds hold a 1 m hysteresis, so a player standing on a boundary does not flicker between tiers.
+- **Crowd draw calls are bounded: at most 13 meshes + 12 labels = 25**, whatever the room size (cap 200),
+  plus 6 shadow-pass calls for the near set. The old `RemotePlayers.tsx` drew 8 meshes per player with
+  their own geometry and materials, all casting shadows: 800 calls (and 600 shadow calls) at 100 players.
+- Geometry and materials are shared: 7 geometries and 7 materials for the whole crowd, plus one label
+  texture per distinct name (unused textures are freed past 64). Per-instance colour comes from the preset.
+- Triangles: a full-detail figure is about 1.1k triangles, an impostor about 100. 30 full + 170 impostors
+  ≈ 50k triangles.
+- Crowd meshes ignore raycasts, so doors and props behind players stay clickable.
+
+Not covered here: skinned animation for the nearest players is C7 (it replaces the near tier); bandwidth
+headroom (interest management, quantised positions) is still the open C4 note above.
+
+To measure (after the lead mounts it): `PW_GL=metal ... pnpm exec playwright test e2e/crowd.spec.ts`.
+It prints `[crowd] {...}` lines (fps, calls, triangles and tier counts) for desktop and mobile emulation
+and writes `docs/evidence/slice/crowd-labelled-{desktop,mobile}.png`. `calls` is read from
+`renderer.info` in the frame loop, so it is the previous frame's last render pass; if post-processing
+renders several passes, read it as a lower bound.
+
+### Skinned avatar (C7) — budget, not measured, 2026-11-28
+
+- `world3d/SkinnedAvatar.tsx` (unmounted) draws the K1 pedestrian (`kits/k1/k1_pedestrian.glb`, about 2.5–3.4k
+  triangles per preset, 18 joints) with one `AnimationMixer` per avatar and three always-playing actions
+  (idle, walk, run) whose weights come from `world/locomotion.ts`. CPU cost is one mixer update per avatar
+  per frame; the GLB is loaded once (`useGLTF` cache) and cloned per avatar with `SkeletonUtils.clone`. The
+  K1 manifest is fetched and parsed once for all avatars (`world3d/k1Dress.ts`, cached promise; a failure is
+  retried by the next avatar). `scene/Pedestrians.tsx` still keeps its own copy until the fidelity lane
+  imports `useK1Kit`/`dressK1` from there.
+- Foot slide: the K1 walk is authored at 1.4 m/s and CT1 walks at 4.2 m/s, so walk plays at 3x;
+  `WALK_MAX_PLAYBACK_RATE` is 3.2, so walk is unclamped at walking speed (run, 7.14 / 3.6 = 1.98, is unclamped
+  under its own 2x cap). Walk and run are posed from one shared normalised gait phase while blended
+  (`gaitCycleRate`), so the legs stay in step between 4.2 and 7.14 m/s. A 3x walk reads brisk; re-authoring
+  the K1 walk near 4.2 m/s would let the walk cap come back down.
+- Draw calls: one per visible part mesh per avatar (body, garment, hair, 0–2 accessories, so 3–5) plus their
+  shadow passes. Recoloured materials are cloned per avatar and disposed on unmount.
+- Proposed cap: the local player plus the 8 nearest remote players skinned (inside the C6 near/shadow tier,
+  8 m), the rest stay on the C6 instanced parts and impostors. That is at most 45 extra calls.
+- To measure after mounting: read `__nervixCrowd.calls` with and without the skinned near tier.
+
+### Fixture walkers and merchant NPCs (C8) — budget, not measured, 2026-11-28
+
+- `server/scripts/fixture-walkers.mjs` (DEMO only) adds at most 8 presence sockets (default 6) moving at 5 Hz
+  at 1.4 m/s: about 30 moves per second into the plaza room, well inside the C4 load runs above (100 bots at
+  10 Hz). They render as ordinary remote players through the C6 crowd tiers, so they count against its caps.
+- Seeding is opt-in and separate from the slice fixtures: after `node seed/slice-fixtures.mjs`, run
+  `NERVIX_WORLD_SLICE=1 node seed/walker-fixtures.mjs` (same DATABASE_URL), then the walker service.
+- Guard limitation: the slice / live-payments / production checks read the walker's own environment; the
+  server's `/health` only reports the hard-coded `DEMO_MODE`. Run the walkers from the server's shell
+  environment until `/health` reports the server's real payment mode and NODE_ENV.
+- `world3d/MerchantNpcs.tsx` (unmounted) draws one idle K1 skinned NPC per street house with a manifest plot
+  (7 directory houses today, 6 on the street) plus one two-line label sprite each: 3–5 calls per NPC, so
+  about 36 calls with 6 street NPCs. NPCs stand inside their houses, so most are occluded from the plaza;
+  if the budget is tight the scene wave can mount them only near the player or only inside the house room
+  (`InteriorMerchantNpc`, one NPC).
+- To measure after mounting: `__nervixCrowd.calls` and `renderer.info.render.calls` with and without
+  `<MerchantNpcs>`, with the walkers running.
