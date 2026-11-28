@@ -35,17 +35,21 @@ Verify: `cd docs/references && shasum -a 256 -c <(sed -n '/^```$/,/^```$/p' MANI
 A16, A17, A18 and A18-alt were visually inspected by the agent on 2026-11-28 (image input
 available this session). ref1–ref4 status is unchanged from `README.md`.
 
-## A01–A15 — not available locally
+## A01–A15 — present in `assets/references/` (canonical collection)
 
-A01-plaza, A02-fountain-v2, A03-paving, A04-merchant-house-v2, A05-cafe-v2, A06-casino-v2,
-A07-cafe-interior, A08-arcade, A09-shopfront-kit, A10-planting, A11-street-furniture,
-A12-hillside-v2, A13-merchant, A14-cafe-keeper, A15-traveler exist only as **personal ChatGPT
-Library links** (listed in `../art-direction/Nervix-World-selected-references.md`). No local
-original was found (searched `~/Downloads`, `~/Documents`, `~/Desktop`, `~/Pictures`, ChatGPT
-app caches, and Spotlight for `A01-`…`A15-` names; the `A0x_*.jpg` hits on disk belong to an
-unrelated video project). **No substitute is filed under these IDs.** ref1 is *not* A01: A01 is a
-later generation that used ref1 as input. To complete the set, download each from the Library and
-drop it here under its ID name, then add its hash above.
+**Superseded 2026-11-28:** the earlier note here said A01–A15 existed only as ChatGPT Library
+links. That is obsolete. All 23 original PNGs (A01–A18, A18-alt, ref1–ref4) were published in
+handoff PR #2 (`codex/world-builder-handoff`) and are committed at
+[`assets/references/`](../../assets/references/), with `SHA256SUMS` and a `README.md`.
+
+`assets/references/` is the **canonical** art collection. This folder (`docs/references/`) keeps
+byte-identical working copies of ref1–ref4 and A16–A18 for the docs; the hashes above match the
+same files in `assets/references/`.
+
+Verify the full set: `cd assets/references && shasum -a 256 -c SHA256SUMS` (23/23 OK on 2026-11-28).
+
+ref1 is still *not* A01: A01-plaza is the controlling arrival/composition target (street spawn
+first frame); ref1 is supporting context only.
 
 ## Art-direction briefs (`../art-direction/`)
 
