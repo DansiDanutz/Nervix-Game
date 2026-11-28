@@ -757,3 +757,20 @@ body,
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* House panel: profile, owner editor */
+.catalog-overlay { max-width: 320px; max-height: calc(100vh - 32px); overflow: auto; border: 2px solid transparent; }
+.catalog-overlay__welcome { margin: 6px 0; font-size: 13px; font-style: italic; }
+.catalog-overlay li.is-featured span:first-child::before { content: "★ "; color: #b08a2e; }
+.catalog-overlay a + a { margin-left: 10px; }
+.house-editor { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(0, 0, 0, 0.12); }
+.house-editor h3 { margin: 0 0 6px; font-size: 13px; }
+.house-editor form { display: flex; flex-direction: column; gap: 6px; }
+.house-editor label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; }
+.house-editor textarea { min-height: 48px; font: inherit; }
+.house-editor fieldset { border: 0; padding: 0; margin: 0; font-size: 11px; }
+.house-editor__check { flex-direction: row !important; align-items: center; gap: 6px !important; }
+.house-editor__row { flex-direction: row !important; margin-top: 6px; }
+.house-editor__row input { width: 0; flex: 1; }
+.house-editor__status { margin: 6px 0 0; font-size: 11px; }
+.place-hint { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); padding: 6px 12px; border-radius: 999px; background: rgba(32, 22, 30, 0.78); color: #fff4dc; font-size: 13px; z-index: 16; pointer-events: none; }

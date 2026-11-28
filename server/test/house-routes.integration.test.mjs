@@ -18,7 +18,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = join(HERE, "..", "db", "migrations");
 const PG_HOST = process.env.PGHOST ?? "/tmp";
 const DB = `nervix_world_itest_${process.pid}`;
-const PORT = 18000 + (process.pid % 1000);
+const PORT = 28000 + (process.pid % 700);
 const BASE = `http://127.0.0.1:${PORT}`;
 
 function pgAvailable() {

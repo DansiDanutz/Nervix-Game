@@ -11,12 +11,43 @@ import { GuidePanel } from "./ui/GuidePanel";
 import { AccessGate } from "./ui/AccessGate";
 import { InteriorCatalog } from "./ui/InteriorCatalog";
 import { TouchControls } from "./ui/TouchControls";
-import { HOUSE_DOORS, type HouseDoor } from "./scene/HouseDoors";
+import type { HouseDoor } from "./scene/HouseDoors";
+import { arrival, danggDoor, loadSliceLayout, near, STREET_SPAWN, TEST_BUILDER_DOOR, type Anchor, type Place, type SliceLayout } from "./scene/slice";
 import { usePresence } from "./net/presence";
 
 const SceneView = lazy(() => import("./scene/SceneView"));
 import { api, type Session, type QuestProgress } from "./net/api";
 import { loadSession } from "./net/session";
+
+type Target =
+  | { kind: "venue"; label: string }
+  | { kind: "house"; door: HouseDoor; label: string }
+  | { kind: "exit"; label: string };
+
+const ROOM_EXIT: Anchor = { x: 0, z: 4.3 };
+
+function targetAt(place: Place, layout: SliceLayout | null, x: number, z: number): Target | null {
+  if (place.kind === "house") {
+    return near(ROOM_EXIT, x, z, 2.2) || near({ x: 0, z: -4.0 }, x, z, 2.2) ? { kind: "exit", label: "Plaza" } : null;
+  }
+  if (!layout) return null;
+  if (place.kind === "venue") {
+    const dangg = danggDoor(layout);
+    if (near(layout.salon.danggDoor, x, z)) return { kind: "house", door: dangg, label: "DanGG" };
+    if (near(layout.salon.exit, x, z)) return { kind: "exit", label: "Plaza" };
+    return null;
+  }
+  if (near(layout.facadeDoor, x, z, 3.0)) return { kind: "venue", label: "OpenPoker" };
+  const t = TEST_BUILDER_DOOR.position;
+  if (near({ x: t[0], z: t[2] }, x, z, 2.8)) return { kind: "house", door: TEST_BUILDER_DOOR, label: TEST_BUILDER_DOOR.label };
+  return null;
+}
+
+function placeLabel(place: Place) {
+  if (place.kind === "plaza") return "Plaza · WASD to walk · drag to look · Q/R turn";
+  if (place.kind === "venue") return "OpenPoker salon · DanGG's house is in the right alcove · Esc returns to the plaza";
+  return `${place.door.label} · Esc returns to the plaza`;
+}
 
 export function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -34,20 +65,60 @@ export function App() {
   const [showOrders, setShowOrders] = useState(false);
   const [showAds, setShowAds] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
-  const [nearDoor, setNearDoor] = useState<HouseDoor | null>(null);
-  const [interior, setInterior] = useState<HouseDoor | null>(null);
-  const [teleport, setTeleport] = useState<{ x: number; z: number; key: number } | null>(null);
+  const [place, setPlace] = useState<Place>({ kind: "plaza" });
+  const [layout, setLayout] = useState<SliceLayout | null>(null);
+  const [layoutError, setLayoutError] = useState<string | null>(null);
+  const [spawn, setSpawn] = useState<Anchor>(STREET_SPAWN);
+  const [target, setTarget] = useState<Target | null>(null);
+  const [teleport] = useState<{ x: number; z: number; key: number; yaw?: number } | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const interior = place.kind === "house" ? place.door : null;
   const onMarkers = useCallback((m: Marker[]) => setMarkers(m), []);
-  const onPosition = useCallback((x: number, z: number) => {
-    let best: HouseDoor | null = null;
-    let bestD = 2.8;
-    for (const d of HOUSE_DOORS) {
-      const dist = Math.hypot(d.position[0] - x, d.position[2] - z);
-      if (dist < bestD) { bestD = dist; best = d; }
-    }
-    setNearDoor(best);
+
+  useEffect(() => {
+    loadSliceLayout().then(setLayout).catch((e: Error) => setLayoutError(e.message));
   }, []);
+
+  /** What the player can interact with from where they stand. */
+  const onPosition = useCallback(
+    (x: number, z: number) => {
+      setTarget(targetAt(place, layout, x, z));
+    },
+    [place, layout],
+  );
+
+  const go = useCallback(
+    async (next: Place) => {
+      if (next.kind !== "plaza") {
+        // Entering any business needs a completed profile; the server re-checks every read.
+        const me = await api.me().catch(() => null);
+        if (!me || (me.level !== "browse" && me.level !== "build")) {
+          setAuthError("A completed profile is required to enter a business.");
+          return;
+        }
+      }
+      if (!layout) return;
+      setAuthError(null);
+      setSpawn(arrival(next, place, layout));
+      setTarget(null);
+      setPlace(next);
+    },
+    [layout, place],
+  );
+
+  const activate = useCallback(
+    (t: Target | null) => {
+      if (!t) return;
+      if (t.kind === "venue") void go({ kind: "venue", id: "openpoker" });
+      else if (t.kind === "house") void go({ kind: "house", door: t.door, from: place.kind === "venue" ? "openpoker" : "plaza" });
+      else void go({ kind: "plaza" });
+    },
+    [go, place],
+  );
+
+  useEffect(() => {
+    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__nervixPlace = place.kind === "house" ? `house:${place.door.id}` : place.kind;
+  }, [place]);
   const { players, status: presence, sendMove } = usePresence({
     userId: session?.userId ?? "guest",
     name: session?.displayName ?? "Traveler",
@@ -69,10 +140,12 @@ export function App() {
     (async () => {
       try {
         const s = await api.session(loadSession().userId);
-        const { property } = await api.provision(s.userId, "merchant");
         if (!alive) return;
         setSession(s);
-        setPropertyId(property.id);
+        // Only eligible builders reserve a property; visitors just explore.
+        const property = await api.provision(s.userId, "merchant").then((r) => r.property).catch(() => null);
+        if (!alive) return;
+        if (property) setPropertyId(property.id);
         setQuest((await api.progress(s.userId)).progress);
         setStatus("connected");
       } catch {
@@ -86,28 +159,16 @@ export function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLElement && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT")) return;
       if (e.key.toLowerCase() === "g") setShowGuide((v) => !v);
       if (e.key === "Escape") {
         setShowGuide(false);
-        setInterior(null);
-      }
-      if (interior && (e.key.toLowerCase() === "e" || e.key === "Enter" || e.key === "Escape")) {
-        setInterior(null);
-        setTeleport({ x: interior.position[0], z: interior.position[2] + 2.8, key: Date.now() });
+        if (place.kind !== "plaza") void go({ kind: "plaza" });
         return;
       }
-      if (!interior && (e.key.toLowerCase() === "e" || e.key === "Enter") && nearDoor) {
-        void api
-          .me()
-          .then((me) => {
-            if (me.level !== "browse" && me.level !== "build") {
-              setAuthError("A completed profile is required to enter a business.");
-              return;
-            }
-            setInterior(nearDoor);
-            setTeleport({ x: 0, z: 3.2, key: Date.now() });
-          })
-          .catch(() => setAuthError("Could not verify your access."));
+      if ((e.key.toLowerCase() === "e" || e.key === "Enter") && target) {
+        activate(target);
+        return;
       }
       if (e.key.toLowerCase() !== "e") return;
       if (!session || !nearby) return;
@@ -116,14 +177,14 @@ export function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [session, nearby, quest, interior, nearDoor]);
+  }, [session, nearby, quest, place, target, go, activate]);
 
   return (
     <div className="app">
       {!entered && <AccessGate onEnter={() => setEntered(true)} />}
       {entered && <Suspense fallback={null}>
         <SceneView
-          markers={markers}
+          markers={place.kind === "plaza" ? markers : []}
           onMarkers={onMarkers}
           onNearby={setNearby}
           onMove={sendMove}
@@ -132,33 +193,26 @@ export function App() {
           selfId={session?.userId ?? ""}
           mode={sceneMode}
           teleportTo={teleport}
-          onNearDoor={setNearDoor}
           onPosition={onPosition}
-          interior={interior}
-          onExitInterior={() => {
-            setInterior(null);
-            if (interior) setTeleport({ x: interior.position[0], z: interior.position[2] + 2.8, key: Date.now() });
-          }}
+          place={place}
+          layout={layout}
+          spawn={spawn}
+          onEnterHouse={(door) => activate({ kind: "house", door, label: door.label })}
+          onEnterVenue={() => activate({ kind: "venue", label: "OpenPoker" })}
         />
       </Suspense>}
 
 
       {interior && <InteriorCatalog door={interior} />}
-      {entered && !interior && nearDoor && (
-        <TouchControls interior={false} canEnter onEnter={() => setInterior(nearDoor)} onExit={() => {}} />
+      {entered && (
+        <div className="place-hint" data-testid="place-hint" data-place={place.kind === "house" ? `house:${place.door.id}` : place.kind}>
+          {target ? `E / Enter or click · ${target.kind === "exit" ? "Return to the plaza" : `Enter ${target.label}`}` : placeLabel(place)}
+        </div>
       )}
-      {interior && (
-        <TouchControls
-          interior
-          canEnter={false}
-          onEnter={() => {}}
-          onExit={() => {
-            setInterior(null);
-            setTeleport({ x: interior.position[0], z: interior.position[2] + 2.8, key: Date.now() });
-          }}
-        />
+      {entered && layoutError && <div className="app__notice" role="alert">{layoutError}</div>}
+      {entered && target && (
+        <TouchControls interior={target.kind === "exit"} canEnter={target.kind !== "exit"} onEnter={() => activate(target)} onExit={() => activate(target)} />
       )}
-
       {entered && !interior && <Hud session={session ?? { userId: "", displayName: "", role: "player", demo: true }} nearby={nearby} seals={quest?.seals.length ?? 0} />}
 
       <div className="app__side" style={!entered || interior ? { display: "none" } : undefined}>

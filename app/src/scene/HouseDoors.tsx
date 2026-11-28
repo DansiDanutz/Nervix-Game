@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -12,21 +11,19 @@ export interface HouseDoor {
   trim: string;
 }
 
-export const HOUSE_DOORS: HouseDoor[] = [
-  { id: "bld_dangg", propertyId: "prop_dangg", owner: "usr_dangg", label: "OpenPoker", position: [9, 0, -8.4], colour: "#5b3a5e", trim: "#c9a441" },
-  { id: "bld_test", propertyId: "prop_test", owner: "usr_test", label: "Test Builder House", position: [6, 0, 4], colour: "#2f6f6a", trim: "#b5486b" },
-];
-
-export function HouseDoors({ onNear }: { onNear: (door: HouseDoor | null) => void }) {
-  useEffect(() => {
-    onNear(null);
-  }, [onNear]);
-
+/** Free-standing merchant doors. Labels show only the stable door label; owner identity loads inside. */
+export function HouseDoors({ doors, onDoorClick }: { doors: HouseDoor[]; onDoorClick: (door: HouseDoor) => void }) {
   return (
     <group>
-      {HOUSE_DOORS.map((d) => (
+      {doors.map((d) => (
         <group key={d.id} position={d.position}>
-          <mesh position={[0, 1.4, 0]} castShadow>
+          <mesh
+            position={[0, 1.4, 0]}
+            castShadow
+            onClick={(e) => {
+              e.stopPropagation();
+              onDoorClick(d);
+            }}>
             <boxGeometry args={[2.0, 2.8, 0.2]} />
             <meshStandardMaterial color={d.colour} roughness={0.7} />
           </mesh>
@@ -43,7 +40,7 @@ export function HouseDoors({ onNear }: { onNear: (door: HouseDoor | null) => voi
           <Html position={[0, 3.9, 0]} center distanceFactor={10}>
             <div className="door-label">
               <strong>{d.label}</strong>
-              <small>owner {d.owner}</small>
+              <small>merchant house · E or click</small>
             </div>
           </Html>
           <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} userData-house={d.id}>

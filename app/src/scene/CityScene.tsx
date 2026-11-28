@@ -86,9 +86,10 @@ export function pickAssets(manifest: Manifest | null, mode: SceneMode) {
   return chunks.length > 0 ? chunks : full ? [full] : [];
 }
 
-export function CityScene({ onMarkers, mode = "chunks" }: { onMarkers: (m: Marker[]) => void; mode?: SceneMode }) {
+export function CityScene({ onMarkers, mode = "chunks", hide = [] }: { onMarkers: (m: Marker[]) => void; mode?: SceneMode; hide?: string[] }) {
   const { manifest, missing } = useManifest();
-  const assets = pickAssets(manifest, mode);
+  // A chunk replaced by a newer Blender export (e.g. the OpenPoker facade) is hidden, never both drawn.
+  const assets = pickAssets(manifest, hide.length ? "chunks" : mode).filter((a) => !hide.includes(a.id));
 
   useEffect(() => {
     const placed = (manifest?.markers ?? []).map((m) => ({

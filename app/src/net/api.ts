@@ -55,12 +55,32 @@ export interface AuditEvent {
   createdAt: string;
 }
 
+export interface HouseProfile {
+  welcome: string | null;
+  decor: { theme?: "salon" | "workshop" | "gallery" | "cafe"; accent?: string; banner?: boolean };
+  display: { featuredListingIds?: string[]; showApp?: boolean };
+  websiteUrl: string | null;
+  updatedAt: string | null;
+}
+
 export interface House {
   propertyId: string;
   ownerId: string;
+  merchantId: string | null;
+  merchantName: string | null;
+  merchantVerified: boolean;
   ownerName: string;
   appUrl: string | null;
   listings: { id: string; name: string; priceMinor: number; currency: string }[];
+  profile: HouseProfile;
+}
+
+/** Server error with its machine-readable code (e.g. cross_owner). */
+export class ApiError extends Error {
+  constructor(readonly status: number, readonly code: string, message: string) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
 
 export interface Builder {
@@ -113,13 +133,16 @@ export interface AgentReply {
   history?: { role: string; content: string }[];
 }
 
-async function call<T>(path: string, body?: unknown): Promise<T> {
+async function call<T>(path: string, body?: unknown, method?: "PATCH"): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    method: body === undefined ? "GET" : "POST",
+    method: method ?? (body === undefined ? "GET" : "POST"),
     headers: body === undefined ? undefined : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`${res.status} ${path}`);
+  if (!res.ok) {
+    const detail = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+    throw new ApiError(res.status, detail.error ?? "error", detail.message ?? `${res.status} ${path}`);
+  }
   return (await res.json()) as T;
 }
 
@@ -148,7 +171,11 @@ export const api = {
     call<{ suspended: boolean }>(`/admin/merchants/${merchantId}/reinstate`, { userId }),
   adminAudit: (userId: string) => call<{ events: AuditEvent[] }>(`/admin/audit?userId=${encodeURIComponent(userId)}`),
   house: (propertyId: string, listing?: string, app?: string) =>
-    call<{ house: House }>(`/houses/${propertyId}${listing ? `?listing=${encodeURIComponent(listing)}` : app ? `?app=${encodeURIComponent(app)}` : ""}`),
+    call<{ house: House; canEdit: boolean }>(`/houses/${propertyId}${listing ? `?listing=${encodeURIComponent(listing)}` : app ? `?app=${encodeURIComponent(app)}` : ""}`),
+  saveHouseProfile: (propertyId: string, patch: Partial<Omit<HouseProfile, "updatedAt">>) =>
+    call<{ profile: HouseProfile }>(`/houses/${propertyId}/profile`, patch, "PATCH"),
+  addHouseListing: (propertyId: string, listing: { name: string; priceMinor: number; currency: string }) =>
+    call<{ offering: { id: string } }>(`/houses/${propertyId}/listings`, listing),
   builders: () => call<{ builders: Builder[] }>("/builders"),
   placements: () => call<{ placements: Placement[] }>("/placements"),
   campaigns: () => call<{ campaigns: Campaign[] }>("/campaigns"),
