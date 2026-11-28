@@ -1,28 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { uniqueById, othersOf, joinMessage, presenceUrl, retireSocket } from "./presence.ts";
+import { uniqueById, othersOf, joinMessage, presenceUrl, retireSocket } from "./presenceCore.ts";
 import config, { apiTarget } from "../../vite.config.ts";
 
 test("uniqueById keeps one avatar per player, latest position wins", () => {
   const out = uniqueById([
-    { id: "a", name: "A", district: "d", x: 1, z: 1 },
-    { id: "b", name: "B", district: "d", x: 2, z: 2 },
-    { id: "a", name: "A", district: "d", x: 9, z: 9 },
+    { id: "a", name: "A", district: "d", place: "plaza", preset: "teal", x: 1, z: 1, yaw: 0, seq: 0 },
+    { id: "b", name: "B", district: "d", place: "plaza", preset: "teal", x: 2, z: 2, yaw: 0, seq: 0 },
+    { id: "a", name: "A", district: "d", place: "plaza", preset: "teal", x: 9, z: 9, yaw: 0, seq: 0 },
   ]);
   assert.equal(out.length, 2);
-  assert.deepEqual(out.find((p) => p.id === "a"), { id: "a", name: "A", district: "d", x: 9, z: 9 });
+  assert.deepEqual(out.find((p) => p.id === "a"), { id: "a", name: "A", district: "d", place: "plaza", preset: "teal", x: 9, z: 9, yaw: 0, seq: 0 });
 });
 
 test("othersOf drops the player's own server handle", () => {
   const players = [
-    { id: "p_aaaaaaaaaaaa", name: "Me", district: "d", x: 0, z: 0 },
-    { id: "p_bbbbbbbbbbbb", name: "You", district: "d", x: 1, z: 1 },
+    { id: "p_aaaaaaaaaaaa", name: "Me", district: "d", place: "plaza", preset: "teal", x: 0, z: 0, yaw: 0, seq: 0 },
+    { id: "p_bbbbbbbbbbbb", name: "You", district: "d", place: "plaza", preset: "teal", x: 1, z: 1, yaw: 0, seq: 0 },
   ];
   assert.deepEqual(othersOf(players, "p_aaaaaaaaaaaa").map((p) => p.id), ["p_bbbbbbbbbbbb"]);
 });
 
 test("othersOf shows nobody until the server has named this connection", () => {
-  const players = [{ id: "p_aaaaaaaaaaaa", name: "Me", district: "d", x: 0, z: 0 }];
+  const players = [{ id: "p_aaaaaaaaaaaa", name: "Me", district: "d", place: "plaza", preset: "teal", x: 0, z: 0, yaw: 0, seq: 0 }];
   assert.deepEqual(othersOf(players, null), []);
 });
 
@@ -43,8 +43,10 @@ test("an explicit VITE_WS_URL still wins", () => {
 
 test("the presence client source never falls back to port 8787", async () => {
   const { readFile } = await import("node:fs/promises");
-  const source = await readFile(new URL("./presence.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /8787/);
+  for (const file of ["./presence.ts", "./presenceCore.ts", "./presencePlace.ts"]) {
+    const source = await readFile(new URL(file, import.meta.url), "utf8");
+    assert.doesNotMatch(source, /8787/, file);
+  }
 });
 
 test("vite proxies /presence as a WebSocket to the same target as /api", () => {

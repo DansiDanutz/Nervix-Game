@@ -18,6 +18,7 @@ import { createRequestHandler } from "../src/routes/dispatch.mjs";
 import { applySliceFixtures, SESSIONS } from "../seed/slice-fixtures.mjs";
 import { pgAvailable, createThrowawayDb } from "./helpers/db.mjs";
 import { pickTestPort } from "./helpers/ports.mjs";
+import { closeAll, closed, has, join, next, nextRoom, open, selfIn, settle, withPresence as withPresenceOn } from "./helpers/presenceClient.mjs";
 
 const USER_ID = /usr_|demo_/;
 const FIXTURE_COOKIE = "sess_unit_dangg";
@@ -28,54 +29,7 @@ async function fakeResolver(req) {
   return (req.headers.cookie ?? "").includes(`nervix_session=${FIXTURE_COOKIE}`) ? FIXTURE_USER : null;
 }
 
-async function listen(server) {
-  await new Promise((r) => server.listen(0, "127.0.0.1", r));
-  return `ws://127.0.0.1:${server.address().port}/presence`;
-}
-
-function withPresence(options, fn) {
-  return async () => {
-    const server = http.createServer();
-    attachPresence(server, options);
-    const url = await listen(server);
-    try {
-      await fn(url);
-    } finally {
-      server.closeAllConnections?.();
-      await new Promise((r) => server.close(r));
-    }
-  };
-}
-
-/** Opens a socket and records every frame it receives. */
-const open = (url, { cookie } = {}) =>
-  new Promise((resolve, reject) => {
-    const ws = new WebSocket(url, cookie ? { headers: { cookie: `nervix_session=${cookie}` } } : {});
-    ws.frames = [];
-    ws.on("message", (raw) => ws.frames.push(raw.toString()));
-    ws.once("open", () => resolve(ws));
-    ws.once("error", reject);
-  });
-
-const next = (ws, type) =>
-  new Promise((resolve) => {
-    const onMessage = (raw) => {
-      const msg = JSON.parse(raw.toString());
-      if (msg.type === type) {
-        ws.off("message", onMessage);
-        resolve(msg);
-      }
-    };
-    ws.on("message", onMessage);
-  });
-
-async function join(ws, message = {}) {
-  const welcome = next(ws, "welcome");
-  ws.send(JSON.stringify({ type: "join", ...message }));
-  return welcome;
-}
-
-const closeAll = (...sockets) => sockets.forEach((ws) => ws.close());
+const withPresence = (options, fn) => withPresenceOn(attachPresence, options, fn);
 
 test("two players see each other and a leaving player disappears", withPresence({ resolveSession: fakeResolver }, async (url) => {
   const a = await open(url);
@@ -85,13 +39,13 @@ test("two players see each other and a leaving player disappears", withPresence(
   const wb = await join(b);
   assert.equal(wb.players.length, 2, "the newcomer sees both players");
 
-  const moved = next(a, "players");
+  const moved = nextRoom(a, (v) => selfIn(v, wb.id)?.x === 3);
   b.send(JSON.stringify({ type: "move", x: 3, z: 4 }));
-  const bo = (await moved).players.find((p) => p.id === wb.id);
+  const bo = selfIn(await moved, wb.id);
   assert.equal(bo.x, 3);
   assert.equal(bo.z, 4);
 
-  const removed = next(a, "players");
+  const removed = nextRoom(a, (v) => !has(v, wb.id));
   b.close();
   const after = await removed;
   assert.deepEqual(after.players.map((p) => p.id), [wa.id]);
@@ -151,12 +105,12 @@ test("no frame sent to anyone contains a usr_ or demo_ id", withPresence({ resol
   const watcher = await open(url);
   await join(watcher);
   const member = await open(url, { cookie: FIXTURE_COOKIE });
-  await join(member, { userId: "usr_dangg", district: "usr_dangg" });
+  const wm = await join(member, { userId: "usr_dangg", district: "usr_dangg" });
   const guest = await open(url);
-  await join(guest, { userId: "demo_abc123", name: "demo_abc123", district: "demo_abc123" });
+  const wg = await join(guest, { userId: "demo_abc123", name: "demo_abc123", district: "demo_abc123" });
 
-  for (const ws of [member, guest]) {
-    const seen = next(watcher, "players");
+  for (const [ws, id] of [[member, wm.id], [guest, wg.id]]) {
+    const seen = nextRoom(watcher, (v) => selfIn(v, id)?.x === 2);
     ws.send(JSON.stringify({ type: "move", x: 2, z: 2, district: "usr_dangg" }));
     await seen;
   }
@@ -165,7 +119,7 @@ test("no frame sent to anyone contains a usr_ or demo_ id", withPresence({ resol
   const emote = await emoted;
   assert.match(emote.id, HANDLE_PATTERN);
 
-  const left = next(watcher, "players");
+  const left = nextRoom(watcher, (v) => !has(v, wm.id));
   member.close();
   await left;
 
@@ -179,9 +133,9 @@ test("a client-sent district must be a plain slug", withPresence({}, async (url)
   const ws = await open(url);
   const w = await join(ws, { district: "Bad District!" });
   assert.equal(w.players[0].district, "central-plaza");
-  const moved = next(ws, "players");
+  const moved = nextRoom(ws, (v) => selfIn(v, w.id)?.x === 1);
   ws.send(JSON.stringify({ type: "move", x: 1, z: 1, district: "merchant-quarter" }));
-  assert.equal((await moved).players[0].district, "merchant-quarter");
+  assert.equal(selfIn(await moved, w.id).district, "merchant-quarter");
   ws.close();
 }));
 
@@ -201,7 +155,7 @@ test("a second join on the same connection is ignored", withPresence({}, async (
   const ws = await open(url);
   const w = await join(ws);
   ws.send(JSON.stringify({ type: "join" }));
-  const moved = next(ws, "players");
+  const moved = nextRoom(ws, (v) => selfIn(v, w.id)?.x === 1);
   ws.send(JSON.stringify({ type: "move", x: 1, z: 1 }));
   const snapshot = await moved;
   assert.deepEqual(snapshot.players.map((p) => p.id), [w.id]);
@@ -210,9 +164,6 @@ test("a second join on the same connection is ignored", withPresence({}, async (
 
 // ---- S4 review hardening -------------------------------------------------
 
-const closed = (ws) => new Promise((resolve) => ws.once("close", (code) => resolve(code)));
-const settle = (ms = 150) => new Promise((r) => setTimeout(r, ms));
-const countType = (ws, type) => ws.frames.filter((f) => JSON.parse(f).type === type).length;
 
 const rejected = (url, headers) =>
   new Promise((resolve) => {
@@ -297,29 +248,7 @@ test("the session is resolved lazily on join, not on connection", async () => {
   })();
 });
 
-test("moves are rate limited per socket", withPresence({ moveLimit: { burst: 3, perSecond: 0.001 } }, async (url) => {
-  const watcher = await open(url);
-  await join(watcher);
-  const mover = await open(url);
-  await join(mover);
-  await settle(50);
-  const before = countType(watcher, "players");
-  for (let i = 0; i < 10; i += 1) mover.send(JSON.stringify({ type: "move", x: i, z: i }));
-  await settle();
-  assert.equal(countType(watcher, "players") - before, 3, "only the burst was broadcast");
-  closeAll(watcher, mover);
-}));
-
-test("emotes are rate limited per socket", withPresence({ emoteLimit: { burst: 1, perSecond: 0.001 } }, async (url) => {
-  const watcher = await open(url);
-  await join(watcher);
-  const actor = await open(url);
-  await join(actor);
-  for (let i = 0; i < 5; i += 1) actor.send(JSON.stringify({ type: "emote", emote: "wave" }));
-  await settle();
-  assert.equal(countType(watcher, "emote"), 1);
-  closeAll(watcher, actor);
-}));
+// Move and emote rate-limit drops are covered on a fake clock in presence-tick.test.mjs.
 
 test("the default move and emote limits allow normal play", async () => {
   const { DEFAULT_MOVE_LIMIT, DEFAULT_EMOTE_LIMIT } = await import("../src/presence.mjs");
