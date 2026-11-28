@@ -98,6 +98,69 @@ export function createOrder({ id, buyerId, merchantId, items, currency, fulfillm
   });
 }
 
+export const MAX_LINE_QUANTITY = 99;
+
+function requestedQuantities(requested) {
+  if (!Array.isArray(requested) || requested.length === 0) throw new TransitionError("items are required");
+  const totals = new Map();
+  for (const line of requested) {
+    const { sku, quantity } = line ?? {};
+    if (typeof sku !== "string" || !sku) throw new TransitionError("each item needs a sku");
+    if (!Number.isSafeInteger(quantity) || quantity < 1) throw new TransitionError("quantity must be an integer >= 1");
+    const sum = (totals.get(sku) ?? 0) + quantity;
+    if (sum > MAX_LINE_QUANTITY) throw new TransitionError(`quantity must be at most ${MAX_LINE_QUANTITY}`);
+    totals.set(sku, sum);
+  }
+  return totals;
+}
+
+/**
+ * Price requested lines from the server catalogue. Only `sku` and `quantity`
+ * are read from the request; name, unit price and currency come from the
+ * catalogue. Duplicate skus are merged. Inactive or unknown skus are rejected.
+ */
+export function priceLines(catalogue, requested) {
+  const bySku = new Map((catalogue ?? []).filter((p) => p.active !== false).map((p) => [p.sku, p]));
+  const items = [...requestedQuantities(requested)].map(([sku, quantity]) => {
+    const product = bySku.get(sku);
+    if (!product) throw new TransitionError(`unknown item ${sku}`);
+    if (!isMinorUnits(product.unitAmountMinor)) throw new TransitionError(`catalogue price for ${sku} is invalid`);
+    return Object.freeze({ sku, name: product.name, unitAmountMinor: product.unitAmountMinor, quantity, currency: product.currency });
+  });
+  const currencies = new Set(items.map((i) => i.currency));
+  if (currencies.size !== 1) throw new TransitionError("all items must share one currency");
+  return Object.freeze({
+    currency: items[0].currency,
+    items: Object.freeze(items.map(({ currency: _c, ...line }) => Object.freeze(line))),
+  });
+}
+
+/** Fulfilment modes allowed by the products/orders schema (001_init.sql CHECK). */
+export const FULFILLMENT_MODES = Object.freeze(["digital", "appointment", "delivery", "pickup"]);
+
+/**
+ * The order's fulfilment mode, taken from the catalogue products of its lines
+ * (never from the client). Every line must share one allowed mode.
+ */
+export function orderFulfillment(catalogue, items) {
+  const bySku = new Map((catalogue ?? []).map((p) => [p.sku, p]));
+  const modes = new Set((items ?? []).map(({ sku }) => {
+    const mode = bySku.get(sku)?.fulfillment;
+    if (!FULFILLMENT_MODES.includes(mode)) throw new TransitionError(`no valid fulfilment for ${sku}`);
+    return mode;
+  }));
+  if (modes.size !== 1) throw new TransitionError("all items must share one fulfilment mode");
+  return [...modes][0];
+}
+
+/** "buyer", "merchant" (the merchant's owner) or null. Ids come from the session and the store. */
+export function orderRole(order, { userId, merchantOwnerId }) {
+  if (!userId) return null;
+  if (order.buyerId === userId) return "buyer";
+  if (merchantOwnerId && merchantOwnerId === userId) return "merchant";
+  return null;
+}
+
 function assertTransition(from, to) {
   if (!TRANSITIONS[from].includes(to)) {
     throw new TransitionError(`illegal transition ${from} -> ${to}`);
