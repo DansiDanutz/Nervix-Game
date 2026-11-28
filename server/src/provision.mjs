@@ -30,12 +30,13 @@ function stableId(prefix, userId) {
 
 /**
  * @param {object} args
- * @param {string} args.userId
+ * @param {string} args.userId the session user, never a client-supplied id
+ * @param {string|null} [args.merchantId] the caller's verified merchant the house is bound to
  * @param {'merchant'|'cafe'|'gaming'} args.businessType
  * @param {Array<{id:string, template:string, district:string}>} args.slots
  * @param {Array<object>} [args.existing] properties already provisioned
  */
-export function provisionProperty({ userId, businessType, slots, existing = [] }) {
+export function provisionProperty({ userId, merchantId = null, businessType, slots, existing = [] }) {
   if (!userId) throw new ProvisioningError("userId is required");
   const allocation = ALLOCATION[businessType];
   if (!allocation) throw new ProvisioningError(`unknown businessType ${businessType}`);
@@ -54,6 +55,7 @@ export function provisionProperty({ userId, businessType, slots, existing = [] }
   const property = Object.freeze({
     id: stableId("prop", userId),
     ownerId: userId,
+    merchantId,
     slotId: slot.id,
     district: slot.district,
     template: slot.template,

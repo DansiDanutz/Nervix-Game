@@ -59,9 +59,22 @@ export function requireLevel(level, required) {
   return true;
 }
 
-/** Only https, no credentials, no private hosts. */
+const APP_URL_MAX = 400;
+const LOCAL_SUFFIXES = Object.freeze([".local", ".internal", ".localhost", ".home.arpa", ".lan"]);
+// The WHATWG URL parser normalises every IPv4 spelling (decimal, hex, octal) to a dotted quad.
+const IPV4_LITERAL = /^\d{1,3}(\.\d{1,3}){3}$/;
+
+/** True for hosts that may reach this machine or a private network: IP literals, local names, single labels. */
+function isPrivateHost(rawHost) {
+  const host = rawHost.toLowerCase().replace(/\.$/, "");
+  if (host.startsWith("[") || IPV4_LITERAL.test(host)) return true;
+  if (host === "localhost" || !host.includes(".")) return true;
+  return LOCAL_SUFFIXES.some((suffix) => host.endsWith(suffix));
+}
+
+/** Only https, no credentials, no IP literals, no private or local hosts. */
 export function safeAppUrl(raw) {
-  if (typeof raw !== "string" || raw.length > 400) return null;
+  if (typeof raw !== "string" || raw.length > APP_URL_MAX) return null;
   let u;
   try {
     u = new URL(raw);
@@ -69,6 +82,6 @@ export function safeAppUrl(raw) {
     return null;
   }
   if (u.protocol !== "https:" || u.username || u.password) return null;
-  if (u.hostname === "localhost" || u.hostname.endsWith(".local") || u.hostname.endsWith(".internal")) return null;
+  if (isPrivateHost(u.hostname)) return null;
   return u.toString();
 }
