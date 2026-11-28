@@ -8,6 +8,7 @@ import { PerfMeter } from "./PerfMeter";
 import { PlazaDressing } from "./PlazaDressing";
 import { SetDressing } from "./SetDressing";
 import { DevRaycast } from "./DevRaycast";
+import { DevCamera } from "./devCamera";
 import { HouseDoors, type HouseDoor } from "./HouseDoors";
 import { InteriorRoom } from "./InteriorRoom";
 import { FacadeModel, SalonScene } from "./OpenPokerScene";
@@ -152,6 +153,8 @@ export default function SceneView(props: SceneProps) {
         interior={!plaza}
         spawn={props.spawn}
       />
+      {/* DEV only, after the rig: ?cam=a01 pins the judged A01 pose (blender/scripts/arrival_camera.py). */}
+      {import.meta.env.DEV && <DevCamera />}
       <PerfMeter onFps={props.onFps} />
       {import.meta.env.DEV && <DevRaycast />}
     </Canvas>
