@@ -47,3 +47,6 @@ blender --background --python blender/scripts/validate_scene.py
 ```
 
 The full specification is in [docs/MASTER_PROMPT.md](docs/MASTER_PROMPT.md).
+## Build the merchant city
+
+[Game brief](game.md) · [Roadmap](Roadmap.md) · [Architecture](ARCHITECTURE.md) · [Original image gallery](assets/references/README.md) · [Contributing from any harness](CONTRIBUTING.md)
