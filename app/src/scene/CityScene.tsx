@@ -73,14 +73,26 @@ function Blockout() {
   );
 }
 
-export function CityScene({ onMarkers }: { onMarkers: (m: Marker[]) => void }) {
+export type SceneMode = "chunks" | "full";
+
+/** Never render the district and its chunks together. */
+export function pickAssets(manifest: Manifest | null, mode: SceneMode) {
+  if (!manifest || manifest.assets.length === 0) return [];
+  const full = manifest.assets.find((a) => a.id === manifest.district);
+  const chunks = manifest.assets.filter((a) => a.id !== manifest.district);
+  if (mode === "full") return full ? [full] : chunks;
+  return chunks.length > 0 ? chunks : full ? [full] : [];
+}
+
+export function CityScene({ onMarkers, mode = "chunks" }: { onMarkers: (m: Marker[]) => void; mode?: SceneMode }) {
   const { manifest, missing } = useManifest();
+  const assets = pickAssets(manifest, mode);
 
   useEffect(() => {
     onMarkers(manifest?.markers ?? []);
   }, [manifest, onMarkers]);
 
-  if (missing || !manifest || manifest.assets.length === 0) {
+  if (missing || !manifest || assets.length === 0) {
     return (
       <group>
         <Blockout />
@@ -91,12 +103,10 @@ export function CityScene({ onMarkers }: { onMarkers: (m: Marker[]) => void }) {
   return (
     <group>
       <Suspense fallback={null}>
-        {manifest.assets.map((a) => (
+        {assets.map((a) => (
           <AssetModel key={a.id} file={`/${a.file}`} />
         ))}
       </Suspense>
     </group>
   );
 }
-
-useGLTF.preload("/nervix_city_district_01.glb");

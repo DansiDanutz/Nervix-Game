@@ -21,7 +21,9 @@ export function App() {
   const [nearby, setNearby] = useState<Marker | null>(null);
   const [quest, setQuest] = useState<QuestProgress | null>(null);
   const [fps, setFps] = useState(0);
-  const [entered, setEntered] = useState(() => new URLSearchParams(window.location.search).has("enter"));
+  const params = new URLSearchParams(window.location.search);
+  const [entered, setEntered] = useState(() => params.has("enter"));
+  const sceneMode = params.get("scene") === "full" ? "full" : "chunks";
   const [showAuth, setShowAuth] = useState(false);
   const [showMerchant, setShowMerchant] = useState(false);
   const [showOrders, setShowOrders] = useState(false);
@@ -80,6 +82,7 @@ export function App() {
           onFps={setFps}
           players={players}
           selfId={session?.userId ?? ""}
+          mode={sceneMode}
         />
       </Suspense>}
 
