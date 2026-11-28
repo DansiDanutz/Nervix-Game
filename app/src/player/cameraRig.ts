@@ -15,6 +15,8 @@ export interface Box {
   maxX: number;
   minZ: number;
   maxZ: number;
+  /** Top of the obstacle (m, manifest top_y); absent = a full-height wall. Only the camera boom reads it. */
+  topY?: number;
 }
 
 export const PITCH_LIMITS = Object.freeze({ min: -0.15, max: 0.9 });
@@ -182,11 +184,17 @@ export function frameAtBoom(at: Vec2, look: Look, view: ViewRig, boom: number): 
   return { camera: { x: o.x + u.x * d, y: o.y + u.y * d, z: o.z + u.z * d }, target: full.target };
 }
 
-/** Entry distance of a ray into one ground-plane box (walls are full height), or null. */
+/**
+ * Entry distance of a ray into one box, or null. The box spans its ground footprint and, in height,
+ * everything below its topY (absent: full height). So a box whose top is below the boom ray where the
+ * ray crosses it is passed over; a falling ray may enter through the top instead of a side.
+ */
 function slabEntry(origin: Vec3, dir: Vec3, box: Box): number | null {
   let near = -Infinity;
   let far = Infinity;
-  for (const [o, d, lo, hi] of [[origin.x, dir.x, box.minX, box.maxX], [origin.z, dir.z, box.minZ, box.maxZ]] as const) {
+  const top = box.topY ?? Infinity;
+  const slabs = [[origin.x, dir.x, box.minX, box.maxX], [origin.z, dir.z, box.minZ, box.maxZ], [origin.y, dir.y, -Infinity, top]] as const;
+  for (const [o, d, lo, hi] of slabs) {
     if (d === 0) {
       if (o <= lo || o >= hi) return null;
       continue;
@@ -200,7 +208,7 @@ function slabEntry(origin: Vec3, dir: Vec3, box: Box): number | null {
   return near >= 0 && near <= far ? near : null;
 }
 
-/** Nearest wall hit along the boom against the collision boxes, in metres along the 3D ray, or null. */
+/** Nearest blocking hit along the boom against the collision boxes (tops honoured), in metres along the 3D ray, or null. */
 export function rayBoxDistance(origin: Vec3, direction: Vec3, length: number, boxes: readonly Box[]): number | null {
   let best: number | null = null;
   for (const box of boxes) {

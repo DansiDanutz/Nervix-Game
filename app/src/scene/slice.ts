@@ -13,6 +13,7 @@ import type { Box } from "../player/cameraRig";
 import type { HouseDoor } from "./HouseDoors";
 import type { ToneMappingName } from "./postFx";
 import type { AgxLook } from "./agxLook";
+import type { SlicePlot } from "../world/houseDirectory";
 
 export interface Anchor {
   x: number;
@@ -64,6 +65,8 @@ export interface SliceLayout {
   };
   /** Present only once the Blender arrival square is exported. */
   plaza?: PlazaLayout;
+  /** B2 door plots (runtime_layout.plots[]); absent in manifests that predate B2. */
+  plots?: readonly SlicePlot[];
   source: string;
 }
 
@@ -129,9 +132,10 @@ export function stepBack(a: Anchor, back = STEP_BACK): Anchor {
 export function arrival(next: Place, prev: Place, layout: SliceLayout): Anchor {
   if (next.kind === "venue") return layout.salon.spawn;
   if (next.kind === "house") return { x: 0, z: 3.2, yaw: 0 };
-  if (prev.kind === "house" && prev.door.id === TEST_BUILDER_DOOR.id) {
-    if (layout.plaza) return stepBack(layout.plaza.testBuilderDoor);
-    return { x: TEST_BUILDER_DOOR.position[0], z: TEST_BUILDER_DOOR.position[2] + 2.8, yaw: 0 };
+  // Any plaza house (the fallback plaza door or a manifest plot door): back out of its own threshold.
+  if (prev.kind === "house" && prev.from === "plaza") {
+    const [x, , z] = prev.door.position;
+    return prev.door.yaw === undefined ? { x, z: z + 2.8, yaw: 0 } : stepBack({ x, z, yaw: prev.door.yaw });
   }
   return stepBack(layout.facadeDoor);
 }
@@ -144,6 +148,7 @@ interface SliceManifest {
     facade_door: Anchor;
     salon: { spawn: Anchor; exit: Anchor; dangg_door: Anchor; bounds: Box; obstacles: Box[] };
     plaza?: unknown;
+    plots?: unknown;
   };
 }
 
@@ -175,7 +180,15 @@ function reader(base: string) {
     const o = obj(v, path);
     return { x: num(o.x, `${path}.x`), z: num(o.z, `${path}.z`), yaw: num(o.yaw, `${path}.yaw`) };
   };
-  return { fail, obj, num, hex, box, anchor };
+  /** A collision box with an optional top_y (m): the camera boom passes over boxes lower than the ray. */
+  const obstacle = (v: unknown, path: string): Box => {
+    const b = box(v, path);
+    const top = (v as Obj).top_y;
+    if (top === undefined) return b;
+    const topY = num(top, `${path}.top_y`);
+    return topY > 0 ? { ...b, topY } : fail(`${path}.top_y`, "must be > 0");
+  };
+  return { fail, obj, num, hex, box, anchor, obstacle };
 }
 
 function inside(b: Box, x: number, z: number) {
@@ -260,7 +273,7 @@ export function parsePlaza(raw: unknown, source: string): PlazaLayout | undefine
   if (fountain.topY <= 0) r.fail("fountain.top_y", "must be > 0");
   const bounds = r.box(p.bounds, "bounds");
   if (!Array.isArray(p.obstacles)) r.fail("obstacles", "must be an array");
-  const obstacles = (p.obstacles as unknown[]).map((o, i) => r.box(o, `obstacles[${i}]`));
+  const obstacles = (p.obstacles as unknown[]).map((o, i) => r.obstacle(o, `obstacles[${i}]`));
   if (!inside(bounds, spawn.x, spawn.z)) r.fail("spawn", "is outside bounds");
   if (obstacles.some((o) => inside(o, spawn.x, spawn.z))) r.fail("spawn", "is inside an obstacle");
   const testBuilderDoor = r.anchor(p.test_builder_door, "test_builder_door");
@@ -280,6 +293,40 @@ export function parsePlaza(raw: unknown, source: string): PlazaLayout | undefine
   };
 }
 
+const PLOT_ID = /^[\w-]{1,64}$/;
+const SIZE_CLASSES: readonly string[] = ["small", "medium", "large"];
+const UNIT_TOLERANCE = 1e-3;
+
+function parsePlot(v: unknown, i: number, r: ReturnType<typeof reader>, seen: ReadonlySet<string>, plaza: PlazaLayout | undefined): SlicePlot {
+  const at = `plots[${i}]`;
+  const p = r.obj(v, at);
+  const id = typeof p.id === "string" && PLOT_ID.test(p.id) ? p.id : r.fail(`${at}.id`, "must be a plot id ([A-Za-z0-9_-], 1-64 chars)");
+  if (seen.has(id)) r.fail(`${at}.id`, `duplicates ${id}`);
+  const district = typeof p.district === "string" && p.district.length > 0 ? p.district : r.fail(`${at}.district`, "must be a non-empty string");
+  const sizeClass = SIZE_CLASSES.includes(p.sizeClass as string) ? (p.sizeClass as string) : r.fail(`${at}.sizeClass`, `must be one of ${SIZE_CLASSES.join(", ")}`);
+  const door = Array.isArray(p.door) && p.door.length === 3 ? p.door : r.fail(`${at}.door`, "must be [x, y, z]");
+  const [x, , z] = door.map((n, k) => r.num(n, `${at}.door[${k}]`));
+  const out = Array.isArray(p.outward) && p.outward.length === 2 ? p.outward : r.fail(`${at}.outward`, "must be [x, z]");
+  const [ox, oz] = out.map((n, k) => r.num(n, `${at}.outward[${k}]`));
+  if (Math.abs(Math.hypot(ox, oz) - 1) > UNIT_TOLERANCE) r.fail(`${at}.outward`, "must be a unit vector");
+  const yaw = r.num(p.yaw, `${at}.yaw`);
+  if (p.built !== undefined && typeof p.built !== "boolean") r.fail(`${at}.built`, "must be a boolean");
+  if (plaza && !inside(plaza.bounds, x, z)) r.fail(`${at}.door`, "is outside the plaza bounds");
+  if (plaza?.obstacles.some((o) => inside(o, x, z))) r.fail(`${at}.door`, "is inside an obstacle");
+  // B2 exports door empties on facades Blender already modelled; only built: false marks an empty lot.
+  const built = p.built !== false;
+  return Object.freeze({ id, district, sizeClass, door: Object.freeze({ x, z, yaw }), outward: Object.freeze({ x: ox, z: oz }), built });
+}
+
+/** runtime_layout.plots: absent = undefined (pre-B2); malformed = readable error. Doors are checked against the plaza. */
+export function parsePlots(raw: unknown, source: string, plaza: PlazaLayout | undefined): readonly SlicePlot[] | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  const r = reader(`slice manifest ${source}: runtime_layout`);
+  if (!Array.isArray(raw)) r.fail("plots", "must be an array");
+  const plots = (raw as unknown[]).reduce<readonly SlicePlot[]>((acc, v, i) => [...acc, parsePlot(v, i, r, new Set(acc.map((p) => p.id)), plaza)], []);
+  return Object.freeze(plots);
+}
+
 /** Parses the Blender slice manifest. Throws a readable error when it is missing or incomplete. */
 export function parseSliceManifest(raw: unknown, source: string): SliceLayout {
   const m = raw as SliceManifest;
@@ -288,6 +335,7 @@ export function parseSliceManifest(raw: unknown, source: string): SliceLayout {
     throw new Error(`slice manifest ${source} has no runtime_layout; re-run the Blender slice export`);
   }
   const plaza = parsePlaza(r.plaza, source);
+  const plots = parsePlots(r.plots, source, plaza);
   return {
     facadeDoor: r.facade_door,
     salon: {
@@ -298,6 +346,7 @@ export function parseSliceManifest(raw: unknown, source: string): SliceLayout {
       obstacles: r.salon.obstacles ?? [],
     },
     ...(plaza ? { plaza } : {}),
+    ...(plots ? { plots } : {}),
     source,
   };
 }

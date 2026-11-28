@@ -3,14 +3,17 @@
  * once per page) joined with the doors this layout has. Door labels and NPC
  * names come from the directory, never from client code.
  *
- * - The manifest has no runtime_layout.plots yet (B2), so the plaza and salon
- *   use the fallback doors (the Blender-built plaza house and the salon house),
- *   labelled from the directory; a door whose house is not listed (suspended,
- *   unverified, or the directory failed) is closed, and every door stays closed
- *   until the directory has loaded. targetAt re-runs on PlayerController's
+ * - With manifest plots (B2, runtime_layout.plots) every plaza door is a plot
+ *   door whose id is the plot id (the fixture builder house is slot-12); without
+ *   them the plaza uses the fallback door (the Blender-built plaza house). The
+ *   salon always uses its fallback door (the salon merchant). Labels come from the
+ *   directory; a door whose house is not listed (suspended, unverified, or the
+ *   directory failed) is closed, and every door stays closed until the
+ *   directory has loaded. targetAt re-runs on PlayerController's
  *   120 ms onPosition tick with the new directory, so no stale prompt survives.
  * - Street plots for runtime K2 houses and NPCs: manifest plots, minus those
- *   Blender already built and those on the spawn-to-fountain sightline.
+ *   Blender already built (a plot not marked built: false, or one on a Blender
+ *   door) and those on the spawn-to-fountain sightline.
  */
 import { useEffect, useMemo, useState } from "react";
 import { api, type WorldHouse } from "../net/api";
@@ -30,10 +33,10 @@ export interface WorldDirectory {
   readonly builtPlotIds: ReadonlySet<string>;
 }
 
-/** B2 pending: parseSliceManifest does not carry runtime_layout.plots yet. */
+/** No plots: a pre-B2 manifest, no layout yet, or the salon (never on a street plot). */
 export const NO_PLOTS: readonly SlicePlot[] = Object.freeze([]);
 
-export function worldDirectory(houses: readonly WorldHouse[] | null, layout: SliceLayout | null, plots: readonly SlicePlot[] = NO_PLOTS): WorldDirectory {
+export function worldDirectory(houses: readonly WorldHouse[] | null, layout: SliceLayout | null, plots: readonly SlicePlot[] = layout?.plots ?? NO_PLOTS): WorldDirectory {
   const plazaFallback = [testBuilderDoor(layout)];
   const salonFallback = layout ? [danggDoor(layout)] : [];
   const plaza = joinHouseDirectory({ houses, plots, fallbackDoors: plazaFallback });
@@ -41,13 +44,14 @@ export function worldDirectory(houses: readonly WorldHouse[] | null, layout: Sli
   const salon = joinHouseDirectory({ houses, plots: NO_PLOTS, fallbackDoors: salonFallback });
   const arrival = layout?.plaza;
   const blenderDoors = arrival && layout ? [arrival.testBuilderDoor, layout.facadeDoor] : [];
+  const modelledIds = plots.filter((p) => p.built !== false).map((p) => p.id);
   const fallbackIds = [...plazaFallback, ...salonFallback].map((d) => d.id);
   return Object.freeze({
     houses,
     plazaDoors: plaza.doors,
     salonDoors: salon.doors,
     streetPlots: arrival ? clearOfSightline(plots, arrival.spawn, arrival.fountain) : NO_PLOTS,
-    builtPlotIds: builtPlotIds(plots, blenderDoors, fallbackIds),
+    builtPlotIds: builtPlotIds(plots, blenderDoors, [...fallbackIds, ...modelledIds]),
   });
 }
 

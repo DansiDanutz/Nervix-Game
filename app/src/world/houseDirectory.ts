@@ -24,6 +24,10 @@ export interface SlicePlot {
   readonly sizeClass: string;
   /** Unit vector pointing from the facade into the street. */
   readonly outward: { readonly x: number; readonly z: number };
+  /** Manifest district id (e.g. merchant-quarter). */
+  readonly district?: string;
+  /** Blender already modelled this facade (parseSliceManifest defaults it true); false = an empty lot for a runtime K2 house. */
+  readonly built?: boolean;
 }
 
 export interface HouseDirectoryInput {

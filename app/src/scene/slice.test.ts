@@ -171,3 +171,79 @@ test("the shipped manifest still parses", async () => {
   const layout = parseSliceManifest(raw, "public/slice/manifest.json");
   assert.ok(layout.plaza, "runtime_layout.plaza");
 });
+
+/* ---- B2: runtime_layout.plots and obstacle top_y ---------------------------------------- */
+
+const PLOT = { id: "slot-12", district: "merchant-quarter", sizeClass: "large", door: [15, 0, 3.7], outward: [0, -1], yaw: Math.PI };
+const withPlots = (plots: unknown, plaza: unknown = PLAZA) => ({ ...LEGACY, runtime_layout: { ...LEGACY.runtime_layout, plaza, plots } });
+
+test("absent plots stay absent (backward compatible)", () => {
+  assert.equal(parseSliceManifest(withPlaza(PLAZA), "m.json").plots, undefined);
+  assert.equal(parseSliceManifest(withPlots(null), "m.json").plots, undefined);
+});
+
+test("plots convert the manifest arrays to the client SlicePlot shape and are frozen", () => {
+  const second = { ...PLOT, id: "slot-13", sizeClass: "small", door: [-10.594, 0, 10.4] };
+  const { plots } = parseSliceManifest(withPlots([PLOT, second]), "m.json");
+  assert.deepEqual(plots, [
+    { id: "slot-12", district: "merchant-quarter", sizeClass: "large", door: { x: 15, z: 3.7, yaw: Math.PI }, outward: { x: 0, z: -1 }, built: true },
+    { id: "slot-13", district: "merchant-quarter", sizeClass: "small", door: { x: -10.594, z: 10.4, yaw: Math.PI }, outward: { x: 0, z: -1 }, built: true },
+  ]);
+  assert.ok(Object.isFrozen(plots) && Object.isFrozen(plots![0]) && Object.isFrozen(plots![0].door));
+});
+
+test("a plot is a Blender-modelled facade unless the manifest says built: false", () => {
+  const { plots } = parseSliceManifest(withPlots([{ ...PLOT, built: false }]), "m.json");
+  assert.equal(plots![0].built, false);
+});
+
+test("malformed plots fail fast with the offending path", () => {
+  const cases: [unknown, RegExp][] = [
+    [{}, /plots must be an array/],
+    [["x"], /plots\[0\] must be an object/],
+    [[{ ...PLOT, id: "" }], /plots\[0\]\.id must be a plot id/],
+    [[{ ...PLOT, id: "slot 12" }], /plots\[0\]\.id must be a plot id/],
+    [[PLOT, PLOT], /plots\[1\]\.id duplicates slot-12/],
+    [[{ ...PLOT, district: 3 }], /plots\[0\]\.district must be a non-empty string/],
+    [[{ ...PLOT, sizeClass: "huge" }], /plots\[0\]\.sizeClass must be one of small, medium, large/],
+    [[{ ...PLOT, door: [15, 3.7] }], /plots\[0\]\.door must be \[x, y, z\]/],
+    [[{ ...PLOT, door: [15, 0, "3.7"] }], /plots\[0\]\.door\[2\] must be a finite number/],
+    [[{ ...PLOT, outward: [0, -2] }], /plots\[0\]\.outward must be a unit vector/],
+    [[{ ...PLOT, outward: { x: 0, z: -1 } }], /plots\[0\]\.outward must be \[x, z\]/],
+    [[{ ...PLOT, yaw: null }], /plots\[0\]\.yaw must be a finite number/],
+    [[{ ...PLOT, built: "yes" }], /plots\[0\]\.built must be a boolean/],
+    [[{ ...PLOT, door: [99, 0, 0] }], /plots\[0\]\.door is outside the plaza bounds/],
+    [[{ ...PLOT, door: [0, 0, 0] }], /plots\[0\]\.door is inside an obstacle/],
+  ];
+  for (const [plots, message] of cases) {
+    assert.throws(() => parseSliceManifest(withPlots(plots), "m.json"), message);
+  }
+});
+
+test("obstacle top_y is optional, parsed to topY and validated", () => {
+  const plain = parsePlaza(PLAZA, "t")!;
+  assert.deepEqual(plain.obstacles[0], { minX: -3.4, maxX: 3.4, minZ: -3.4, maxZ: 3.4 });
+  const tall = parsePlaza({ ...PLAZA, obstacles: [{ ...PLAZA.obstacles[0], top_y: 0.9 }] }, "t")!;
+  assert.deepEqual(tall.obstacles[0], { minX: -3.4, maxX: 3.4, minZ: -3.4, maxZ: 3.4, topY: 0.9 });
+  assert.throws(() => parsePlaza({ ...PLAZA, obstacles: [{ ...PLAZA.obstacles[0], top_y: 0 }] }, "t"), /plaza\.obstacles\[0\]\.top_y must be > 0/);
+  assert.throws(() => parsePlaza({ ...PLAZA, obstacles: [{ ...PLAZA.obstacles[0], top_y: "1" }] }, "t"), /plaza\.obstacles\[0\]\.top_y must be a finite number/);
+});
+
+test("the shipped manifest's plots and obstacle tops parse", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const raw = JSON.parse(await readFile(new URL("../../public/slice/manifest.json", import.meta.url), "utf8"));
+  const layout = parseSliceManifest(raw, "public/slice/manifest.json");
+  assert.deepEqual(layout.plots!.map((p) => p.id), ["slot-12", "slot-13", "slot-14", "slot-15", "slot-16", "slot-17", "slot-18"]);
+  const p12 = layout.plots![0];
+  assert.deepEqual([p12.door.x, p12.door.z], [layout.plaza!.testBuilderDoor.x, layout.plaza!.testBuilderDoor.z], "slot-12 is the Test Builder house");
+  assert.ok(layout.plaza!.obstacles.every((b) => b.topY !== undefined));
+});
+
+test("leaving any plaza house steps back from its own threshold, whatever its id", () => {
+  const layout = parseSliceManifest(withPlaza(PLAZA), "m.json");
+  const door = { ...TEST_BUILDER_DOOR, id: "slot-15", position: [-14.781, 0, 10.4] as [number, number, number], yaw: Math.PI };
+  const back = arrival({ kind: "plaza" }, { kind: "house", door, from: "plaza" }, layout);
+  close(back.x, -14.781);
+  close(back.z, 10.4 - 2.6);
+  close(back.yaw!, Math.PI);
+});

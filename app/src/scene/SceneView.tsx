@@ -109,7 +109,8 @@ function LegacyPlazaLighting() {
 /**
  * Runtime K2 houses and their AI representatives on street plots (B4, C8). Plots Blender already
  * built are skipped, and so are plots on the spawn-to-fountain sightline (useWorldDirectory).
- * Until B2 exports runtime_layout.plots this draws nothing; the NPC list still reaches its DEV hook.
+ * The B2 plots all sit on facades Blender modelled, so today this draws no K2 house and places no
+ * NPC; a plot exported with built: false gets both. The NPC list still reaches its DEV hook.
  */
 function StreetHouses({ directory }: { directory: WorldDirectory }) {
   if (!directory.houses) return null;
