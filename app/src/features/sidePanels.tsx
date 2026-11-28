@@ -1,12 +1,11 @@
 /** The built-in side panels, registered in their original menu order. */
 import type { ReactNode } from "react";
 import { AuthPanel } from "../ui/AuthPanel";
-import { MerchantPanel } from "../ui/MerchantPanel";
 import { CheckoutPanel } from "../ui/CheckoutPanel";
 import { AdsPanel } from "../ui/AdsPanel";
 import { AdminPanel } from "../ui/AdminPanel";
-import { AgentPanel } from "../ui/AgentPanel";
 import { createRegistry, register } from "./registry";
+import { avatarPanel } from "./avatarPanel";
 import type { PanelContext, PanelFeature, PanelRegistry } from "./panelContext";
 
 const MenuButton = ({ label, onClick }: { label: string; onClick: () => void }) => (
@@ -21,16 +20,6 @@ const account: PanelFeature = {
       {!isOpen("account") && session && (
         <MenuButton label={session.verified ? `Verified: ${session.displayName}` : "Sign in with email"} onClick={() => setOpen("account", true)} />
       )}
-    </>
-  ),
-};
-
-const merchant: PanelFeature = {
-  id: "merchant", slot: "side", order: 20,
-  render: ({ isOpen, setOpen, session, propertyId }) => (
-    <>
-      {!isOpen("merchant") && propertyId && session && <MenuButton label="Merchant workspace" onClick={() => setOpen("merchant", true)} />}
-      {isOpen("merchant") && propertyId && session && <MerchantPanel merchantId="mer_1" propertyId={propertyId} />}
     </>
   ),
 };
@@ -65,10 +54,8 @@ const admin: PanelFeature = {
   render: ({ session }) => session?.role === "admin" && <AdminPanel userId={session.userId} />,
 };
 
-const agent: PanelFeature = {
-  id: "agent", slot: "side", order: 70,
-  render: ({ propertyId }) => propertyId && <AgentPanel propertyId={propertyId} agentName="Mira" />,
-};
-
-/** Milestones add a panel with one more `register` here (the lead holds the shell token). */
-export const sidePanels: PanelRegistry = [account, merchant, orders, guide, ads, admin, agent].reduce(register, createRegistry<PanelContext, ReactNode>());
+/**
+ * Talk to the merchant and the owner's workspace (CT2) are house panels: see
+ * features/interiorPanels.tsx and ui/InteriorPanelHost.tsx (the side column is
+ * hidden inside houses). Milestones add a panel with one more `register` here (the lead holds the shell token). */
+export const sidePanels: PanelRegistry = [account, orders, guide, ads, admin, avatarPanel].reduce(register, createRegistry<PanelContext, ReactNode>());

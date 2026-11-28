@@ -13,6 +13,7 @@ import { DEMO_MODE } from "./nervixpay.demo.mjs";
 import { attachPresence } from "./presence.mjs";
 import { createContext } from "./routes/context.mjs";
 import { presenceSessionResolver } from "./routes/presence.mjs";
+import { presenceStoreResolvers } from "./presence-resolvers.mjs";
 import { createRoutes } from "./routes/index.mjs";
 import { createRequestHandler } from "./routes/dispatch.mjs";
 
@@ -22,7 +23,7 @@ const PORT = Number(process.env.PORT ?? DEFAULT_PORT);
 const ctx = createContext();
 const server = http.createServer(createRequestHandler(createRoutes(ctx)));
 
-attachPresence(server, { resolveSession: presenceSessionResolver(ctx) });
+attachPresence(server, { resolveSession: presenceSessionResolver(ctx), ...presenceStoreResolvers(ctx) });
 
 async function boot() {
   const { db } = ctx;

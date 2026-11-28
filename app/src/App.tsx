@@ -6,6 +6,8 @@ import { AccessGate } from "./ui/AccessGate";
 import { InteriorCatalog } from "./ui/InteriorCatalog";
 import { TouchControls } from "./ui/TouchControls";
 import { PanelHost } from "./ui/PanelHost";
+import { InteriorPanelHost } from "./ui/InteriorPanelHost";
+import { PlayerChat } from "./ui/PlayerChat";
 import { arrival, loadSliceLayout, STREET_SPAWN, streetSpawn, type Anchor, type SliceLayout } from "./scene/slice";
 import { usePresence } from "./net/presence";
 import { api, type Session } from "./net/api";
@@ -149,6 +151,8 @@ export function App() {
       </Suspense>}
 
       {interior && <InteriorCatalog door={interior} />}
+      {entered && <InteriorPanelHost ctx={shellCtx} />}
+      {entered && <PlayerChat enterFocuses={target === null} />}
       {entered && <HintStack place={place} target={target} settled={hintsSettled} />}
       {entered && layoutError && <div className="app__notice" role="alert">{layoutError}</div>}
       {entered && arrivalError && place.kind === "plaza" && <div className="app__notice" role="alert">{arrivalError}</div>}
