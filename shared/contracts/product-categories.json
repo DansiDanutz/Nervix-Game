@@ -1,0 +1,15 @@
+{
+  "contract": "product-categories",
+  "version": 1,
+  "frozen": true,
+  "note": "Categories for builder_offerings (D12: the single catalogue source). Each maps to a display kind for the 3D product kit. Stub: P1 adds the column and validation.",
+  "categories": [
+    { "id": "seat", "label": "Table seat", "display": "chair" },
+    { "id": "bundle", "label": "Bundle", "display": "crate" },
+    { "id": "digital", "label": "Digital item", "display": "plinth" },
+    { "id": "drink", "label": "Drink", "display": "counter" },
+    { "id": "food", "label": "Food", "display": "counter" },
+    { "id": "merch", "label": "Merchandise", "display": "shelf" },
+    { "id": "service", "label": "Service", "display": "sign" }
+  ]
+}
