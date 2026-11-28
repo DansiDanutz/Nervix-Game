@@ -149,11 +149,21 @@ def _dome(kit, m, name, base, drum_r, drum_h, dome_r, rise):
     kit.lathe(name + "_drum", m["limestone"], [(drum_r + 0.3, 0.0), (drum_r, 0.1), (drum_r, drum_h),
                                                (drum_r + 0.35, drum_h + 0.1), (drum_r + 0.35, drum_h + 0.4),
                                                (0.0, drum_h + 0.4)], (cx, cy, z), segs=48)
-    for k in range(12):
+    for k in range(12):   # r2: arched, framed drum windows between pale pilasters (A01 rotunda)
         a = 2 * math.pi * k / 12
-        kit.box(name + "_windows", m["window_glow"], (0.6, 0.12, drum_h * 0.5),
-                (cx + (drum_r + 0.02) * math.cos(a), cy + (drum_r + 0.02) * math.sin(a), z + drum_h * 0.5),
+        ca, sa = math.cos(a), math.sin(a)
+        wz, wh, wr = z + 0.35, drum_h * 0.45, 0.34
+        kit.box(name + "_windows", m["limestone_pale"], (1.0, 0.14, wh + wr + 0.25),
+                (cx + (drum_r + 0.03) * ca, cy + (drum_r + 0.03) * sa, wz + (wh + wr + 0.25) / 2 - 0.1),
                 rot=(0, 0, a + math.pi / 2))
+        kit.box(name + "_windows", m["window_glow"], (2 * wr, 0.12, wh),
+                (cx + (drum_r + 0.08) * ca, cy + (drum_r + 0.08) * sa, wz + wh / 2), rot=(0, 0, a + math.pi / 2))
+        kit.cyl(name + "_windows", m["window_glow"], wr, 0.12, (cx + (drum_r + 0.08) * ca, cy + (drum_r + 0.08) * sa,
+                                                              wz + wh), verts=12, rot=(math.pi / 2, 0, a + math.pi / 2))
+        b = a + math.pi / 12
+        kit.box(name + "_windows", m["gold"], (0.22, 0.12, drum_h - 0.1),
+                (cx + (drum_r + 0.05) * math.cos(b), cy + (drum_r + 0.05) * math.sin(b), z + drum_h / 2 + 0.05),
+                rot=(0, 0, b + math.pi / 2))
     zd = z + drum_h + 0.4
     n = 12
     prof = [(dome_r * math.cos(t), rise * math.sin(t)) for t in [i * math.pi / 2 / n for i in range(n + 1)]]
@@ -196,9 +206,12 @@ def _turrets(kit, m):
 def _perron(kit, m):
     """A01/A16 grand stair: central red runner up the facade steps, flanked by two raised landings
     whose return flights descend east and west, carpeted red with gold edges."""
-    kit.box_mm("casino_carpet", m["red_carpet"], -1.35, 1.35, 4.9, 7.3, 0.0, 0.03)
+    kit.box_mm("casino_carpet", m["red_carpet"], -1.4, 1.4, 4.9, 7.3, 0.0, 0.03)
     for sx in (-1.0, 1.0):
-        kit.box_mm("casino_carpet", m["gold"], sx * 1.35 - 0.07, sx * 1.35 + 0.07, 4.9, 7.3, 0.0, 0.035)
+        kit.box_mm("casino_carpet", m["gold"], sx * 1.4 - 0.07, sx * 1.4 + 0.07, 4.9, 7.3, 0.0, 0.035)
+    for k in range(4):   # brass stair rods across each riser
+        kit.cyl("casino_carpet", m["gold"], 0.025, 1.9, (0.0, 7.3 + 0.3 * k - 0.03, 0.15 * k + 0.16), verts=6,
+                rot=(0, math.pi / 2, 0))
     for k in range(4):  # red risers under the facade's tread runners (y 7.3 + 0.3k, rise 0.15)
         y = 7.3 + 0.3 * k
         kit.box_mm("casino_carpet", m["red_carpet"], -0.9, 0.9, y - 0.025, y + 0.005, 0.15 * k, 0.15 * (k + 1) + 0.01)

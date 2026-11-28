@@ -27,40 +27,63 @@ def wall_lantern(kit, name, m, x, y, z, face=1.0):
     kit.box(name, m["iron"], (0.06, 0.3, 0.06), (x, y + face * 0.18, z + 0.38), rot=(face * 0.8, 0, 0))  # strut
     kit.box(name, m["brass"], (0.3, 0.3, 0.06), (x, y + face * 0.42, z - 0.02))
     kit.box(name, m["brass"], (0.34, 0.34, 0.08), (x, y + face * 0.42, z + 0.5))
-    kit.sphere(name + "_glow", m["glow"], 0.15, (x, y + face * 0.42, z + 0.24), scale=(1, 1, 1.4), segs=10,
+    kit.sphere(name + "_glow", m["lamp_glass"], 0.15, (x, y + face * 0.42, z + 0.24), scale=(1, 1, 1.4), segs=10,
                rings=6)
     for dx, dy in ((-0.14, -0.14), (0.14, -0.14), (-0.14, 0.14), (0.14, 0.14)):  # lantern cage posts
         kit.box(name, m["brass"], (0.035, 0.035, 0.5), (x + dx, y + face * 0.42 + dy, z + 0.24))
 
 
 def potted_olive(kit, name, m, x, y, s=1.0):
+    """r2 olive: glazed pot, a forked gnarled trunk and a broad silver-green crown of olive-leaf
+    cards over a few soft blobs (judges: "no olive trees", "toy-like bushes")."""
     kit.lathe(name, m["clay"], [(0.0, 0.0), (0.3 * s, 0.0), (0.42 * s, 0.35 * s), (0.4 * s, 0.6 * s),
                                 (0.46 * s, 0.66 * s), (0.0, 0.62 * s)], (x, y, 0.0), segs=16)
-    kit.cyl(name, m["wood_dark"], 0.06 * s, 1.1 * s, (x, y, 0.6 * s), verts=6)
-    for dx, dy, dz, r in ((0, 0, 1.75, 0.55), (0.3, 0.1, 1.5, 0.4), (-0.3, -0.1, 1.55, 0.42),
-                          (0.05, -0.25, 2.0, 0.35)):
-        kit.blob(name, m["olive"], r * s, (x + dx * s, y + dy * s, dz * s), scale=(1, 1, 0.85))
+    olive_crown(kit, name, m, x, y, 0.6 * s, s)
+
+
+def olive_crown(kit, name, m, x, y, z, s=1.0, seed=0):
+    """Gnarled two-stem trunk from z and a layered crown of olive cards (shared by ground olives)."""
+    for k, (dx, dy) in enumerate(((0.35, 0.15), (-0.3, -0.2))):
+        kit.tube(name, m["wood_dark"], [(x, y, z), (x + dx * 0.3 * s, y + dy * 0.3 * s, z + 0.7 * s),
+                                        (x + dx * s, y + dy * s, z + 1.35 * s)], 0.09 * s, 0.05 * s, sides=6)
+    for k in range(5):
+        a = 2.4 * k + seed
+        cx, cy, cz = x + 0.5 * s * math.cos(a), y + 0.5 * s * math.sin(a), z + (1.35 + 0.18 * (k % 3)) * s
+        kit.blob(name, m["leaf_dark"], 0.26 * s, (cx, cy, cz), scale=(1.2, 1.2, 0.7))
+    for k in range(8):   # crossed leaf cards: a soft, broken silhouette
+        a = k * math.pi / 8 + seed
+        kit.card(name, m["card_olive"], (x + 0.15 * math.cos(3 * a) * s, y + 0.15 * math.sin(3 * a) * s,
+                                         z + (0.95 + 0.12 * (k % 3)) * s),
+                 2.1 * s, 1.35 * s, a, cell=k + int(seed))
+    for k in range(4):   # a flat-ish canopy layer seen from above (the A01 camera is 6 m up)
+        a = k * math.pi / 2 + 0.4 + seed
+        kit.card(name, m["card_olive"], (x + 0.35 * s * math.cos(a), y + 0.35 * s * math.sin(a), z + 1.75 * s),
+                 1.6 * s, 1.4 * s, a, cell=k + 1, tilt=1.2)
 
 
 def flower_bush(kit, name, m, x, y, z, r=0.5, colour="flower_magenta"):
-    kit.blob(name, m["leaf_dark"], r, (x, y, z + r * 0.6), scale=(1.2, 1.0, 0.8))
-    for k in range(6):
-        a = 2 * math.pi * k / 6
-        kit.blob(name, m[colour], r * 0.35, (x + r * 0.7 * math.cos(a), y + r * 0.6 * math.sin(a), z + r * 0.95))
+    kit.blob(name, m["leaf_dark"], r * 0.8, (x, y, z + r * 0.5), scale=(1.2, 1.0, 0.8))
+    card = m["card_bloom"] if colour != "olive" else m["card_vine"]
+    for k in range(3):
+        kit.card(name, card, (x, y, z), r * 2.6, r * 2.1, k * math.pi / 3, cell=k)
 
 
 def urn_with_flowers(kit, name, m, base, r, mat="gold"):
+    """Urn spilling magenta bougainvillea: the bloom cards dominate, little green shows (A01)."""
     x, y, z = base
-    kit.lathe(name, m[mat], [(0.0, 0.0), (r * 0.55, 0.0), (r * 0.6, 0.08), (r, r * 0.9),
-                             (r * 0.85, r * 1.45), (r * 1.0, r * 1.6), (r * 0.9, r * 1.62),
+    kit.lathe(name, m[mat], [(0.0, 0.0), (r * 0.55, 0.0), (r * 0.6, 0.08), (r * 0.45, 0.2), (r, r * 0.9),
+                             (r * 0.85, r * 1.45), (r * 1.05, r * 1.6), (r * 0.9, r * 1.62),
                              (0.0, r * 1.5)], (x, y, z), segs=20)
+    for a in (0.0, math.pi):   # side handles
+        kit.tube(name, m[mat], [(x + r * 0.7 * math.cos(a), y + r * 0.7 * math.sin(a), z + r * 1.3),
+                                (x + r * 1.15 * math.cos(a), y + r * 1.15 * math.sin(a), z + r * 1.2),
+                                (x + r * 0.95 * math.cos(a), y + r * 0.95 * math.sin(a), z + r * 0.8)],
+                 r * 0.06, sides=5)
     top = z + r * 1.55
-    kit.blob(name, m["leaf_dark"], r * 1.1, (x, y, top + r * 0.35), scale=(1.1, 1.1, 0.7))
-    for k in range(7):
-        a = 2 * math.pi * k / 7
-        kit.blob(name, m["flower_magenta"] if k % 3 else m["flower_violet"], r * 0.42,
-                 (x + r * 0.75 * math.cos(a), y + r * 0.75 * math.sin(a), top + r * 0.6))
-    kit.blob(name, m["flower_magenta"], r * 0.5, (x, y, top + r * 0.95))
+    kit.blob(name, m["leaf_dark"], r * 0.7, (x, y, top + r * 0.2), scale=(1.1, 1.1, 0.6))
+    kit.blob(name, m["flower_magenta"], r * 0.75, (x, y, top + r * 0.55), scale=(1.2, 1.2, 0.7))
+    for k in range(6):   # bougainvillea spilling over the rim
+        kit.card(name, m["card_bloom"], (x, y, top - r * 0.35), r * 3.6, r * 2.8, k * math.pi / 6, cell=k)
 
 
 def window(kit, name, m, x, y, z, w=1.0, h=1.5, face=1.0, glow=False):

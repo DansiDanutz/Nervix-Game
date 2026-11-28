@@ -1,0 +1,151 @@
+{
+  "generated": "2026-11-28T06:16:28+00:00",
+  "inputs": {
+    "reference": "assets/references/A01-plaza.png",
+    "blender": "docs/evidence/slice/blender-A01-camera.png",
+    "game": "docs/evidence/slice/game-A01-camera.png"
+  },
+  "strip": "docs/evidence/slice/compare-A01-fidelity-r1.png",
+  "strip_size": [
+    2524,
+    514
+  ],
+  "method": {
+    "metric_size": [
+      836,
+      470
+    ],
+    "ssim": "luma, 8x8 non-overlapping windows, mean",
+    "delta_e": "CIE76 in CIELAB (sRGB, D65), mean per pixel",
+    "grid": "3x3: rows top/mid/bottom, columns left/centre/right",
+    "note": "Support signal only; the judged rubric (docs/art-direction/a01-rubric.md) decides."
+  },
+  "pairs": {
+    "reference_vs_blender": {
+      "whole": {
+        "ssim": 0.0689,
+        "delta_e": 36.71
+      },
+      "top-left": {
+        "ssim": 0.0599,
+        "delta_e": 37.01
+      },
+      "top-centre": {
+        "ssim": 0.159,
+        "delta_e": 30.32
+      },
+      "top-right": {
+        "ssim": 0.1371,
+        "delta_e": 30.77
+      },
+      "mid-left": {
+        "ssim": 0.0527,
+        "delta_e": 41.76
+      },
+      "mid-centre": {
+        "ssim": 0.0513,
+        "delta_e": 37.72
+      },
+      "mid-right": {
+        "ssim": 0.0371,
+        "delta_e": 33.54
+      },
+      "bottom-left": {
+        "ssim": 0.0424,
+        "delta_e": 44.23
+      },
+      "bottom-centre": {
+        "ssim": 0.0401,
+        "delta_e": 39.98
+      },
+      "bottom-right": {
+        "ssim": 0.056,
+        "delta_e": 35.06
+      }
+    },
+    "reference_vs_game": {
+      "whole": {
+        "ssim": 0.0828,
+        "delta_e": 32.83
+      },
+      "top-left": {
+        "ssim": 0.0583,
+        "delta_e": 33.68
+      },
+      "top-centre": {
+        "ssim": 0.2047,
+        "delta_e": 28.62
+      },
+      "top-right": {
+        "ssim": 0.1917,
+        "delta_e": 28.55
+      },
+      "mid-left": {
+        "ssim": 0.0504,
+        "delta_e": 37.93
+      },
+      "mid-centre": {
+        "ssim": 0.0407,
+        "delta_e": 34.18
+      },
+      "mid-right": {
+        "ssim": 0.0446,
+        "delta_e": 29.5
+      },
+      "bottom-left": {
+        "ssim": 0.0466,
+        "delta_e": 35.52
+      },
+      "bottom-centre": {
+        "ssim": 0.0548,
+        "delta_e": 34.47
+      },
+      "bottom-right": {
+        "ssim": 0.0759,
+        "delta_e": 33.03
+      }
+    },
+    "blender_vs_game": {
+      "whole": {
+        "ssim": 0.6209,
+        "delta_e": 17.33
+      },
+      "top-left": {
+        "ssim": 0.6966,
+        "delta_e": 17.22
+      },
+      "top-centre": {
+        "ssim": 0.6611,
+        "delta_e": 13.29
+      },
+      "top-right": {
+        "ssim": 0.6817,
+        "delta_e": 13.52
+      },
+      "mid-left": {
+        "ssim": 0.5584,
+        "delta_e": 18.03
+      },
+      "mid-centre": {
+        "ssim": 0.5845,
+        "delta_e": 16.68
+      },
+      "mid-right": {
+        "ssim": 0.6747,
+        "delta_e": 18.62
+      },
+      "bottom-left": {
+        "ssim": 0.4582,
+        "delta_e": 24.1
+      },
+      "bottom-centre": {
+        "ssim": 0.581,
+        "delta_e": 18.32
+      },
+      "bottom-right": {
+        "ssim": 0.7191,
+        "delta_e": 16.13
+      }
+    }
+  }
+}

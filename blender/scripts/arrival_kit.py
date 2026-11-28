@@ -12,6 +12,8 @@ import bpy
 from mathutils import Euler, Matrix, Vector
 
 UV_BOX, UV_POLAR = 0, 1
+POLAR_CENTRES = [(0.0, 0.0)]   # UV mode UV_POLAR + i polar-maps around POLAR_CENTRES[i - 1] (i >= 1)
+UV_CARD = 10             # + atlas cell (0..3): quad mapped onto one quarter of a 2 x 2 atlas
 TAU = 2.0 * math.pi
 
 
@@ -62,6 +64,19 @@ class Kit:
         self._faces(grp, [f], m, smooth, uvmode)
         return f
 
+    def card(self, name, m, centre, w, h, yaw, cell=0, tilt=0.0, lift=0.0):
+        """Alpha foliage card: a w x h quad standing at centre (bottom edge at z - lift), turned yaw
+        about z and leaned tilt about its own horizontal axis. Double-sided via the material."""
+        cx, cy, cz = centre
+        ux, uy = math.cos(yaw), math.sin(yaw)
+        nx, ny = -uy, ux
+        lean_h, lean_d = h * math.cos(tilt), h * math.sin(tilt)
+        z0 = cz - lift
+        pts = [(cx - ux * w / 2, cy - uy * w / 2, z0), (cx + ux * w / 2, cy + uy * w / 2, z0),
+               (cx + ux * w / 2 + nx * lean_d, cy + uy * w / 2 + ny * lean_d, z0 + lean_h),
+               (cx - ux * w / 2 + nx * lean_d, cy - uy * w / 2 + ny * lean_d, z0 + lean_h)]
+        return self.poly(name, m, pts, smooth=False, uvmode=UV_CARD + (cell % 4))
+
     def _prim(self, name, m, fn, smooth, **kw):
         grp = self.g(name)
         res = fn(grp.bm, **kw)
@@ -94,8 +109,9 @@ class Kit:
         self._prim(name, m, bmesh.ops.create_icosphere, True, subdivisions=subdiv, radius=r,
                    matrix=_mat(loc, (0, 0, 0), scale))
 
-    def lathe(self, name, m, profile, centre, segs=32, smooth=True, cap=True):
-        """Revolve [(r, z), ...] (bottom to top) around the vertical axis at centre (x, y, z0)."""
+    def lathe(self, name, m, profile, centre, segs=32, smooth=True, cap=True, phase=0.0):
+        """Revolve [(r, z), ...] (bottom to top) around the vertical axis at centre (x, y, z0).
+        phase rotates the vertex ring (an 8-segment lathe with phase TAU/16 has a face toward +x)."""
         grp = self.g(name)
         cx, cy, cz = centre
         rings = []
@@ -103,8 +119,8 @@ class Kit:
             if r <= 1e-4:
                 rings.append([grp.bm.verts.new((cx, cy, cz + z))])
                 continue
-            rings.append([grp.bm.verts.new((cx + r * math.cos(TAU * k / segs),
-                                            cy + r * math.sin(TAU * k / segs), cz + z))
+            rings.append([grp.bm.verts.new((cx + r * math.cos(TAU * k / segs + phase),
+                                            cy + r * math.sin(TAU * k / segs + phase), cz + z))
                           for k in range(segs)])
         faces = []
         for a, b in zip(rings, rings[1:]):
@@ -138,6 +154,12 @@ class Kit:
             vs = [grp.bm.verts.new((cx + r * math.cos(a), cy + r * math.sin(a), z)) for r, a in pts]
             faces.append(grp.bm.faces.new(vs))
         self._faces(grp, faces, m, False, uvmode)
+
+    def polar_mode(self, centre):
+        """UV mode that maps faces in arcs around centre (fan paving)."""
+        if tuple(centre) not in POLAR_CENTRES:
+            POLAR_CENTRES.append(tuple(centre))
+        return UV_POLAR + POLAR_CENTRES.index(tuple(centre))
 
     def square_minus_circle(self, name, m, half, r, z, segs=96):
         """Flat paving from a circle of radius r out to the square |x|,|y| <= half."""
@@ -291,14 +313,22 @@ class Kit:
 
 def _uv_face(f, uvl, m, mode):
     s = float(m.get("uv_scale", 2.0))
-    if mode == UV_POLAR:
+    if mode >= UV_CARD:
+        cell = mode - UV_CARD
+        u0, v0 = (cell % 2) * 0.5, (cell // 2) * 0.5
+        for lp, (du, dv) in zip(f.loops, ((0, 0), (0.5, 0), (0.5, 0.5), (0, 0.5))):
+            lp[uvl].uv = (u0 + du, v0 + dv)
+        return
+    if UV_POLAR <= mode < UV_CARD:
+        ox, oy = POLAR_CENTRES[mode - UV_POLAR] if mode > UV_POLAR else (0.0, 0.0)
         c = f.calc_center_median()
-        ac = math.atan2(c.y, c.x)
+        cx, cy = c.x - ox, c.y - oy
+        ac = math.atan2(cy, cx)
         for lp in f.loops:
-            p = lp.vert.co
-            a = math.atan2(p.y, p.x)
+            px, py = lp.vert.co.x - ox, lp.vert.co.y - oy
+            a = math.atan2(py, px)
             a += TAU * round((ac - a) / TAU)
-            lp[uvl].uv = (a * math.hypot(c.x, c.y) / s, math.hypot(p.x, p.y) / s)
+            lp[uvl].uv = (a * math.hypot(cx, cy) / s, math.hypot(px, py) / s)
         return
     n = f.normal
     ax, ay, az = abs(n.x), abs(n.y), abs(n.z)

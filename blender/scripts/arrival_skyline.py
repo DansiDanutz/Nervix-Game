@@ -16,7 +16,7 @@ TEMPLE = (-132.0, 40.0)   # on a shoulder right of centre, low enough to stay in
 HILL_X0 = -50.0
 HILL_SLOPE = 0.65
 SKY_CAMERA_STRENGTH = 1.1   # what the camera sees
-SKY_LIGHT_STRENGTH = 0.72   # ambient fill: low, so the golden sun models the shaded sides         # metres of rise per metre of depth: the spawn frame shows ~0.46 m/m above eye
+SKY_LIGHT_STRENGTH = 0.45   # ambient fill: low, so the golden sun models the shaded sides         # metres of rise per metre of depth: the spawn frame shows ~0.46 m/m above eye
 
 
 def hill_height(x, y):
@@ -40,20 +40,35 @@ def build_skyline(kit, m):
 
 
 def _end_arch(kit, m):
-    """Open three-bay gate closing the back street: low (top under the fountain crown in the spawn
-    frame) and pierced, so the far paving, the hill and the aqueduct piers read through and above
-    it instead of a solid backdrop slab."""
+    """r2 (judges: "thin flat gateway"): one deep stone arch closing the back street, with a ring
+    of alternating voussoirs, a big keystone, impost cornices and an attic, framing the hill and
+    the aqueduct through its opening (A01)."""
     g = "street_arch"
-    kit.arcade(g, m["limestone"], "y", -8.6, 8.1, 3, 4.3, 4.2, 6.6, ARCH_X, 1.6, soffit=m["limestone_pale"])
-    kit.box_mm(g, m["limestone_pale"], ARCH_X - 1.0, ARCH_X + 1.0, -8.8, 8.3, 6.6, 7.0)
-    kit.box_mm(g, m["gold"], ARCH_X + 0.98, ARCH_X + 1.02, -8.8, 8.3, 6.45, 6.55)
-    kit.box_mm(g, m["limestone"], ARCH_X - 0.8, ARCH_X + 0.8, -2.6, 2.1, 7.0, 8.0)
-    kit.box_mm(g, m["plum"], ARCH_X + 0.82, ARCH_X + 0.88, -2.0, 1.5, 7.15, 7.85)
+    w, spring, top, thick = 7.6, 5.2, 11.0, 2.4
+    kit.arch_bay(g, m["limestone"], "y", -8.6, 8.1, w, spring, top, ARCH_X, thick, segs=16,
+                 soffit=m["limestone_pale"])
+    uc, r = -0.25, w / 2
+    face = ARCH_X + thick / 2
+    for k in range(13):   # voussoirs proud of the face
+        t = math.pi * (k + 0.5) / 13
+        mat = m["limestone_pale"] if k % 2 == 0 else m["limestone"]
+        ln = 1.25 if k == 6 else 0.95
+        kit.box(g, mat, (0.24, 0.62 if k != 6 else 0.8, ln),
+                (face + 0.1, uc - (r + ln / 2) * math.cos(t), spring + (r + ln / 2) * math.sin(t)),
+                rot=(math.pi / 2 - t, 0, 0))
+    for sy in (-1.0, 1.0):   # impost cornices and pilasters
+        y = uc + sy * (r + 0.6)
+        kit.box_mm(g, m["limestone_pale"], face - 0.2, face + 0.3, y - 0.7, y + 0.7, spring - 0.35, spring)
+        kit.box_mm(g, m["limestone_pale"], face, face + 0.18, y - 0.45, y + 0.45, 0.0, spring - 0.35)
+    kit.box_mm(g, m["limestone_pale"], ARCH_X - 1.4, ARCH_X + 1.5, -8.8, 8.3, top, top + 0.45)
+    kit.box_mm(g, m["gold"], face + 0.28, face + 0.32, -8.8, 8.3, top - 0.12, top - 0.04)
+    kit.box_mm(g, m["limestone"], ARCH_X - 1.0, ARCH_X + 1.0, -3.2, 2.7, top + 0.45, top + 1.6)
+    kit.box_mm(g, m["plum"], ARCH_X + 1.02, ARCH_X + 1.08, -2.6, 2.1, top + 0.6, top + 1.45)
     for y in (-8.0, 7.5):
-        kit.lathe(g, m["terracotta"], [(0.7, 0.0), (0.0, 1.1)], (ARCH_X, y, 7.0), segs=4)
-    for y in (-3.1, 2.6):
-        kit.box("street_arch_lantern", m["iron"], (0.5, 0.06, 0.06), (ARCH_X + 1.05, y, 4.0))
-        kit.sphere("street_arch_glow", m["glow"], 0.2, (ARCH_X + 1.3, y, 3.7), scale=(1, 1, 1.3), segs=8, rings=6)
+        kit.lathe(g, m["terracotta"], [(0.7, 0.0), (0.0, 1.1)], (ARCH_X, y, top + 0.45), segs=4)
+    for y in (-4.6, 4.1):
+        kit.box("street_arch_lantern", m["iron"], (0.5, 0.06, 0.06), (face + 0.25, y, 4.4))
+        kit.sphere("street_arch_glow", m["glow"], 0.24, (face + 0.5, y, 4.1), scale=(1, 1, 1.3), segs=8, rings=6)
 
 
 def _hills(kit, m):
@@ -170,8 +185,8 @@ def build_world(name="ArrivalWorld"):
     cramp = nt.nodes.new("ShaderNodeValToRGB")
     nt.links.new(tc.outputs["Generated"], sep.inputs["Vector"])
     nt.links.new(sep.outputs["Z"], ramp.inputs["Fac"])
-    stops = [(0.0, "#FFD08A"), (0.08, "#FFC892"), (0.2, "#FBB99C"), (0.34, "#F2B0B2"), (0.52, "#BFC3E6"),
-             (0.85, "#8FB2E4")]
+    stops = [(0.0, "#FFD9A0"), (0.08, "#FFCDA0"), (0.18, "#F9C2AA"), (0.3, "#DDC8D8"), (0.45, "#AFCBEB"),
+             (0.8, "#8DB7E8")]
     el = ramp.color_ramp.elements
     while len(el) < len(stops):
         el.new(0.5)

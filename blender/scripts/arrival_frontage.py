@@ -33,28 +33,27 @@ def build_frontage(kit, m):
 
 
 def _flower_box(kit, name, m, x, y, z, w, face=1.0):
-    """Clay sill box with dark leaves, magenta/violet blooms and short trailing ivy (A01/A04)."""
+    """Clay sill box with bougainvillea leaf cards and a trailing vine card (alpha cards, A01/A04)."""
     kit.box(name, m["clay"], (w, 0.32, 0.26), (x, y + face * 0.2, z))
-    n = max(3, int(w / 0.3))
+    n = max(2, int(w / 0.45))
     for k in range(n):
         px = x - w / 2 + (k + 0.5) * w / n
-        kit.blob(name, m["leaf_dark"], 0.17, (px, y + face * 0.24, z + 0.2), scale=(1.0, 1.0, 0.8))
-        kit.blob(name, m["flower_magenta"] if k % 2 else m["flower_violet"], 0.09,
-                 (px + 0.05, y + face * 0.34, z + 0.33))
-        if k % 2 == 0:  # ivy trailing over the front of the box
-            kit.blob(name, m["olive"], 0.1, (px, y + face * 0.38, z - 0.18 - 0.08 * (k % 3)), scale=(0.8, 0.6, 1.6))
+        kit.card(name, m["card_bloom"], (px, y + face * 0.24, z + 0.05), 0.6, 0.55, 0.15 * (k % 3 - 1), cell=k)
+        kit.card(name, m["card_bloom"], (px, y + face * 0.26, z + 0.05), 0.55, 0.5, math.pi / 2, cell=k + 1)
+        if k % 2 == 0:   # vine trailing over the front of the box
+            kit.card(name, m["card_vine"], (px, y + face * 0.38, z + 0.1), 0.45, 0.8, 0.0, cell=k + 2, lift=0.8)
 
 
 def _vine(kit, name, m, x, y, z0, z1, face=1.0, sway=0.25, seed=0):
-    """Climbing vine: staggered leaf clumps up a wall with a few bougainvillea heads."""
+    """Climbing vine: overlapping leaf cards up a wall, every third card in bougainvillea bloom."""
     k, z = 0, z0
     while z < z1:
         dx = sway * math.sin(1.7 * k + seed)
-        kit.blob(name, m["olive"] if (k + seed) % 2 else m["leaf_dark"], 0.28, (x + dx, y + face * 0.18, z),
-                 scale=(1.0, 0.6, 1.2))
-        if k % 3 == 1:
-            kit.blob(name, m["flower_magenta"], 0.13, (x + dx + 0.15, y + face * 0.32, z + 0.1))
-        k, z = k + 1, z + 0.5
+        mat = m["card_bloom"] if k % 3 == 1 else m["card_vine"]
+        kit.card(name, mat, (x + dx, y + face * 0.16, z), 1.0, 1.0, 0.0, cell=k + seed, tilt=-0.12 * face)
+        kit.card(name, m["card_vine"], (x + dx, y + face * 0.3, z + 0.3), 0.8, 0.8, 0.5 * (k % 2 * 2 - 1),
+                 cell=k + seed + 1)
+        k, z = k + 1, z + 0.6
 
 
 def _greenery(kit, m):
@@ -62,10 +61,9 @@ def _greenery(kit, m):
     (house corner x 13.8..16.2 in frame, the cafe front and its upper windows)."""
     fy = HOUSE_Y[1]
     # Ivy trailing along the house string course over the door, and a sill box at the lantern.
-    for k in range(6):
-        x = 13.9 + k * 0.42
-        kit.blob("house_vines", m["leaf_dark"] if k % 2 else m["olive"], 0.2, (x, fy + 0.32, 3.75 - 0.25 * (k % 3)),
-                 scale=(0.9, 0.6, 1.5))
+    for k in range(5):
+        x = 14.1 + k * 0.5
+        kit.card("house_vines", m["card_vine"], (x, fy + 0.3, 3.95), 0.7, 0.9, 0.0, cell=k, lift=0.9)
     _flower_box(kit, "house_flowerbox", m, 16.0, fy, 4.35, 1.1)
     # Cafe: a box under every upper window, a vine up each end pier and a garland on the cornice.
     x0, x1 = CAFE_X
@@ -74,12 +72,10 @@ def _greenery(kit, m):
         _flower_box(kit, "cafe_flowerbox", m, x0 + 1.5 + k * 2.95, f, 5.2, 1.4)
     for vx, seed in ((x1 - 0.15, 0), (x0 + 0.15, 3)):
         _vine(kit, "cafe_vines", m, vx, f, 0.4, 8.0, seed=seed)
-    for k in range(int((x1 - x0) / 0.55)):
-        x = x0 + 0.3 + k * 0.55
-        kit.blob("cafe_vines", m["olive"] if k % 2 else m["leaf_dark"], 0.22,
-                 (x, f + 0.42, 4.62 - 0.12 * math.sin(k * 1.3)), scale=(1.1, 0.7, 0.8))
-        if k % 3 == 0:
-            kit.blob("cafe_vines", m["flower_magenta"], 0.12, (x + 0.1, f + 0.55, 4.7))
+    for k in range(int((x1 - x0) / 0.7)):   # garland trailing from the cornice
+        x = x0 + 0.35 + k * 0.7
+        kit.card("cafe_vines", m["card_bloom"] if k % 3 == 0 else m["card_vine"],
+                 (x, f + 0.45, 4.95 - 0.12 * math.sin(k * 1.3)), 0.9, 0.7, 0.0, cell=k, lift=0.6)
 
 
 # ---- A04 merchant house ----------------------------------------------------------
@@ -204,15 +200,21 @@ def _cafe(kit, m):
                                                (ax1, y_wall, z_wall)])
     kit.poly("cafe_awning", m["teal_light"], [(ax1, y_wall, z_wall - 0.03), (ax1, y_out, z_out - 0.03),
                                                (ax0, y_out, z_out - 0.03), (ax0, y_wall, z_wall - 0.03)])
-    n = int((ax1 - ax0) / 0.5)
+    n = int((ax1 - ax0) / 0.62)   # r2: deeper scallops with a cream edge and gold tassels (A01)
     for k in range(n):
-        x = ax0 + 0.25 + k * (ax1 - ax0 - 0.5) / max(n - 1, 1)
-        kit.cyl("cafe_awning_valance", m["cloth_cream"], 0.27, 0.03, (x, y_out + 0.01, z_out - 0.12), verts=12,
+        x = ax0 + 0.31 + k * (ax1 - ax0 - 0.62) / max(n - 1, 1)
+        kit.cyl("cafe_awning_valance", m["cloth_cream"], 0.34, 0.03, (x, y_out + 0.01, z_out - 0.2), verts=14,
                 rot=(math.pi / 2, 0, 0), smooth=False)
-        kit.cyl("cafe_awning_valance", m["teal_light"], 0.24, 0.04, (x, y_out + 0.02, z_out - 0.1), verts=12,
+        kit.cyl("cafe_awning_valance", m["teal_light"], 0.3, 0.04, (x, y_out + 0.02, z_out - 0.18), verts=14,
                 rot=(math.pi / 2, 0, 0), smooth=False)
-        kit.sphere("cafe_awning_valance", m["gold"], 0.04, (x, y_out + 0.03, z_out - 0.37), segs=6, rings=4)
-    kit.box_mm("cafe_awning_valance", m["teal_light"], ax0, ax1, y_out - 0.01, y_out + 0.03, z_out - 0.12, z_out + 0.05)
+        kit.sphere("cafe_awning_valance", m["gold"], 0.05, (x, y_out + 0.04, z_out - 0.56), segs=6, rings=4)
+    kit.box_mm("cafe_awning_valance", m["teal_light"], ax0, ax1, y_out - 0.01, y_out + 0.03, z_out - 0.2, z_out + 0.05)
+    for k in range(int((ax1 - ax0) / 0.9)):   # cream stripes on the canvas
+        x = ax0 + 0.45 + k * 0.9
+        kit.poly("cafe_awning_valance", m["cloth_cream"], [(x - 0.12, y_wall + 0.05, z_wall + 0.012),
+                                                          (x - 0.12, y_out - 0.05, z_out + 0.012),
+                                                          (x + 0.12, y_out - 0.05, z_out + 0.012),
+                                                          (x + 0.12, y_wall + 0.05, z_wall + 0.012)])
     for x in (ax0 + 0.3, (ax0 + ax1) / 2, ax1 - 0.3):
         kit.box("cafe_awning_rods", m["iron"], (0.04, 2.5, 0.04), (x, (y_wall + y_out) / 2 - 0.05, (z_wall + z_out) / 2 - 0.1),
                 rot=(math.atan2(z_wall - z_out, y_out - y_wall), 0, 0))
@@ -269,10 +271,7 @@ def _arcade(kit, m):
             cx = x + step / 2
             kit.arch_bay("arcade_arches", m["ashlar"], "x", cx - w / 2, cx + w / 2, w, 3.05, 5.0, p, 0.9,
                          z0=3.05, soffit=m["limestone_pale"])
-            kit.box("arcade_banners", m["plum"], (0.9, 0.05, 1.9), (cx, p + 0.5, 3.35))
-            kit.box("arcade_banners", m["gold"], (0.32, 0.05, 0.32), (cx, p + 0.53, 2.9), rot=(0, math.pi / 4, 0))
-            kit.box("arcade_banners", m["gold"], (0.95, 0.06, 0.06), (cx, p + 0.5, 4.32))
-            kit.box("arcade_shops", m["interior"], (step - 1.6, 0.08, 2.7), (cx, SHOP_PLANE + 0.05, 1.45))
+            _shop_interior(kit, m, cx, step)
             kit.poly("arcade_shop_awnings", m["teal"], [(cx - step / 2 + 0.8, SHOP_PLANE, 3.2),
                                                         (cx - step / 2 + 0.8, SHOP_PLANE + 1.0, 2.75),
                                                         (cx + step / 2 - 0.8, SHOP_PLANE + 1.0, 2.75),
@@ -290,6 +289,24 @@ def _arcade(kit, m):
     for i in range(ARCADE_BAYS):
         window(kit, "arcade_upper_windows", m, x0 + (i + 0.5) * step, p + 0.45, 6.1, w=1.0, h=1.9, glow=i % 3 == 1)
     gable_roof_x(kit, "arcade_roof", m, x0, x1, -18.0, p + 0.45, 9.4, 2.4)
+
+
+def _shop_interior(kit, m, cx, step):
+    """r2: a lit shopfront behind each arcade bay (A01/A08): warm glowing back wall, a wooden
+    counter, shelves of glazed jars and a hanging lantern, so the colonnade reads as shops."""
+    w = step - 1.6
+    kit.box("arcade_shops", m["window_glow"], (w, 0.08, 2.7), (cx, SHOP_PLANE + 0.05, 1.45))
+    kit.box("arcade_shop_fittings", m["wood_dark"], (w + 0.3, 0.14, 0.18), (cx, SHOP_PLANE + 0.1, 2.9))
+    for z in (1.35, 2.05):
+        kit.box("arcade_shop_fittings", m["wood"], (w - 0.2, 0.35, 0.05), (cx, SHOP_PLANE + 0.25, z))
+        for j in range(5):
+            mat = (m["glaze_teal"], m["clay"], m["glaze_cobalt"], m["lemon"], m["clay"])[(j + int(z * 10)) % 5]
+            kit.cyl("arcade_shop_fittings", mat, 0.11, 0.26, (cx - w / 2 + 0.35 + j * (w - 0.7) / 4,
+                                                             SHOP_PLANE + 0.27, z + 0.03), verts=8)
+    kit.box("arcade_shop_fittings", m["wood"], (w - 0.4, 0.55, 0.9), (cx, SHOP_PLANE + 1.2, 0.45))
+    kit.box("arcade_shop_fittings", m["cloth_cream"], (w - 0.3, 0.6, 0.04), (cx, SHOP_PLANE + 1.2, 0.92))
+    kit.sphere("arcade_shop_lantern_glow", m["lamp_glass"], 0.17, (cx, SHOP_PLANE + 1.3, 2.55), scale=(1, 1, 1.3),
+               segs=8, rings=6)
 
 
 # ---- foreground ------------------------------------------------------------------

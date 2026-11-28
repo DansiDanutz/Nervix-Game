@@ -70,6 +70,8 @@ def parse_args():
     p.add_argument("--final", action="store_true")
     p.add_argument("--save", action="store_true")
     p.add_argument("--samples", type=int, default=32)
+    p.add_argument("--engine", choices=("eevee", "cycles"), default="eevee")
+    p.add_argument("--tag", default=None, help="with --render: output name fid-<tag>.png instead of a01cam-")
     return p.parse_args(argv)
 
 
@@ -123,11 +125,31 @@ def report(scene, cam):
         print(f"LANDMARK {name:22s} u={c.x:.3f} v={1 - c.y:.3f} depth={c.z:.1f}")
 
 
-def render(scene, cam, path, samples):
+def use_engine(scene, engine, samples):
+    """EEVEE for quick looks; Cycles (GPU when available, denoised) for the judged frames."""
+    if engine == "eevee":
+        scene.render.engine = "BLENDER_EEVEE"
+        scene.eevee.taa_render_samples = samples
+        return
+    scene.render.engine = "CYCLES"
+    scene.cycles.samples = samples
+    scene.cycles.use_denoising = True
+    scene.cycles.max_bounces = 6
+    try:
+        prefs = bpy.context.preferences.addons["cycles"].preferences
+        prefs.compute_device_type = "METAL"
+        prefs.get_devices()
+        for dev in prefs.devices:
+            dev.use = True
+        scene.cycles.device = "GPU"
+    except (KeyError, TypeError, AttributeError):
+        scene.cycles.device = "CPU"
+
+
+def render(scene, cam, path, samples, engine="eevee"):
     isolate()
     scene.camera = cam
-    scene.render.engine = "BLENDER_EEVEE"
-    scene.eevee.taa_render_samples = samples
+    use_engine(scene, engine, samples)
     scene.render.resolution_x, scene.render.resolution_y = WIDTH, HEIGHT
     scene.render.resolution_percentage = 100
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -157,10 +179,10 @@ def main():
             fh.write("\n")
         print("SAVED", SLICE_BLEND, POSE_JSON)
     if args.final:
-        render(scene, cam, os.path.join(EVIDENCE_DIR, "blender-A01-camera.png"), args.samples)
+        render(scene, cam, os.path.join(EVIDENCE_DIR, "blender-A01-camera.png"), args.samples, args.engine)
     elif args.render:
-        render(scene, cam, os.path.join(EVIDENCE_DIR, "iterations", f"a01cam-{args.render}.png"),
-               args.samples)
+        name = f"fid-{args.render}.png" if args.tag == "fid" else f"a01cam-{args.render}.png"
+        render(scene, cam, os.path.join(EVIDENCE_DIR, "iterations", name), args.samples, args.engine)
     after = sha256(DISTRICT_BLEND)
     print("DISTRICT_SHA256", before, after)
     assert before == after, "district file changed"

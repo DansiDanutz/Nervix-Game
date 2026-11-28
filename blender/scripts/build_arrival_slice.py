@@ -21,7 +21,10 @@ from arrival_casino import build_casino  # noqa: E402
 from arrival_frontage import HOUSE_DOOR_X, HOUSE_Y, build_frontage  # noqa: E402
 from arrival_kit import Kit  # noqa: E402
 from arrival_materials import build_materials  # noqa: E402
+from arrival_people import build_people  # noqa: E402
+from arrival_dressing import build_dressing  # noqa: E402
 from arrival_skyline import build_skyline, build_world  # noqa: E402
+from arrival_skyline_far import build_skyline_far  # noqa: E402
 from arrival_square import build_square  # noqa: E402
 from arrival_street import build_street  # noqa: E402
 from openpoker_common import DISTRICT_BLEND, SLICE_BLEND  # noqa: E402
@@ -32,10 +35,17 @@ SUN = "arrival_sun"
 CAM_EYE = (21.98, 0.70, 1.98)     # runtime (21.98, 1.98, -0.70): settled cameraRig pose
 CAM_TARGET = (13.0, 0.70, 1.52)   # runtime (13, 1.52, -0.70)
 CAM_VFOV_DEG = 55.0
-SUN_TRAVEL = (-0.5, 0.72, -0.42)  # low golden-hour sun from behind-left: lights the casino front
-SUN_COLOUR = (1.0, 0.76, 0.5)
-SUN_STRENGTH = 6.5
+# Fidelity r1: low golden-hour sun from the left and behind the square (A01). It travels toward
+# +x (the A01 camera) and +y (screen right), so long shadows fall forward-right over the paving
+# and the casino front (normal -y) is lit. The elevation keeps the square out of the left
+# rows' shadow (a 19 deg sun left the whole square in shade in fid-r1-iter1; at 32 deg from the
+# left the 10 m cafe row still shaded it). ~40 deg from back-left lights the square and the casino.
+SUN_TRAVEL = (0.55, 0.52, -0.55)   # r2: ~36 deg (was ~41), longer raking shadows
+SUN_COLOUR = (1.0, 0.7, 0.42)
+SUN_STRENGTH = 7.5        # r2: 9.0 washed the lit paving out to cream under AgX
+SUN_ANGLE_DEG = 3.5
 BEVEL_WIDTH = 0.07
+EXPOSURE = 0.3            # AgX Punchy reads dark at golden hour; A01 is a bright warm painting
 
 
 def sha256(path):
@@ -80,7 +90,7 @@ def add_sun(coll):
     ld = bpy.data.lights.new(SUN, "SUN")
     ld.energy = SUN_STRENGTH
     ld.color = SUN_COLOUR
-    ld.angle = math.radians(2.5)
+    ld.angle = math.radians(SUN_ANGLE_DEG)
     o = bpy.data.objects.new(SUN, ld)
     travel = Vector(SUN_TRAVEL).normalized()
     o.rotation_euler = Vector((0.0, 0.0, -1.0)).rotation_difference(travel).to_euler()
@@ -121,6 +131,7 @@ def configure_scene(scene, cam):
     scene.render.resolution_y = 900
     scene.render.resolution_percentage = 100
     scene.view_settings.view_transform = "AgX"
+    scene.view_settings.exposure = EXPOSURE
     try:
         scene.view_settings.look = "AgX - Punchy"
     except TypeError:  # look names differ between builds; keep the base AgX look
@@ -141,8 +152,12 @@ def main():
     build_street(kit, m)
     build_casino(kit, m)
     build_skyline(kit, m)
+    build_skyline_far(kit, m)
+    build_dressing(kit, m)
     objs = kit.finalize()
     bevel_tagged(objs)
+    people = build_people(coll)
+    print("ARRIVAL_PEOPLE", [o.name for o in people])
     cam = add_camera(coll)
     add_sun(coll)
     add_markers(coll)

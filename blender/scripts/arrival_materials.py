@@ -125,28 +125,35 @@ def make_ashlar_normal(src=ASHLAR, name="ar_ashlar_n.png"):
     return _save_normal(name, (lum - lum.mean()) / (lum.std() + 1e-6) * 0.25, strength=2.0)
 
 
-def make_roof_tiles(name="ar_roof_tiles.png", size=256):
+def make_roof_tiles(name="ar_roof_tiles.png", size=512):
     """Terracotta barrel tiles: rows of rounded courses with a dark shadow line."""
     ys, xs = np.mgrid[0:size, 0:size] / size
     rng = np.random.default_rng(5)
     course = (ys * 8) % 1.0
     barrel = 0.5 + 0.5 * np.cos((xs * 10 % 1.0 - 0.5) * np.pi * 2)
-    base = _hex("#B95E3C") * (0.82 + 0.22 * barrel[..., None])
-    base = base * (0.75 + 0.25 * np.clip(course / 0.2, 0, 1))[..., None]
-    base = base * rng.uniform(0.9, 1.08, (8, 10))[(ys * 8).astype(int) % 8, (xs * 10).astype(int) % 10][..., None]
+    cell = ((ys * 8).astype(int) % 8, (xs * 10).astype(int) % 10)
+    hue = np.array([_hex(c) for c in ("#B95E3C", "#C46A40", "#A9553A", "#CF7B4C", "#9E4C33")])
+    base = hue[rng.integers(0, 5, (8, 10))][cell] * (0.8 + 0.24 * barrel[..., None])
+    base = base * (0.7 + 0.3 * np.clip(course / 0.2, 0, 1))[..., None]
+    base = base * rng.uniform(0.88, 1.08, (8, 10))[cell][..., None]
+    lichen = rng.random((8, 10))[cell] < 0.12
+    base = np.where(lichen[..., None], base * 0.8 + 0.2 * _hex("#B9A270"), base)
+    base = base * rng.normal(1.0, 0.035, (size, size, 1))
+    _save_normal(name.replace(".png", "_n.png"), barrel * 0.8 + np.clip(course / 0.2, 0, 1) * 0.6, strength=3.0)
     return _save(name, base)
 
 
-def make_hill(name="ar_hill.png", size=256):
-    """Dry golden hillside with olive scrub patches (A12), large scale, tileable."""
-    ident, f1, f2 = _voronoi(size, 9, 21)
+def make_hill(name="ar_hill.png", size=512):
+    """Dry golden hillside (A01/A12): soft scrub drifts and rock showing through, fine grass grain,
+    no hard-edged patches (round 1 judges: 'flat faceted hill')."""
+    from arrival_textures import _tile_noise   # late import: arrival_textures imports this module
     rng = np.random.default_rng(22)
-    pick = rng.random(81)[ident]
-    grass = _hex("#C9A060") * rng.uniform(0.9, 1.08, 81)[ident][..., None]
-    scrub = _hex("#7C8A45") * rng.uniform(0.85, 1.1, 81)[ident][..., None]
-    rock = _hex("#B99A80")
-    out = np.where((pick < 0.45)[..., None], scrub, np.where((pick < 0.6)[..., None], rock, grass))
-    return _save(name, out * rng.normal(1.0, 0.03, (size, size, 1)))
+    scrub = np.clip(_tile_noise(size, (2, 3, 5, 8), 23) * 1.6 + 0.1, 0.0, 1.0)
+    rock = np.clip(_tile_noise(size, (3, 6, 9), 24) * 2.0 - 0.75, 0.0, 1.0)
+    grass = _hex("#D2A866") * (1.0 + 0.08 * _tile_noise(size, (12, 20), 25))[..., None]
+    out = grass * (1 - scrub[..., None]) + _hex("#7F8C4A") * scrub[..., None]
+    out = out * (1 - rock[..., None]) + _hex("#C2A58C") * rock[..., None]
+    return _save(name, out * rng.normal(1.0, 0.04, (size, size, 1)))
 
 
 def _image_material(name, path, rough, uv_scale, tint=None, normal=None, normal_strength=0.6):
@@ -226,22 +233,21 @@ def _sky_tinted(mat, tint_hex="#BFD8F0"):
 
 
 def build_materials():
-    cobble = make_bricks("ar_setts.png", ["#DDB58F", "#E6C49E", "#D2A684", "#DCA990", "#E9CDA9", "#CFA081",
-                                          "#E0B69A"], "#9C7A5E", 13, rows=14, per_row=10)
-    plum = make_bricks("ar_plum_pavers.png", ["#7A2846", "#8C3553", "#69203C", "#933E5A"], "#4A1A2C", 31)
-    pale = make_bricks("ar_pale_pavers.png", ["#EBD3AE", "#E2C39C", "#F0DCBA", "#DDBB95"], "#B08F6C", 41,
-                       rows=8, per_row=4)
+    from arrival_matlib import build_fid_materials   # late import: arrival_matlib imports this module
     roof = make_roof_tiles()
     hill = make_hill()
     grain = make_stone_grain()
     ashlar_n = make_ashlar_normal()
+    base = _base_materials(roof, hill, grain, ashlar_n)
+    base.update(build_fid_materials())
+    return base
+
+
+def _base_materials(roof, hill, grain, ashlar_n):
     return {
-        "cobble": _image_material("ar_cobble", cobble, 0.85, 2.4, normal=_n(cobble)),
-        "plum_band": _image_material("ar_plum_band", plum, 0.8, 1.6, normal=_n(plum)),
-        "pale_band": _image_material("ar_pale_band", pale, 0.8, 1.8, normal=_n(pale)),
         "ashlar": _image_material("ar_ashlar", ASHLAR, 0.9, 4.0, normal=ashlar_n),
         "ashlar_shade": _image_material("ar_ashlar_shade", ASHLAR, 0.9, 4.0, tint="#A88E86", normal=ashlar_n),
-        "roof": _image_material("ar_roof_tiles", roof, 0.7, 2.0),
+        "roof": _image_material("ar_roof_tiles", roof, 0.7, 2.0, normal=_n(roof), normal_strength=0.9),
         "hill": _image_material("ar_hillside", hill, 0.95, 40.0),
         "far_ridge": _flat("ar_far_ridge", "#B99AA6", 0.95),
         "dome_rose": _flat("ar_dome_rose", "#C77B7E", 0.5, 0.3),
@@ -261,11 +267,11 @@ def build_materials():
         "red_carpet": _flat("ar_red_carpet", "#9A1E35", 0.9),
         "gold": _flat("ar_gold", "#E0B04A", 0.3, 1.0),
         "brass": _flat("ar_brass", "#B88A3A", 0.35, 0.9),
-        "teal": _flat("ar_teal", "#2F7F78", 0.6),
+        "teal": _flat("ar_teal", "#2F8A80", 0.45),
         "plaster_rose": _flat("ar_plaster_rose", "#E3B59A", 0.9),
         "lemon": _flat("ar_lemon", "#E7C63A", 0.5),
         "teal_dark": _flat("ar_teal_dark", "#235F5A", 0.65),
-        "teal_light": _flat("ar_teal_awning", "#3C978C", 0.75),
+        "teal_light": _flat("ar_teal_awning", "#3FAE9E", 0.75),
         "wood": _flat("ar_wood", "#6B4026", 0.6),
         "wood_dark": _flat("ar_wood_dark", "#3E2518", 0.65),
         "terracotta": _flat("ar_terracotta", "#B4593A", 0.7),

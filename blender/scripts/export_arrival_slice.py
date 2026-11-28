@@ -27,12 +27,14 @@ from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from arrival_bake import LM_JPG, LM_META  # noqa: E402
+from arrival_glb_lightmap import inject  # noqa: E402
 from arrival_skyline import SKY_LIGHT_STRENGTH  # noqa: E402
-from build_arrival_slice import ARRIVAL, SUN, sha256  # noqa: E402
+from build_arrival_slice import ARRIVAL, EXPOSURE, SUN, sha256  # noqa: E402
 from openpoker_common import APP_SLICE_DIR, DISTRICT_BLEND, EXPORT_DIR, ROOT  # noqa: E402
 
 GLB = "nervix_arrival_square.glb"
-MAX_BYTES = 8 * 1024 * 1024
+MAX_BYTES = 20 * 1024 * 1024     # fidelity r1 budget: GLB incl. the embedded lightmap atlas
 MAX_TRIS = 350_000
 SPAWN_YAW = math.pi / 2           # facing -x (runtime), toward the fountain
 BOUNDS_BLENDER = (-42.0, 34.0, -13.0, 13.0)   # x0, x1, y0, y1: square, east street, back street
@@ -48,7 +50,7 @@ DISTRICT_CHUNK_COLLECTIONS = {"Plaza": "nervix_plaza", "Street": "nervix_street"
 # hemi_sky is the cool lavender bounce of the Blender sky's upper half; the gradient stops are the
 # ArrivalWorld ramp (horizon peach, mid rose-lavender, zenith soft blue) for a client sky dome.
 LIGHTING_COLOURS = {"background": "#f6c4a0", "fog": "#efc3a3", "hemi_sky": "#cfc4d8", "hemi_ground": "#a8775c"}
-SKY_GRADIENT = {"horizon": "#ffc892", "mid": "#f2b0b2", "zenith": "#8fb2e4"}
+SKY_GRADIENT = {"horizon": "#ffcda0", "mid": "#ddc8d8", "zenith": "#8db7e8"}   # ArrivalWorld stops (fid r1)
 FILL = {"color": "#b9c2e0", "intensity": 0.35}   # low cool fill standing in for Blender's sky bounce
 FOG_NEAR, FOG_FAR = 70.0, 460.0
 SUN_DISTANCE = 60.0
@@ -76,9 +78,12 @@ def world_bbox(o, depsgraph):
 
 
 def fountain(depsgraph):
-    lo, hi = world_bbox(bpy.data.objects["fountain_basin"], depsgraph)
+    basin = bpy.data.objects["fountain_basin"]
+    lo, hi = world_bbox(basin, depsgraph)
     cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
-    radius = max(hi[0] - lo[0], hi[1] - lo[1]) / 2
+    ev = basin.evaluated_get(depsgraph)   # octagonal basin: the circle must reach its corners
+    radius = max(math.hypot((ev.matrix_world @ v.co).x - cx, (ev.matrix_world @ v.co).y - cy)
+                 for v in ev.data.vertices)
     top = world_bbox(bpy.data.objects["fountain_tiers"], depsgraph)[1][2]
     x, z = runtime_xz((cx, cy))
     return {"x": x, "z": z, "radius": round(radius, 3), "top_y": round(top, 3)}
@@ -187,6 +192,8 @@ def lighting():
                        "intensity": round(SKY_LIGHT_STRENGTH * HEMI_RUNTIME_SCALE, 2)},
         "sky_gradient": dict(SKY_GRADIENT),
         "fill": dict(FILL),
+        # The bake and the Blender renders are graded under AgX with this exposure (stops -> linear).
+        "view": {"tone_mapping": "agx", "exposure": round(2.0 ** EXPOSURE, 4)},
     }
 
 
@@ -231,9 +238,11 @@ def triangles(depsgraph):
 def merge_manifest(path, plaza, asset):
     with open(path) as fh:
         manifest = json.load(fh)
-    manifest.setdefault("runtime_layout", {})["plaza"] = plaza
+    layout = manifest.setdefault("runtime_layout", {})
+    layout["plaza"] = {**layout.get("plaza", {}), **plaza}          # merge: never drop other fields
+    old = next((a for a in manifest.get("assets", []) if a.get("id") == asset["id"]), {})
     assets = [a for a in manifest.get("assets", []) if a.get("id") != asset["id"]]
-    manifest["assets"] = assets + [asset]
+    manifest["assets"] = assets + [{**old, **asset}]
     with open(path, "w") as fh:
         json.dump(manifest, fh, indent=2)
         fh.write("\n")
@@ -272,12 +281,26 @@ def main():
     tris = triangles(depsgraph)
     app_glb = os.path.join(APP_SLICE_DIR, GLB)
     size = export_glb(app_glb)
+    lightmap = None
+    if os.path.exists(LM_META) and os.path.exists(LM_JPG):
+        with open(LM_META) as fh:
+            meta = json.load(fh)
+        info = inject(app_glb, LM_JPG, meta["scale"])
+        size = info["bytes"]
+        lightmap = {"mode": "lightmap", "texcoord": 1, "texture": info["texture"], "scale": meta["scale"],
+                    "encoding": meta["encoding"], "size": meta["size"], "samples": meta["samples"],
+                    "materials": info["materials"], "primitives": info["primitives"],
+                    "semantics": "final = albedo * srgb_decode(texel) * scale; occlusionTexture carries the same "
+                                 "atlas for clients without lightmap support"}
+        print("LIGHTMAP_INJECTED", json.dumps(info))
     os.makedirs(EXPORT_DIR, exist_ok=True)
     shutil.copyfile(app_glb, os.path.join(EXPORT_DIR, GLB))
     assert size < MAX_BYTES, f"GLB too large: {size}"
     assert tris < MAX_TRIS, f"too many triangles: {tris}"
     asset = {"id": "nervix_arrival_square", "file": GLB, "bytes": size, "triangles": tris, "frame": "district",
              "placement_runtime": [0.0, 0.0, 0.0], "draco": False}
+    if lightmap is not None:
+        asset["baked_lighting"] = lightmap
     for d in (APP_SLICE_DIR, EXPORT_DIR):
         merge_manifest(os.path.join(d, "manifest.json"), plaza, asset)
     assert sha256(DISTRICT_BLEND) == before, "district file changed"

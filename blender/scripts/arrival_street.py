@@ -33,7 +33,7 @@ def build_street(kit, m):
         _facade(kit, m, f"street_left_{i + 1:02d}", x0, x1, LEFT_FRONT, 1.0, n, i)
     for i, (x0, x1, n) in enumerate(RIGHT_ROW):
         _facade(kit, m, f"street_right_{i + 1:02d}", x0, x1, RIGHT_FRONT, -1.0, n, i + 3)
-    _facade(kit, m, "corner_left", 3.4, 13.6, -10.5, 1.0, 3, 1, door=False)
+    _facade(kit, m, "corner_left", 3.4, 13.6, -10.5, 1.0, 2, 1, door=True)   # A01 cottage scale
     _facade(kit, m, "corner_right", 8.2, 17.0, 13.0, -1.0, 3, 2, door=False)
     _facade(kit, m, "flare_right", 17.0, 19.2, 11.0, -1.0, 3, 4, door=False)   # setback, outside the frame
     _street_props(kit, m)
@@ -57,7 +57,9 @@ def _facade(kit, m, name, x0, x1, fy, face, storeys, idx, door=True):
     for xq in (x0 + 0.2, x1 - 0.2):  # quoins
         for k in range(int(h / 0.8)):
             kit.box(name + "_trim", trim, (0.42 if k % 2 else 0.3, 0.1, 0.36), (xq, fy + face * 0.05, 0.5 + k * 0.8))
-    gable_roof_x(kit, name + "_roof", m, x0, x1, y0, y1, h, 2.0 + 0.3 * (idx % 3), over=0.5)
+    gable_roof_x(kit, name + "_roof", m, x0, x1, y0, y1, h, 2.0 + 0.3 * (idx % 3), over=0.9)
+    for k in range(int((x1 - x0) / 0.8)):   # timber corbels under the deep eave
+        kit.box(name + "_corbels", m["wood_dark"], (0.16, 0.75, 0.2), (x0 + 0.4 + k * 0.8, fy + face * 0.4, h - 0.15))
     w = x1 - x0
     cols = max(2, int(w / 2.7))
     xs = [x0 + (k + 0.5) * w / cols for k in range(cols)]
@@ -86,13 +88,23 @@ def _facade(kit, m, name, x0, x1, fy, face, storeys, idx, door=True):
 
 
 def _door(kit, m, name, x, fy, face, idx):
+    """Arched door (A01): stone jambs and voussoir arch, plank leaf with iron straps, ring knocker."""
     stone = m["limestone_pale"]
     for sx in (-1.0, 1.0):
-        kit.box(name + "_trim", stone, (0.32, 0.36, 2.5), (x + sx * 0.8, fy + face * 0.18, 1.25))
-    kit.box(name + "_trim", stone, (2.0, 0.4, 0.34), (x, fy + face * 0.2, 2.65))
-    kit.box(name + "_door", m["teal"] if idx % 2 else m["wood"], (1.28, 0.08, 2.45), (x, fy + face * 0.02, 1.22))
-    for z in (0.6, 1.9):
+        kit.box(name + "_trim", stone, (0.32, 0.36, 2.0), (x + sx * 0.8, fy + face * 0.18, 1.0))
+    for k in range(9):   # voussoirs round the arch head
+        a = math.pi * k / 8
+        kit.box(name + "_trim", stone, (0.34, 0.38, 0.22), (x - 0.8 * math.cos(a), fy + face * 0.19,
+                                                             2.0 + 0.8 * math.sin(a)), rot=(0, math.pi / 2 - a, 0))
+    leaf = m["teal"] if idx % 2 else m["wood"]
+    kit.box(name + "_door", leaf, (1.28, 0.08, 2.0), (x, fy + face * 0.02, 1.0))
+    kit.cyl(name + "_door", leaf, 0.64, 0.08, (x, fy + face * 0.02, 2.0), verts=16, rot=(math.pi / 2, 0, 0))
+    for k in range(5):   # vertical planks
+        kit.box(name + "_door", m["wood_dark"], (0.02, 0.1, 2.5), (x - 0.5 + k * 0.25, fy + face * 0.03, 1.25))
+    for z in (0.6, 1.7):
         kit.box(name + "_door", m["iron"], (1.2, 0.04, 0.06), (x, fy + face * 0.07, z))
+    kit.tube(name + "_door", m["brass"], [(x + 0.32 + 0.11 * math.cos(t * 0.785), fy + face * 0.1,
+                                           1.2 + 0.11 * math.sin(t * 0.785)) for t in range(9)], 0.02, sides=6)
     kit.box(name + "_trim", stone, (1.9, 0.5, 0.14), (x, fy + face * 0.25, 0.07))
     wall_lantern(kit, name + "_lantern", m, x + 1.3, fy, 2.6, face)
 
@@ -124,9 +136,13 @@ def _balcony(kit, m, name, x, fy, face, z):
 
 def _banner(kit, m, name, x, fy, face, z):
     """Plum hanging banner with a gold diamond, flat against the wall (never across the street)."""
+    from arrival_dressing import shell_crest
     kit.box(name + "_banner", m["iron"], (0.9, 0.5, 0.05), (x, fy + face * 0.25, z + 2.0))
-    kit.box(name + "_banner", m["plum"], (0.75, 0.05, 1.7), (x, fy + face * 0.45, z + 1.1))
-    kit.box(name + "_banner", m["gold"], (0.3, 0.06, 0.3), (x, fy + face * 0.48, z + 1.2), rot=(0, math.pi / 4, 0))
+    kit.box(name + "_banner", m["banner_cloth"], (0.75, 0.05, 1.7), (x, fy + face * 0.45, z + 1.1))
+    kit.poly(name + "_banner", m["banner_cloth"], [(x - 0.375, fy + face * 0.45, z + 0.25),
+                                                   (x + 0.375, fy + face * 0.45, z + 0.25), (x, fy + face * 0.45, z - 0.1)])
+    kit.box(name + "_banner", m["gold"], (0.8, 0.07, 0.05), (x, fy + face * 0.47, z + 1.9))
+    shell_crest(kit, name + "_banner", m, (x, fy + face * 0.49, z + 1.05), face, 0.24)
 
 
 def _street_props(kit, m):
