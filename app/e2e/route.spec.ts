@@ -39,11 +39,18 @@ async function walkTo(page: Page, tx: number, tz: number, reach = 1.6) {
       for (let i = 1; i <= steps; i++) await page.mouse.move(cx + (dx * i) / steps, cy, { steps: 2 });
       await page.mouse.up();
     }
-    const dist = Math.hypot(tx - p.x, tz - p.z);
+    // Hold W and watch the position; release on arrival or when progress stops (blocked).
     await page.keyboard.down("w");
-    await page.waitForTimeout(Math.min(1200, Math.max(150, ((dist - reach * 0.6) / 4.2) * 1000)));
+    let last = Math.hypot(tx - p.x, tz - p.z);
+    for (let t = 0; t < 40; t++) {
+      await page.waitForTimeout(50);
+      const q = (await player(page))!;
+      const d = Math.hypot(tx - q.x, tz - q.z);
+      if (d < reach * 0.7 || d > last + 0.05) break; // arrived, or overshooting: re-aim
+      last = d;
+    }
     await page.keyboard.up("w");
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(120);
   }
   const p = (await player(page))!;
   throw new Error(`could not reach (${tx}, ${tz}); stuck at (${p.x}, ${p.z})`);
@@ -90,8 +97,14 @@ test("street → Fountain Square → OpenPoker → DanGG → plaza with keyboard
 
   await page.keyboard.press("Escape");
   await expect.poll(() => placeOf(page)).toBe("plaza");
-  const back = (await player(page))!;
-  expect(Math.hypot(back.x - L.facade_door.x, back.z - L.facade_door.z)).toBeLessThan(4.5);
+  // The new plaza scene publishes its player on its first frame; poll past the stale house value.
+  await expect
+    .poll(async () => {
+      const back = (await player(page))!;
+      return Math.hypot(back.x - L.facade_door.x, back.z - L.facade_door.z);
+    }, { timeout: 10_000 })
+    .toBeLessThan(4.5);
+  await page.waitForTimeout(800);
   await page.screenshot({ path: `${EVIDENCE}/game-route-4-back-on-plaza.png` });
 });
 

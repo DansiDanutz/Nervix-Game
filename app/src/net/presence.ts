@@ -8,7 +8,12 @@ export interface RemotePlayer {
   z: number;
 }
 
-const WS_URL = (import.meta.env.VITE_WS_URL as string | undefined) ?? "ws://localhost:8787/presence";
+const WS_URL = (import.meta.env?.VITE_WS_URL as string | undefined) ?? "ws://localhost:8787/presence";
+
+/** One avatar per player id; a player with several open tabs keeps their latest position. */
+export function uniqueById(players: RemotePlayer[]): RemotePlayer[] {
+  return [...new Map(players.map((p) => [p.id, p] as const)).values()];
+}
 
 /**
  * Shared district presence. Public data only — never a merchant conversation.
@@ -35,7 +40,7 @@ export function usePresence({ userId, name, district }: { userId: string; name: 
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data as string) as { type: string; players?: RemotePlayer[] };
-          if (msg.type === "welcome" || msg.type === "players") setPlayers(msg.players ?? []);
+          if (msg.type === "welcome" || msg.type === "players") setPlayers(uniqueById(msg.players ?? []));
         } catch {
           /* ignore malformed frames */
         }

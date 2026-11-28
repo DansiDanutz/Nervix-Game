@@ -19,7 +19,10 @@ export default defineConfig({
     launchOptions: {
       // Reuse an already-cached browser when the pinned revision is not installed.
       executablePath: process.env.PW_CHROMIUM_PATH || undefined,
-      args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+      // PW_GL=metal renders on the GPU (real frame rate); the default is portable SwiftShader.
+      args: process.env.PW_GL === "metal"
+        ? ["--use-gl=angle", "--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"]
+        : ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
     },
   },
   webServer: [
@@ -40,7 +43,8 @@ export default defineConfig({
       command: `pnpm exec vite --port ${WEB_PORT} --strictPort --host 127.0.0.1`,
       url: `http://127.0.0.1:${WEB_PORT}`,
       reuseExistingServer: false,
-      env: { VITE_API_TARGET: `http://127.0.0.1:${API_PORT}` },
+      // Presence must use the throwaway test server, never another running instance.
+      env: { VITE_API_TARGET: `http://127.0.0.1:${API_PORT}`, VITE_WS_URL: `ws://127.0.0.1:${API_PORT}/presence` },
     },
   ],
 });
