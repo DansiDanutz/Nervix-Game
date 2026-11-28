@@ -86,10 +86,22 @@ export function pickAssets(manifest: Manifest | null, mode: SceneMode) {
   return chunks.length > 0 ? chunks : full ? [full] : [];
 }
 
-export function CityScene({ onMarkers, mode = "chunks", hide = [] }: { onMarkers: (m: Marker[]) => void; mode?: SceneMode; hide?: string[] }) {
+export function CityScene({
+  onMarkers,
+  mode = "chunks",
+  hide = [],
+  blockout = true,
+}: {
+  onMarkers: (m: Marker[]) => void;
+  mode?: SceneMode;
+  hide?: string[];
+  /** false when another export (the arrival square) owns the ground: never draw the blockout over it. */
+  blockout?: boolean;
+}) {
   const { manifest, missing } = useManifest();
   // A chunk replaced by a newer Blender export (e.g. the OpenPoker facade) is hidden, never both drawn.
-  const assets = pickAssets(manifest, hide.length ? "chunks" : mode).filter((a) => !hide.includes(a.id));
+  const available = pickAssets(manifest, hide.length ? "chunks" : mode);
+  const assets = available.filter((a) => !hide.includes(a.id));
 
   useEffect(() => {
     const placed = (manifest?.markers ?? []).map((m) => ({
@@ -100,12 +112,13 @@ export function CityScene({ onMarkers, mode = "chunks", hide = [] }: { onMarkers
     onMarkers(placed);
   }, [manifest, onMarkers]);
 
-  if (missing || !manifest || assets.length === 0) {
-    return (
+  // The blockout stands in only for a missing export; chunks hidden on purpose leave nothing behind.
+  if (missing || !manifest || available.length === 0) {
+    return blockout ? (
       <group>
         <Blockout />
       </group>
-    );
+    ) : null;
   }
 
   return (

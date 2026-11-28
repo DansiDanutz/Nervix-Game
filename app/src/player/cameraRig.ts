@@ -25,6 +25,58 @@ export function cameraOffset(yaw: number, pitch: number, distance: number): Vec2
   return { x: Math.sin(yaw) * flat, y: Math.sin(pitch) * distance, z: Math.cos(yaw) * flat };
 }
 
+export interface ViewRig {
+  /** Camera distance behind the player (m). */
+  distance: number;
+  /** Camera elevation angle (rad) around the player. */
+  pitch: number;
+  /** Eye height the camera orbits and looks at (m). */
+  eye: number;
+  /** Sideways camera shift to screen-right (m): keeps the avatar off the centre of the view. */
+  shoulder: number;
+  /** How far ahead of the player the camera looks (m). */
+  lookAhead: number;
+  /** Look target sits this far below eye height (m): a level, slightly lowered gaze. */
+  lookDrop: number;
+}
+
+/**
+ * Pedestrian third-person framing. Exterior: eye level ~2 m, level gaze, camera
+ * behind the player and shifted 1.3 m to screen-right so the avatar sits in the
+ * lower-left of the frame and what the player faces (the fountain on arrival)
+ * stays in the horizontal centre.
+ */
+export const VIEW: Readonly<Record<"exterior" | "interior", Readonly<ViewRig>>> = Object.freeze({
+  exterior: Object.freeze({ distance: 3.0, pitch: 0.12, eye: 1.62, shoulder: 1.3, lookAhead: 6, lookDrop: 0.1 }),
+  interior: Object.freeze({ distance: 2.6, pitch: 0.05, eye: 1.6, shoulder: 0.5, lookAhead: 6, lookDrop: 0.1 }),
+});
+
+export interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/** Where the camera sits and what it looks at, for a player at `at` with `look`. */
+export function thirdPersonFrame(at: Vec2, look: Look, view: ViewRig): { camera: Vec3; target: Vec3 } {
+  const offset = cameraOffset(look.yaw, look.pitch, view.distance);
+  const right = moveVector(0, 1, look.yaw);
+  const ahead = cameraOffset(look.yaw, 0, -view.lookAhead);
+  return {
+    camera: {
+      x: at.x + offset.x + right.x * view.shoulder,
+      y: view.eye + offset.y,
+      z: at.z + offset.z + right.z * view.shoulder,
+    },
+    // Parallel to the player's facing, past the shoulder, so the gaze stays straight ahead.
+    target: {
+      x: at.x + ahead.x + right.x * view.shoulder,
+      y: view.eye - view.lookDrop,
+      z: at.z + ahead.z + right.z * view.shoulder,
+    },
+  };
+}
+
 /** Unit ground vector for forward/strafe input, relative to the camera yaw. */
 export function moveVector(forward: number, strafe: number, yaw: number): Vec2 {
   if (forward === 0 && strafe === 0) return { x: 0, z: 0 };

@@ -3,7 +3,9 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Marker } from "../scene/CityScene";
 import { touch } from "../net/input";
-import { applyLook, cameraOffset, moveVector, resolveMove, type Box, type Look } from "./cameraRig";
+import { Avatar } from "./Avatar";
+import { LOCAL_PALETTE } from "./avatarShape";
+import { applyLook, moveVector, resolveMove, thirdPersonFrame, VIEW, type Box, type Look } from "./cameraRig";
 
 const SPEED = 4.2;
 const RUN_MULTIPLIER = 1.7;
@@ -13,12 +15,6 @@ const LOOK_SENSITIVITY = 0.005;
 const KEY_TURN_RATE = 1.8; // rad/s for Q / E-less keyboard turning
 const DRAG_THRESHOLD_PX = 4;
 
-// Pedestrian eye level: camera ~1.75 m, just behind the shoulder, looking level
-// along the street. Never overhead, never pitched up at the sky.
-const VIEW = {
-  exterior: { distance: 3.0, pitch: 0.05, eye: 1.62, shoulder: 0.6 },
-  interior: { distance: 2.6, pitch: 0.05, eye: 1.6, shoulder: 0.5 },
-} as const;
 
 export interface PlayerControllerProps {
   markers: Marker[];
@@ -55,6 +51,11 @@ export function PlayerController({
   const appliedTeleport = useRef(0);
   const lastPos = useRef(0);
   const snapped = useRef(false);
+  const onNearbyRef = useRef(onNearby);
+  onNearbyRef.current = onNearby;
+
+  // A nearby prompt belongs to this place only: clear it when the place (canvas) goes away.
+  useEffect(() => () => onNearbyRef.current(null), []);
 
   useEffect(() => {
     const typing = (t: EventTarget | null) =>
@@ -140,15 +141,9 @@ export function PlayerController({
       }
     }
 
-    const view = interior ? VIEW.interior : VIEW.exterior;
-    const offset = cameraOffset(look.current.yaw, look.current.pitch, view.distance);
     // Over the right shoulder so the avatar never covers the centre of the view.
-    const right = moveVector(0, 1, look.current.yaw);
-    const target = new THREE.Vector3(
-      g.position.x + offset.x + right.x * view.shoulder,
-      view.eye + offset.y,
-      g.position.z + offset.z + right.z * view.shoulder,
-    );
+    const frame = thirdPersonFrame({ x: g.position.x, z: g.position.z }, look.current, interior ? VIEW.interior : VIEW.exterior);
+    const target = new THREE.Vector3(frame.camera.x, frame.camera.y, frame.camera.z);
     // The first frame is already the settled arrival view: no swoop from a default camera.
     if (!snapped.current) {
       camera.position.copy(target);
@@ -157,8 +152,7 @@ export function PlayerController({
       camera.position.lerp(target, 1 - Math.pow(0.0005, delta));
     }
     // Look past the player's shoulder toward where they face, at eye height.
-    const ahead = cameraOffset(look.current.yaw, 0, -6);
-    camera.lookAt(g.position.x + ahead.x + right.x * view.shoulder, view.eye - 0.1, g.position.z + ahead.z + right.z * view.shoulder);
+    camera.lookAt(frame.target.x, frame.target.y, frame.target.z);
 
     if (import.meta.env.DEV) {
       (window as unknown as Record<string, unknown>).__nervixPlayer = {
@@ -190,20 +184,7 @@ export function PlayerController({
 
   return (
     <group ref={group} name="player" position={[spawn.x, 0, spawn.z]}>
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <capsuleGeometry args={[0.35, 0.9, 6, 12]} />
-        <meshStandardMaterial color="#3f6f8f" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 1.62, 0]} castShadow>
-        <sphereGeometry args={[0.26, 16, 16]} />
-        <meshStandardMaterial color="#e7b98f" roughness={0.6} />
-      </mesh>
-      {[-0.09, 0.09].map((x) => (
-        <mesh key={x} position={[x, 1.66, 0.22]}>
-          <sphereGeometry args={[0.035, 8, 8]} />
-          <meshStandardMaterial color="#2b2118" />
-        </mesh>
-      ))}
+      <Avatar palette={LOCAL_PALETTE} />
     </group>
   );
 }

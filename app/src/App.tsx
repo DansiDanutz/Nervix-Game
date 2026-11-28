@@ -11,8 +11,9 @@ import { GuidePanel } from "./ui/GuidePanel";
 import { AccessGate } from "./ui/AccessGate";
 import { InteriorCatalog } from "./ui/InteriorCatalog";
 import { TouchControls } from "./ui/TouchControls";
+import { SideMenu } from "./ui/SideMenu";
 import type { HouseDoor } from "./scene/HouseDoors";
-import { arrival, danggDoor, loadSliceLayout, near, STREET_SPAWN, TEST_BUILDER_DOOR, type Anchor, type Place, type SliceLayout } from "./scene/slice";
+import { arrival, danggDoor, loadSliceLayout, near, STREET_SPAWN, streetSpawn, testBuilderDoor, type Anchor, type Place, type SliceLayout } from "./scene/slice";
 import { usePresence } from "./net/presence";
 
 const SceneView = lazy(() => import("./scene/SceneView"));
@@ -38,13 +39,19 @@ function targetAt(place: Place, layout: SliceLayout | null, x: number, z: number
     return null;
   }
   if (near(layout.facadeDoor, x, z, 3.0)) return { kind: "venue", label: "OpenPoker" };
-  const t = TEST_BUILDER_DOOR.position;
-  if (near({ x: t[0], z: t[2] }, x, z, 2.8)) return { kind: "house", door: TEST_BUILDER_DOOR, label: TEST_BUILDER_DOOR.label };
+  const builder = testBuilderDoor(layout);
+  const t = builder.position;
+  if (near({ x: t[0], z: t[2] }, x, z, 2.8)) return { kind: "house", door: builder, label: builder.label };
   return null;
 }
 
+/** Walking this far from the arrival spawn ends the arrival shot (quest card opens). */
+const EXPLORE_DISTANCE = 1.0;
+/** Idle bottom hints fade after this long on arrival (ms). */
+const HINT_FADE_MS = 6000;
+
 function placeLabel(place: Place) {
-  if (place.kind === "plaza") return "Plaza · WASD to walk · drag to look · Q/R turn";
+  if (place.kind === "plaza") return "Plaza · WASD to walk · Shift to run · drag to look · Q/R turn";
   if (place.kind === "venue") return "OpenPoker salon · DanGG's house is in the right alcove · Esc returns to the plaza";
   return `${place.door.label} · Esc returns to the plaza`;
 }
@@ -58,7 +65,27 @@ export function App() {
   const [quest, setQuest] = useState<QuestProgress | null>(null);
   const [fps, setFps] = useState(0);
   const params = new URLSearchParams(window.location.search);
+  // FPS and presence diagnostics are for developers only: ?debug=1.
+  const debug = params.get("debug") === "1";
+  const [exploring, setExploring] = useState(false);
+  const [questPinned, setQuestPinned] = useState<boolean | null>(null);
+  const questOpen = questPinned ?? exploring;
   const [entered, setEntered] = useState(false);
+  // The bottom hints sit over the foreground compass-rose medallion: fade them after the first
+  // input or a few seconds, whichever comes first. Door prompts ("E / Enter ...") always show.
+  const [hintsSettled, setHintsSettled] = useState(false);
+  useEffect(() => {
+    if (!entered || hintsSettled) return;
+    const settle = () => setHintsSettled(true);
+    const timer = window.setTimeout(settle, HINT_FADE_MS);
+    window.addEventListener("keydown", settle);
+    window.addEventListener("pointerdown", settle);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("keydown", settle);
+      window.removeEventListener("pointerdown", settle);
+    };
+  }, [entered, hintsSettled]);
   const sceneMode = params.get("scene") === "full" ? "full" : "chunks";
   const [showAuth, setShowAuth] = useState(false);
   const [showMerchant, setShowMerchant] = useState(false);
@@ -66,25 +93,39 @@ export function App() {
   const [showAds, setShowAds] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [place, setPlace] = useState<Place>({ kind: "plaza" });
+  // A new place shows its name again; it fades on the next input or after HINT_FADE_MS.
+  const placeKey = place.kind === "house" ? `house:${place.door.id}` : place.kind;
+  useEffect(() => setHintsSettled(false), [placeKey]);
   const [layout, setLayout] = useState<SliceLayout | null>(null);
   const [layoutError, setLayoutError] = useState<string | null>(null);
   const [spawn, setSpawn] = useState<Anchor>(STREET_SPAWN);
   const [target, setTarget] = useState<Target | null>(null);
   const [teleport] = useState<{ x: number; z: number; key: number; yaw?: number } | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [arrivalError, setArrivalError] = useState<string | null>(null);
   const interior = place.kind === "house" ? place.door : null;
   const onMarkers = useCallback((m: Marker[]) => setMarkers(m), []);
+  // District markers were authored for the legacy plaza chunks: never shown outside the plaza,
+  // and not on top of the Blender arrival square that supersedes those chunks.
+  const districtMarkers = place.kind === "plaza" && !layout?.plaza ? markers : [];
 
   useEffect(() => {
-    loadSliceLayout().then(setLayout).catch((e: Error) => setLayoutError(e.message));
+    loadSliceLayout()
+      .then((l) => {
+        setLayout(l);
+        // Arrive where the Blender camera study put the street spawn, when exported.
+        setSpawn(streetSpawn(l));
+      })
+      .catch((e: Error) => setLayoutError(e.message));
   }, []);
 
   /** What the player can interact with from where they stand. */
   const onPosition = useCallback(
     (x: number, z: number) => {
       setTarget(targetAt(place, layout, x, z));
+      if (!exploring && Math.hypot(x - spawn.x, z - spawn.z) > EXPLORE_DISTANCE) setExploring(true);
     },
-    [place, layout],
+    [place, layout, exploring, spawn],
   );
 
   const go = useCallback(
@@ -101,6 +142,8 @@ export function App() {
       setAuthError(null);
       setSpawn(arrival(next, place, layout));
       setTarget(null);
+      // Interaction prompts belong to the place being left.
+      setNearby(null);
       setPlace(next);
     },
     [layout, place],
@@ -182,9 +225,10 @@ export function App() {
   return (
     <div className="app">
       {!entered && <AccessGate onEnter={() => setEntered(true)} />}
-      {entered && <Suspense fallback={null}>
+      {/* The scene mounts once the layout is known, so the first frame is the real arrival. */}
+      {entered && (layout || layoutError) && <Suspense fallback={null}>
         <SceneView
-          markers={place.kind === "plaza" ? markers : []}
+          markers={districtMarkers}
           onMarkers={onMarkers}
           onNearby={setNearby}
           onMove={sendMove}
@@ -199,28 +243,52 @@ export function App() {
           spawn={spawn}
           onEnterHouse={(door) => activate({ kind: "house", door, label: door.label })}
           onEnterVenue={() => activate({ kind: "venue", label: "OpenPoker" })}
+          onArrivalError={setArrivalError}
         />
       </Suspense>}
 
 
       {interior && <InteriorCatalog door={interior} />}
       {entered && (
-        <div className="place-hint" data-testid="place-hint" data-place={place.kind === "house" ? `house:${place.door.id}` : place.kind}>
-          {target ? `E / Enter or click · ${target.kind === "exit" ? "Return to the plaza" : `Enter ${target.label}`}` : placeLabel(place)}
+        // One stacked hint region: the place/controls hint and the privacy note never overlap.
+        <div className="hint-stack" data-testid="hint-stack">
+          <div className={`place-hint${hintsSettled && !target ? " is-faded" : ""}`} data-testid="place-hint" data-place={place.kind === "house" ? `house:${place.door.id}` : place.kind}>
+            {target ? `E / Enter or click · ${target.kind === "exit" ? "Return to the plaza" : `Enter ${target.label}`}` : placeLabel(place)}
+          </div>
+          {!interior && <div className={`controls-hint${hintsSettled ? " is-faded" : ""}`} data-testid="controls-hint">Merchant conversations are private</div>}
         </div>
       )}
       {entered && layoutError && <div className="app__notice" role="alert">{layoutError}</div>}
+      {entered && arrivalError && place.kind === "plaza" && <div className="app__notice" role="alert">{arrivalError}</div>}
+      {entered && layout && !layout.plaza && place.kind === "plaza" && (
+        <div className="app__notice" role="status" data-testid="arrival-missing">
+          Arrival square not exported yet (no runtime_layout.plaza in /slice/manifest.json): showing the legacy district.
+        </div>
+      )}
       {entered && target && (
         <TouchControls interior={target.kind === "exit"} canEnter={target.kind !== "exit"} onEnter={() => activate(target)} onExit={() => activate(target)} />
       )}
-      {entered && !interior && <Hud session={session ?? { userId: "", displayName: "", role: "player", demo: true }} nearby={nearby} seals={quest?.seals.length ?? 0} />}
+      {entered && !interior && <Hud
+          session={session ?? { userId: "", displayName: "", role: "player", demo: true }}
+          nearby={place.kind === "plaza" ? nearby : null}
+          seals={quest?.seals.length ?? 0}
+          questOpen={questOpen}
+          onToggleQuest={() => setQuestPinned(!questOpen)}
+        />}
 
       <div className="app__side" style={!entered || interior ? { display: "none" } : undefined}>
-        <div className="app__status" role="status">
-          {status === "connected" ? "demo API connected" : status === "connecting" ? "connecting…" : "API offline — blockout only"}
-          {" · fps "}{fps || "—"}{" · presence "}
-          {presence === "live" ? `live (${players.length})` : presence}
-        </div>
+        {debug ? (
+          <div className="app__status" role="status" data-testid="debug-status">
+            {status === "connected" ? "demo API connected" : status === "connecting" ? "connecting…" : "API offline — blockout only"}
+            {" · fps "}{fps || "—"}{" · presence "}
+            {presence === "live" ? `live (${players.length})` : presence}
+          </div>
+        ) : (
+          // Players only hear about the connection when something is wrong.
+          status === "offline" && <div className="app__status" role="status">API offline — blockout only</div>
+        )}
+        {authError && <div className="app__notice">{authError}</div>}
+        <SideMenu>
         {showAuth && (
           <AuthPanel
             onSignedIn={(s) => {
@@ -254,8 +322,6 @@ export function App() {
             District guide (G)
           </button>
         )}
-        {entered && showGuide && <GuidePanel markers={markers} onClose={() => setShowGuide(false)} />}
-        {authError && <div className="app__notice">{authError}</div>}
         {!showAds && session && (
           <button type="button" className="app__account" onClick={() => setShowAds(true)}>
             Advertising
@@ -264,6 +330,9 @@ export function App() {
         {showAds && session && <AdsPanel merchantId="mer_1" />}
         {session?.role === "admin" && <AdminPanel userId={session.userId} />}
         {propertyId && <AgentPanel propertyId={propertyId} agentName="Mira" />}
+        </SideMenu>
+        {/* G toggles the guide even while the menu is closed. */}
+        {entered && showGuide && <GuidePanel markers={districtMarkers} onClose={() => setShowGuide(false)} />}
       </div>
     </div>
   );

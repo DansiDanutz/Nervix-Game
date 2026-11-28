@@ -1,23 +1,20 @@
-import { useMemo } from "react";
 import { useGLTF, Html } from "@react-three/drei";
-import * as THREE from "three";
 import type { Anchor } from "./slice";
+import { useLitClone } from "./metalReflection";
+import { ARRIVAL_MATERIAL_GRADE } from "./materialGrade";
+import { useNearFade } from "./useNearFade";
+import { isDeliberateClick } from "./clickGuard";
 
 export const SALON_GLB = "/slice/nervix_openpoker_salon.glb";
 export const FACADE_GLB = "/slice/nervix_openpoker_facade.glb";
 
-function useShadowed(url: string) {
+/** Warm interior bounce: what the gold and brass reflect (the salon's cream stone and wood floor). */
+const REFLECT_SKY = "#f3dcb8";
+const REFLECT_GROUND = "#8a5a3c";
+
+function useShadowed(url: string, grade?: typeof ARRIVAL_MATERIAL_GRADE) {
   const { scene } = useGLTF(url);
-  return useMemo(() => {
-    const root = scene.clone(true);
-    root.traverse((o) => {
-      if ((o as THREE.Mesh).isMesh) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-      }
-    });
-    return root;
-  }, [scene]);
+  return useLitClone(scene, REFLECT_SKY, REFLECT_GROUND, grade);
 }
 
 /** A17 salon from Blender. Lighting approximates the Blender render: warm sun from the left windows. */
@@ -48,7 +45,9 @@ export function SalonScene({ exit, danggDoor }: { exit: Anchor; danggDoor: Ancho
 
 /** A16 facade from Blender, drawn exactly where Blender placed it (district frame). */
 export function FacadeModel({ door, onClickDoor }: { door: Anchor; onClickDoor: () => void }) {
-  const root = useShadowed(FACADE_GLB);
+  // The facade stands on the arrival square: same gold/plum correction as the square itself.
+  const root = useShadowed(FACADE_GLB, ARRIVAL_MATERIAL_GRADE);
+  const label = useNearFade<HTMLDivElement>(door.x, door.z);
   return (
     <group name="openpoker_facade">
       <primitive object={root} />
@@ -56,6 +55,7 @@ export function FacadeModel({ door, onClickDoor }: { door: Anchor; onClickDoor: 
         position={[door.x, 1.4, door.z]}
         onClick={(e) => {
           e.stopPropagation();
+          if (!isDeliberateClick(e.delta)) return;
           onClickDoor();
         }}
         userData-door="openpoker">
@@ -63,7 +63,7 @@ export function FacadeModel({ door, onClickDoor }: { door: Anchor; onClickDoor: 
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       <Html position={[door.x, 4.2, door.z]} center distanceFactor={11}>
-        <div className="door-label" data-testid="label-openpoker">
+        <div ref={label} className="door-label" data-testid="label-openpoker">
           <strong>OpenPoker</strong>
           <small>open platform venue · E or click</small>
         </div>
