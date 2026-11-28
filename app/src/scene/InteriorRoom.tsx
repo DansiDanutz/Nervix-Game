@@ -54,7 +54,12 @@ export function InteriorRoom({ door }: { door: HouseDoor }) {
       {/* furnishings differ per house */}
       {isDangg ? (
         <group>
-          {/* curved wood reception, left */}
+          {/* clear central stone aisle toward the stairs */}
+          <mesh position={[0, 0.015, -0.6]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={[2.4, 6.2]} />
+            <meshStandardMaterial color="#cfc6b4" roughness={0.9} />
+          </mesh>
+          {/* curved walnut reception, left */}
           <mesh position={[-3.4, 0.55, 0.4]} rotation={[0, 0.5, 0]} castShadow>
             <cylinderGeometry args={[1.5, 1.5, 1.1, 24, 1, false, 0, Math.PI]} />
             <meshStandardMaterial color="#6b4423" roughness={0.55} />
@@ -63,18 +68,26 @@ export function InteriorRoom({ door }: { door: HouseDoor }) {
             <cylinderGeometry args={[1.55, 1.55, 0.08, 24, 1, false, 0, Math.PI]} />
             <meshStandardMaterial color="#c9a441" roughness={0.35} metalness={0.45} />
           </mesh>
-          {/* recessed walnut wheel on a pedestal, left of the aisle */}
-          <mesh position={[-1.5, 0.5, -1.2]} castShadow>
-            <cylinderGeometry args={[0.35, 0.45, 1.0, 16]} />
-            <meshStandardMaterial color="#3a2a1e" roughness={0.7} />
+          {/* roulette table: stout pedestal, broad walnut rim, recessed wheel, brass spindle */}
+          <mesh position={[-2.2, 0.45, -1.6]} castShadow>
+            <cylinderGeometry args={[0.42, 0.55, 0.9, 16]} />
+            <meshStandardMaterial color="#3a2a1e" roughness={0.75} />
           </mesh>
-          <mesh position={[-1.5, 1.35, -1.2]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.62, 0.12, 12, 28]} />
-            <meshStandardMaterial color="#4a2f1c" roughness={0.5} />
+          <mesh position={[-2.2, 0.95, -1.6]} castShadow>
+            <cylinderGeometry args={[1.05, 1.05, 0.16, 28]} />
+            <meshStandardMaterial color="#5a3a22" roughness={0.45} />
           </mesh>
-          <mesh position={[-1.5, 1.35, -1.2]} rotation={[Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[0.52, 24]} />
-            <meshStandardMaterial color="#2c1b10" roughness={0.8} />
+          <mesh position={[-2.2, 1.04, -1.6]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.92, 0.14, 12, 32]} />
+            <meshStandardMaterial color="#4a2f1c" roughness={0.4} />
+          </mesh>
+          <mesh position={[-2.2, 1.045, -1.6]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.78, 32]} />
+            <meshStandardMaterial color="#241610" roughness={0.85} />
+          </mesh>
+          <mesh position={[-2.2, 1.18, -1.6]}>
+            <cylinderGeometry args={[0.05, 0.05, 0.3, 10]} />
+            <meshStandardMaterial color="#c9a441" roughness={0.3} metalness={0.7} />
           </mesh>
           {/* green card-table alcove, right */}
           <mesh position={[3.6, 0.75, 0.2]} castShadow>
