@@ -2,12 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { api, ApiError, type House } from "../net/api";
 import type { HouseDoor } from "../scene/HouseDoors";
 import { HouseEditor } from "./HouseEditor";
+import { ProductCard, useSelectedProduct } from "./ProductCard";
+import { findCardListing, productSelection, type CardListing } from "./ProductCardModel";
 
 /**
  * Screen-space house panel. Identity, welcome, decor and catalog are resolved
  * server-side from the property binding at runtime; nothing is baked into the
  * scene. Edit controls appear only when the server says canEdit, and every
- * write is re-checked by the server anyway.
+ * write is re-checked by the server anyway. Clicking a product in the room
+ * (ProductDisplays onSelect) or a listing name here opens a read-only card.
  */
 export function InteriorCatalog({ door, onHouse }: { door: HouseDoor; onHouse?: (h: House | null) => void }) {
   const [house, setHouse] = useState<House | null>(null);
@@ -37,11 +40,16 @@ export function InteriorCatalog({ door, onHouse }: { door: HouseDoor; onHouse?: 
     return load();
   }, [load]);
 
+  // A selection never outlives the house it was made in.
+  useEffect(() => () => productSelection.clear(), [door.propertyId]);
+  const selectedId = useSelectedProduct(door.propertyId);
+
   const profile = house?.profile;
   const featured = new Set(profile?.display.featuredListingIds ?? []);
   const listings = [...(house?.listings ?? [])].sort((a, b) => Number(featured.has(b.id)) - Number(featured.has(a.id)));
   const showApp = profile?.display.showApp !== false;
   const accent = profile?.decor.accent ?? door.trim;
+  const selected = findCardListing((house?.listings ?? []) as readonly CardListing[], selectedId);
 
   return (
     <div className="catalog-overlay" aria-label="House panel" data-testid="house-panel" style={{ borderColor: accent }}>
@@ -59,13 +67,16 @@ export function InteriorCatalog({ door, onHouse }: { door: HouseDoor; onHouse?: 
       <ul>
         {listings.map((o) => (
           <li key={o.id} className={featured.has(o.id) ? "is-featured" : undefined}>
-            <span>{o.name}</span>
+            <button type="button" className="catalog-overlay__view" onClick={() => productSelection.select(door.propertyId, o.id)} aria-label={`View ${o.name}`}>
+              {o.name}
+            </button>
             <span>
               {(o.priceMinor / 100).toFixed(2)} {o.currency}
             </span>
           </li>
         ))}
       </ul>
+      {selected && <ProductCard listing={selected} onClose={productSelection.clear} />}
       {showApp && house?.appUrl && (
         <a href={house.appUrl} target="_blank" rel="noopener noreferrer">
           Open app

@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { api, ApiError, type House } from "../net/api";
+import { HouseEditorListings } from "./HouseEditorListings";
+import type { EditableListing } from "./listingEditModel";
 
 const THEMES = ["salon", "workshop", "gallery", "cafe"] as const;
 
@@ -12,8 +14,6 @@ export function HouseEditor({ house, onSaved }: { house: House; onSaved: () => v
   const [websiteUrl, setWebsiteUrl] = useState(p.websiteUrl ?? "");
   const [showApp, setShowApp] = useState(p.display.showApp !== false);
   const [featured, setFeatured] = useState<string[]>(p.display.featuredListingIds ?? []);
-  const [listingName, setListingName] = useState("");
-  const [listingPrice, setListingPrice] = useState("");
   const [status, setStatus] = useState<string | null>(null);
 
   const report = (e: unknown) => setStatus(e instanceof ApiError ? `Refused: ${e.code}` : "Could not save");
@@ -29,24 +29,6 @@ export function HouseEditor({ house, onSaved }: { house: House; onSaved: () => v
         websiteUrl: websiteUrl.trim() || null,
       });
       setStatus("Saved");
-      onSaved();
-    } catch (err) {
-      report(err);
-    }
-  };
-
-  const addListing = async (e: FormEvent) => {
-    e.preventDefault();
-    const priceMinor = Math.round(Number(listingPrice) * 100);
-    if (!listingName.trim() || !Number.isFinite(priceMinor) || priceMinor < 0) {
-      setStatus("Enter a name and a price");
-      return;
-    }
-    try {
-      await api.addHouseListing(house.propertyId, { name: listingName.trim(), priceMinor, currency: "EUR" });
-      setListingName("");
-      setListingPrice("");
-      setStatus("Listing added");
       onSaved();
     } catch (err) {
       report(err);
@@ -93,11 +75,8 @@ export function HouseEditor({ house, onSaved }: { house: House; onSaved: () => v
         </fieldset>
         <button type="submit" data-testid="edit-save">Save house</button>
       </form>
-      <form onSubmit={addListing} className="house-editor__row">
-        <input aria-label="New listing name" value={listingName} onChange={(e) => setListingName(e.target.value)} placeholder="New listing" />
-        <input aria-label="Price in EUR" value={listingPrice} onChange={(e) => setListingPrice(e.target.value)} placeholder="EUR" inputMode="decimal" />
-        <button type="submit">Add</button>
-      </form>
+      <h3>Your listings</h3>
+      <HouseEditorListings propertyId={house.propertyId} listings={house.listings as readonly EditableListing[]} report={setStatus} onSaved={onSaved} />
       {status && <p className="house-editor__status" role="status" data-testid="edit-status">{status}</p>}
     </section>
   );

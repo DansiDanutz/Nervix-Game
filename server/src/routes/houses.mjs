@@ -8,6 +8,24 @@ import { newOffering, offeringPatch } from "./offering-input.mjs";
 import { readMe } from "./me.mjs";
 
 /**
+ * An owner's listing input the server refuses (invalid_category, invalid_slot,
+ * invalid_active, invalid_price, name_required, unsafe_app_url, no_catalogue).
+ * The dispatcher sends a named non-access error as HTTP 400 `{ error: name }`,
+ * so the code becomes the error's name.
+ */
+export class ListingInputError extends Error {
+  constructor(code) {
+    super(`listing refused: ${code}`);
+    this.name = code;
+    this.code = code;
+  }
+}
+
+function refuseListing(code) {
+  throw new ListingInputError(code);
+}
+
+/**
  * `display` with featured ids narrowed to `allowedIds` (a new object; input untouched).
  * Ids stored before P1 may point at another house's listings; nobody sees those.
  */
@@ -70,9 +88,9 @@ export function createHouseRoutes(ctx) {
     "POST /houses/:propertyId/listings": async (body, params) => {
       const edit = await houseEditContext(ctx, params, params.propertyId);
       authorizeHouseEdit(edit);
-      if (!edit.house.builderId) return { error: "no_catalogue" };
+      if (!edit.house.builderId) refuseListing("no_catalogue");
       const made = newOffering(body, edit.house.builderId);
-      if (made.error) return made;
+      if (made.error) refuseListing(made.error);
       await db.store.addOffering(made.offering);
       await db.store.addAudit({ actorId: edit.user.id, action: "house.listing.add", subject: edit.house.propertyId, detail: { listing: made.offering.id } });
       return { offering: made.offering };
@@ -82,7 +100,7 @@ export function createHouseRoutes(ctx) {
       const edit = await houseEditContext(ctx, params, params.propertyId);
       authorizeHouseEdit(edit);
       const { patch, error } = offeringPatch(body);
-      if (error) return { error };
+      if (error) refuseListing(error);
       const updated = await db.store.updateOffering({ offeringId: params.listingId, builderId: edit.house.builderId, patch });
       if (!updated) throw new AccessError("not your listing", "cross_owner");
       await db.store.addAudit({ actorId: edit.user.id, action: "house.listing.edit", subject: edit.house.propertyId, detail: { listing: params.listingId } });
