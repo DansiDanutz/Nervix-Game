@@ -1,0 +1,5 @@
+# A16 · Casino entrance assembly
+
+Attach A06-casino-v2 first and A01-plaza second. A06 controls the architecture; A01 controls its place in the square.
+
+Generate A16, a 3:2 construction reference sheet of the exact casino entrance from A06, in the warm, finely painted Mediterranean 3D adventure-game style of A01. Show the SAME entrance three times: a large straight front elevation, a three-quarter view from the fountain at adult eye level, and a narrow side cutaway through the threshold and arch. Keep floor level, step count, door height and arch proportions consistent across views. Show precisely where the plum double doors sit INSIDE the thick stone reveal, where the gold trim meets the arch, how the cornice returns into the side wall, and how the stair landing meets the plaza paving. Keep the single centered spade emblem. Include one unobtrusive adult silhouette for scale. Neutral warm background, clear contact shadows, all edges in frame. No floating pieces, exploded view, text, extra emblems or redesign. Deliver as A16-casino-entrance-assembly.png.
