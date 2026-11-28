@@ -4,17 +4,27 @@ import { createHash } from "node:crypto";
 import { verificationEmail } from "../email.mjs";
 import { newCodeRecord, verifyCode, normalizeEmail, isValidEmail } from "../auth.mjs";
 import { cookie } from "./http.mjs";
+import { validateDisplayName } from "../display-name.mjs";
 
 const SESSION_DAYS = 7;
 const DAY_MS = 86400000;
 const SESSION_MAX_AGE_S = 604800;
+
+/** The name stored when none is given or the given one fails the policy (C9); never the email's local part. */
+export const NEUTRAL_DISPLAY_NAME = "Traveler";
+
+/** C9: every write path stores only a name that passes the display-name policy. */
+const storableName = (raw) => {
+  const verdict = validateDisplayName(raw);
+  return verdict.ok ? verdict.name : NEUTRAL_DISPLAY_NAME;
+};
 
 export function createSessionRoutes({ db }) {
   return {
     "POST /session": async (body) => {
       const session = {
         userId: body.userId ?? `demo_${Math.random().toString(36).slice(2, 10)}`,
-        displayName: body.displayName ?? "Traveler",
+        displayName: storableName(body.displayName),
         role: "player",
         demo: true,
       };
@@ -27,7 +37,7 @@ export function createSessionRoutes({ db }) {
       const email = normalizeEmail(body.email);
       if (!isValidEmail(email)) return { error: "invalid_email" };
       const userId = `usr_${createHash("sha256").update(email).digest("hex").slice(0, 12)}`;
-      const displayName = String(body.displayName ?? email.split("@")[0]).slice(0, 40);
+      const displayName = storableName(body.displayName);
       await db.store.createUser({ id: userId, email, displayName, verified: false });
       const record = newCodeRecord(email);
       await db.store.createCode(record);

@@ -118,7 +118,7 @@ test("a player in house prop_dangg is absent from plaza snapshots", withPresence
   await settle();
   assert.equal(b.frames.length, before, "house moves and emotes never reach the plaza");
 
-  const seen = nextRoom(b, (v) => selfIn(v, wb.id)?.seq === 1);
+  const seen = nextRoom(b, (v) => selfIn(v, wb.id)?.x === 2);
   send(b, { type: "move", x: 2, z: 2, seq: 1 });
   assert.deepEqual(ids(await seen), [wb.id]);
 
@@ -144,8 +144,9 @@ test("a place change to an unknown place is rejected and the player leaves the o
 test("moves are clamped to the bounds of the player's own place", withPresence({}, async (url) => {
   const ws = await open(url);
   const { id } = await join(ws);
+  // Every room starts the player at x = 0, so the first frame with x != 0 carries the clamped move.
   const moveTo = async (x, z, seq) => {
-    const moved = nextRoom(ws, (v) => selfIn(v, id)?.seq === seq);
+    const moved = nextRoom(ws, (v) => (selfIn(v, id)?.x ?? 0) !== 0);
     send(ws, { type: "move", x, z, seq });
     return selfIn(await moved, id);
   };
@@ -169,8 +170,8 @@ test("moves carry yaw, normalised to (-pi, pi]", withPresence({}, async (url) =>
   let seq = 0;
   for (const [yaw, want] of steps) {
     seq += 1;
-    const moved = nextRoom(ws, (v) => selfIn(v, id)?.seq === seq);
-    send(ws, { type: "move", x: 0, z: 0, yaw, seq });
+    const moved = nextRoom(ws, (v) => selfIn(v, id)?.x === seq);
+    send(ws, { type: "move", x: seq, z: 0, yaw, seq });
     assert.ok(Math.abs(selfIn(await moved, id).yaw - want) < 1e-9, `yaw ${yaw} -> ${want}`);
   }
   ws.close();
@@ -181,7 +182,7 @@ test("a stale or repeated sequence number is dropped", withPresence({}, async (u
   await join(watcher);
   const ws = await open(url);
   const w = await join(ws);
-  const seenAt = (seq) => nextRoom(watcher, (v) => selfIn(v, w.id)?.seq === seq);
+  const seenAt = (x) => nextRoom(watcher, (v) => selfIn(v, w.id)?.x === x); // C9: seq is no longer broadcast
   let seen = seenAt(5);
   send(ws, { type: "move", x: 5, z: 0, seq: 5 });
   await seen;
@@ -194,8 +195,8 @@ test("a stale or repeated sequence number is dropped", withPresence({}, async (u
   send(ws, { type: "move", x: 7, z: 0, seq: 1.5 });
   await sync(ws);
   await settle();
-  const states = roomFrames(watcher).flatMap((f) => f.players.filter((p) => p.id === w.id)).map((p) => [p.x, p.seq]);
-  assert.deepEqual(states.filter(([, seq]) => seq > 0), [[5, 5], [6, 6]], "dropped moves never reach the room");
+  const states = roomFrames(watcher).flatMap((f) => f.players.filter((p) => p.id === w.id)).map((p) => p.x);
+  assert.deepEqual(states.filter((x) => x > 0), [5, 6], "dropped moves never reach the room");
   closeAll(watcher, ws);
 }));
 
@@ -287,7 +288,7 @@ test("guests get a contract preset too", withPresence({}, async (url) => {
 test("the public player view exposes only public fields", withPresence({ resolveSession: fakeResolver }, async (url) => {
   const ws = await open(url, { cookie: DANGG_COOKIE });
   const w = await join(ws);
-  assert.deepEqual(Object.keys(w.players[0]).sort(), ["district", "id", "name", "place", "preset", "seq", "x", "yaw", "z"]);
+  assert.deepEqual(Object.keys(w.players[0]).sort(), ["id", "name", "place", "preset", "x", "yaw", "z"]);
   assert.doesNotMatch(JSON.stringify(w), /usr_|demo_/);
   ws.close();
 }));

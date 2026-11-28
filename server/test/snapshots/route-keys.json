@@ -12,6 +12,7 @@
   "GET /houses/:propertyId",
   "GET /me",
   "GET /me/avatar",
+  "GET /me/privacy",
   "GET /merchants/:merchantId/apps",
   "GET /merchants/:merchantId/knowledge",
   "GET /merchants/:merchantId/products",
@@ -62,5 +63,6 @@
   "POST /progress",
   "POST /session",
   "POST /webhooks/nervixpay",
-  "PUT /me/avatar"
+  "PUT /me/avatar",
+  "PUT /me/privacy"
 ]

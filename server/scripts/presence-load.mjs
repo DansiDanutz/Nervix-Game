@@ -91,7 +91,7 @@ const round = (v, digits = 1) => (v === null ? null : Math.round(v * 10 ** digit
 function openBot(url, place, stats) {
   return new Promise((resolve) => {
     const ws = new WebSocket(url);
-    const sentAt = new Map(); // seq -> ms
+    const sentAt = new Map(); // "x,z" -> ms (C9: seq is no longer broadcast, so the echo is matched by position)
     const bot = { ws, id: null, seq: 0, x: 0, z: 0, sentAt };
     const started = performance.now();
     const timer = setTimeout(() => {
@@ -117,9 +117,13 @@ function openBot(url, place, stats) {
 
 function recordEcho(bot, delta, stats) {
   const self = delta.players.find((p) => p.id === bot.id);
-  if (!self || !bot.sentAt.has(self.seq)) return;
-  stats.echoMs.push(performance.now() - bot.sentAt.get(self.seq));
-  for (const seq of bot.sentAt.keys()) if (seq <= self.seq) bot.sentAt.delete(seq);
+  const key = self ? `${self.x},${self.z}` : null;
+  if (!key || !bot.sentAt.has(key)) return;
+  stats.echoMs.push(performance.now() - bot.sentAt.get(key));
+  for (const sent of [...bot.sentAt.keys()]) {
+    bot.sentAt.delete(sent); // insertion order: everything up to the echoed move is answered
+    if (sent === key) break;
+  }
 }
 
 function step(bot) {
@@ -127,7 +131,7 @@ function step(bot) {
   bot.x = clamp(bot.x + (Math.random() - 0.5) * 2, PLAZA.minX, PLAZA.maxX);
   bot.z = clamp(bot.z + (Math.random() - 0.5) * 2, PLAZA.minZ, PLAZA.maxZ);
   bot.seq += 1;
-  bot.sentAt.set(bot.seq, performance.now());
+  bot.sentAt.set(`${bot.x},${bot.z}`, performance.now());
   bot.ws.send(JSON.stringify({ type: "move", x: bot.x, z: bot.z, yaw: 0, seq: bot.seq }));
 }
 

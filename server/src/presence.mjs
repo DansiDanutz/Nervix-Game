@@ -1,9 +1,11 @@
 /**
  * Shared presence, one room per place (C3).
  *
- * Public presence only: an opaque handle, a display name, the place, a
- * position, yaw, the last move sequence and the avatar preset id. Merchant
- * conversations are never broadcast here.
+ * Public presence only, exactly {id (the opaque handle), name, preset, place,
+ * x, z, yaw} (C9, presence-privacy.mjs). `name` is the display name, or
+ * "Anonymous" when the user hides it, is anonymous, or holds a name the
+ * display-name policy refuses; an anonymous user's preset is derived from the
+ * handle. Merchant conversations are never broadcast here.
  *
  * Identity is session-bound (S4). On `join` the server reads the
  * `nervix_session` cookie of the upgrade request through `resolveSession(req)`,
@@ -47,19 +49,17 @@ import { WebSocketServer } from "ws";
 import {
   DEFAULT_PLACE, boundsFor, clampTo, createPlaceValidator, isNewerSeq, isPlaceShaped, normalizeYaw,
 } from "./presence-places.mjs";
-import { GUEST_NAME, connectionIdentity, connectionPreset } from "./presence-identity.mjs";
-import { originAllowed, parseOrigins } from "./presence-origin.mjs";
+import { GUEST_NAME, connectionIdentity, publicIdentity, sessionName } from "./presence-identity.mjs";
+import { publicView } from "./presence-privacy.mjs";
+import { originAllowed } from "./presence-origin.mjs";
 import { DEFAULT_MAX_QUEUE, DEFAULT_PLACE_LIMIT, createWorkQueue } from "./presence-queue.mjs";
-import {
-  DEFAULT_HEARTBEAT_MS, DEFAULT_MAX_BUFFERED_BYTES, DEFAULT_TICK_MS,
-  createLiveness, createRoomBatcher, createTokenBucket, deliver, presenceSettingsFromEnv,
-} from "./presence-transport.mjs";
+import { createLiveness, createRoomBatcher, createTokenBucket, deliver } from "./presence-transport.mjs";
 import { moderateSay, sayFrame } from "./presence-chat.mjs";
-import { DEFAULT_SAY_ADDRESS_LIMIT, DEFAULT_SAY_LIMIT, DEFAULT_SAY_USER_LIMIT, createSayLimits } from "./presence-chat-limits.mjs";
+import { createSayLimits } from "./presence-chat-limits.mjs";
+import { every, presenceOptions } from "./presence-config.mjs";
+import { createRooms } from "./presence-rooms.mjs";
 
-const MAX_PLAYERS = 200;
 const HANDLE_BYTES = 6;
-const DEFAULT_DISTRICT = "central-plaza";
 const DEFAULT_EMOTE = "wave";
 const OPEN = 1;
 const CLOSE_TRY_AGAIN_LATER = 1013;
@@ -67,25 +67,16 @@ const CLOSE_INTERNAL_ERROR = 1011;
 const CLOSE_POLICY_VIOLATION = 1008;
 const CLOSE_SESSION_ENDED = 4001;
 const HTTP_FORBIDDEN = 403;
-const MS_PER_SECOND = 1000;
-const REAL_CLOCK = Object.freeze({
-  now: () => Date.now(),
-  setInterval: (fn, ms) => setInterval(fn, ms),
-  clearInterval: (handle) => clearInterval(handle),
-});
 
 export { GUEST_NAME };
 export const HANDLE_PATTERN = /^p_[0-9a-f]{12}$/;
-export const DEFAULT_MAX_PAYLOAD = 4 * 1024;
-export const DEFAULT_ROOM_CAPACITY = MAX_PLAYERS;
-export const DEFAULT_MAX_CONNECTIONS = MAX_PLAYERS * 2;
-export const DEFAULT_MOVE_LIMIT = Object.freeze({ burst: 20, perSecond: 20 });
-export const DEFAULT_EMOTE_LIMIT = Object.freeze({ burst: 3, perSecond: 1 });
-export const DEFAULT_SESSION_RECHECK_MS = 60 * MS_PER_SECOND;
+export {
+  DEFAULT_EMOTE_LIMIT, DEFAULT_MAX_CONNECTIONS, DEFAULT_MAX_PAYLOAD, DEFAULT_MOVE_LIMIT, DEFAULT_ROOM_CAPACITY,
+  DEFAULT_SESSION_RECHECK_MS,
+} from "./presence-config.mjs";
 export { DEFAULT_MAX_QUEUE, DEFAULT_PLACE_LIMIT, originAllowed };
 
 // Lowercase slugs only: no underscore, so an id like usr_x cannot be echoed.
-const DISTRICT_SLUG = /^[a-z][a-z0-9-]{0,39}$/;
 const EMOTE_SLUG = /^[a-z][a-z0-9-]{0,19}$/;
 
 const newHandle = () => `p_${randomBytes(HANDLE_BYTES).toString("hex")}`;
@@ -93,85 +84,27 @@ const slugOr = (value, pattern, fallback) => (typeof value === "string" && patte
 const finiteOr = (value, fallback) => (typeof value === "number" && Number.isFinite(value) ? value : fallback);
 const isPlainObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
-const noSession = async () => null;
-const noPreset = async () => null;
-const logError = (error) => console.error(`presence: ${error?.message ?? error}`);
-
 /** The refused place, echoed back to its sender only when it is place-shaped (never a user id). */
 const refusal = (message, requested) => ({ message, place: isPlaceShaped(requested) ? requested : null });
 
-/** Runs `fn` every `ms` on `clock`; returns the stop function. Real timers never hold the process open. */
-function every(clock, ms, fn) {
-  const handle = clock.setInterval(fn, ms);
-  handle?.unref?.();
-  return () => clock.clearInterval(handle);
-}
-
-/** Public view of a player record: the handle, never the user id. */
-const publicView = ({ handle, name, district, place, preset, x, z, yaw, seq }) =>
-  ({ id: handle, name, district, place, preset, x, z, yaw, seq });
-
 export function attachPresence(server, options = {}) {
-  const fromEnv = presenceSettingsFromEnv(process.env);
   const {
-    path = "/presence",
-    resolveSession = noSession,
-    resolvePreset = noPreset,
-    isKnownProperty,
-    onError = logError,
-    maxPayload = DEFAULT_MAX_PAYLOAD,
-    maxConnections = fromEnv.maxConnections ?? DEFAULT_MAX_CONNECTIONS,
-    roomCapacity = fromEnv.roomCapacity ?? DEFAULT_ROOM_CAPACITY,
-    tickMs = fromEnv.tickMs ?? DEFAULT_TICK_MS,
-    heartbeatMs = fromEnv.heartbeatMs ?? DEFAULT_HEARTBEAT_MS,
-    maxBufferedBytes = DEFAULT_MAX_BUFFERED_BYTES,
-    clock = REAL_CLOCK,
-    placeBounds = {},
-    moveLimit = DEFAULT_MOVE_LIMIT,
-    emoteLimit = DEFAULT_EMOTE_LIMIT,
-    placeLimit = DEFAULT_PLACE_LIMIT,
-    maxQueue = DEFAULT_MAX_QUEUE,
-    sayLimit = DEFAULT_SAY_LIMIT,
-    sayUserLimit = DEFAULT_SAY_USER_LIMIT,
-    sayAddressLimit = DEFAULT_SAY_ADDRESS_LIMIT,
-    sessionRecheckMs = DEFAULT_SESSION_RECHECK_MS,
-    allowedOrigins = parseOrigins(process.env.PRESENCE_ALLOWED_ORIGINS),
-  } = options;
+    path, resolveSession, resolvePreset, resolvePrivacy, isKnownProperty, onError, maxPayload, maxConnections, roomCapacity,
+    tickMs, heartbeatMs, maxBufferedBytes, clock, placeBounds, moveLimit, emoteLimit, placeLimit, maxQueue,
+    sayLimit, sayUserLimit, sayAddressLimit, sessionRecheckMs, allowedOrigins,
+  } = presenceOptions(options);
 
   const verifyClient = ({ req }, done) => (originAllowed(req, allowedOrigins) ? done(true) : done(false, HTTP_FORBIDDEN));
   const wss = new WebSocketServer({ server, path, maxPayload, verifyClient });
   const players = new Map(); // ws -> record (userId stays server-side)
+  const refreshers = new Map(); // ws -> () => Promise, re-reads that socket's session and privacy
   const validatePlace = createPlaceValidator({ isKnownProperty, onError, now: clock.now });
   const batch = createRoomBatcher();
   const liveness = createLiveness();
   const sharedSays = createSayLimits({ perUser: sayUserLimit, perAddress: sayAddressLimit }, clock.now);
-  let tick = 0;
+  const { roomOf, roomSize, broadcastRoom, flush } = createRooms({ players, batch, publicView, maxBufferedBytes });
 
   const send = (ws, type, payload = {}) => deliver(ws, JSON.stringify({ type, ...payload }), maxBufferedBytes);
-
-  const roomOf = (place) => [...players.values()].filter((r) => r.place === place).map(publicView);
-  const roomSize = (place) => [...players.values()].filter((r) => r.place === place).length;
-
-  /** Sends one frame to every joined socket in `place`, and nobody else. */
-  const broadcastRoom = (place, type, payload = {}) => {
-    const data = JSON.stringify({ type, ...payload });
-    for (const [client, record] of players) {
-      if (record.place === place) deliver(client, data, maxBufferedBytes);
-    }
-  };
-
-  /** One tick: a delta per room that changed, built from the players' current records. */
-  const flush = () => {
-    tick += 1;
-    for (const { place, changed, left } of batch.drain()) {
-      const members = [...players.values()].filter((r) => r.place === place);
-      const present = new Set(members.map((r) => r.handle));
-      const touched = new Set(changed);
-      const upserts = members.filter((r) => touched.has(r.handle)).map(publicView);
-      const gone = left.filter((handle) => !present.has(handle));
-      if (upserts.length > 0 || gone.length > 0) broadcastRoom(place, "delta", { place, tick, players: upserts, left: gone });
-    }
-  };
 
   /** Terminates sockets silent for a whole heartbeat; pings the rest. */
   const heartbeat = () => {
@@ -198,21 +131,48 @@ export function attachPresence(server, options = {}) {
 
   const leave = (ws) => {
     liveness.forget(ws);
+    refreshers.delete(ws);
     const record = players.get(ws);
     if (players.delete(ws) && record.place) batch.leave(record.place, record.handle);
   };
 
-  /** Closes a signed-in socket once its session no longer resolves to the same user. */
+  /**
+   * C9: rebuilds a connected player's shown name and preset from the current
+   * session and privacy settings, so hiding a name takes effect without a
+   * reconnect. Only name and preset change; the room hears it on the next tick.
+   */
+  const reapplyIdentity = async (ws, user) => {
+    const before = players.get(ws);
+    if (!before) return;
+    const shown = await publicIdentity({ userId: user.id, name: sessionName(user) }, before.handle, { resolvePreset, resolvePrivacy, onError });
+    const self = players.get(ws);
+    if (!self || (self.name === shown.name && self.preset === shown.preset)) return;
+    players.set(ws, Object.freeze({ ...self, name: shown.name, preset: shown.preset }));
+    if (self.place) batch.touch(self.place, self.handle);
+  };
+
+  /** Closes a signed-in socket once its session no longer resolves to the same user; otherwise re-applies its identity. */
+  const recheckSession = async (ws, req, userId) => {
+    try {
+      const user = await resolveSession(req);
+      if (user?.id !== userId) return ws.close(CLOSE_SESSION_ENDED, "session ended");
+      await reapplyIdentity(ws, user);
+    } catch (error) {
+      onError(new Error(`session recheck failed (${error?.message ?? error}); keeping the socket`));
+    }
+  };
+
   const watchSession = (ws, req, userId) => {
-    if (!userId || !(sessionRecheckMs > 0)) return () => {};
-    return every(clock, sessionRecheckMs, async () => {
-      try {
-        const user = await resolveSession(req);
-        if (user?.id !== userId) ws.close(CLOSE_SESSION_ENDED, "session ended");
-      } catch (error) {
-        onError(new Error(`session recheck failed (${error?.message ?? error}); keeping the socket`));
-      }
-    });
+    if (!userId) return () => {};
+    refreshers.set(ws, Object.freeze({ userId, run: () => recheckSession(ws, req, userId) }));
+    if (!(sessionRecheckMs > 0)) return () => {};
+    return every(clock, sessionRecheckMs, () => recheckSession(ws, req, userId));
+  };
+
+  /** Re-applies identity for every socket of `userId` now (call after PUT /me/privacy or /me/avatar). Never throws. */
+  wss.refreshUser = async (userId) => {
+    const runs = [...refreshers.values()].filter((r) => r.userId === userId).map((r) => r.run());
+    await Promise.all(runs);
   };
 
   /** The place a client asked for: the default when absent, null when unknown. */
@@ -254,15 +214,12 @@ export function attachPresence(server, options = {}) {
       if (ws.readyState !== OPEN || players.has(ws)) return;
       if (roomSize(place) >= roomCapacity) return send(ws, "error", { message: "room full" });
       const handle = newHandle();
-      const preset = await connectionPreset(userId, handle, resolvePreset, onError);
+      const shown = await publicIdentity({ userId, name }, handle, { resolvePreset, resolvePrivacy, onError });
       if (ws.readyState !== OPEN) return;
       // Re-checked after the last await: concurrent joins may have filled the room.
       if (roomSize(place) >= roomCapacity) return send(ws, "error", { message: "room full" });
-      const record = Object.freeze({
-        handle, userId, name, preset, place,
-        district: slugOr(message.district, DISTRICT_SLUG, DEFAULT_DISTRICT),
-        x: 0, z: 0, yaw: 0, seq: 0,
-      });
+      // `name` is the shown name (C9); seq stays server-side for stale-move checks.
+      const record = Object.freeze({ handle, userId, name: shown.name, preset: shown.preset, place, x: 0, z: 0, yaw: 0, seq: 0 });
       players.set(ws, record);
       batch.touch(place, handle);
       stopWatch = watchSession(ws, req, userId);
@@ -312,7 +269,6 @@ export function attachPresence(server, options = {}) {
         ...clampTo(boundsFor(self.place, placeBounds), x, z),
         yaw: normalizeYaw(message.yaw, self.yaw),
         seq: message.seq ?? self.seq,
-        district: slugOr(message.district, DISTRICT_SLUG, self.district),
       }));
       batch.touch(self.place, self.handle);
     };

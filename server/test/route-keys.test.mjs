@@ -1,5 +1,5 @@
 /**
- * Black-box route-key snapshot: every one of the 64 "METHOD /path" keys is
+ * Black-box route-key snapshot: every one of the 66 "METHOD /path" keys is
  * served by the real server (in-memory mode, no database), and unknown keys
  * still get the router's 404. Runs the same before and after the F0 split.
  */
@@ -26,9 +26,9 @@ test.before(async () => {
 });
 test.after(() => server?.stop());
 
-test("the snapshot lists exactly 64 unique route keys", () => {
-  assert.equal(KEYS.length, 64);
-  assert.equal(new Set(KEYS).size, 64);
+test("the snapshot lists exactly 66 unique route keys", () => {
+  assert.equal(KEYS.length, 66);
+  assert.equal(new Set(KEYS).size, 66);
 });
 
 test("every snapshot route key is served (never the router 404)", async () => {

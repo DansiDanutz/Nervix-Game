@@ -1,0 +1,44 @@
+/* PrivacySettings (C9). Uses the shared panel tokens from styles.css with local fallbacks. */
+.privacy-settings__options {
+  border: 0;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.privacy-settings__legend {
+  font-size: 0.75rem;
+  color: var(--ink-soft, #5a4a3a);
+  margin-bottom: 0.25rem;
+}
+
+.privacy-settings__option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.45rem;
+  align-items: start;
+  font-size: 0.8rem;
+  color: var(--ink, #2b2118);
+  cursor: pointer;
+}
+
+.privacy-settings__option input {
+  margin-top: 0.15rem;
+}
+
+.privacy-settings__option input:focus-visible {
+  outline: 2px solid var(--plum, #5b3a5e);
+  outline-offset: 1px;
+}
+
+.privacy-settings__label {
+  font-weight: 600;
+}
+
+.privacy-settings__hint {
+  grid-column: 2;
+  font-size: 0.72rem;
+  color: var(--ink-soft, #5a4a3a);
+}

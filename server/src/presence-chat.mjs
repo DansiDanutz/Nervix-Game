@@ -31,6 +31,9 @@ export function cleanSay(text) {
     .trim();
 }
 
+/** True when the text carries a link: a scheme, www. or a bare domain on a common top-level domain. */
+export const hasLink = (text) => LINK.test(text) || BARE_DOMAIN.test(text);
+
 const rejected = (reason) => Object.freeze({ ok: false, reason });
 
 /** `{ ok: true, text }` with the cleaned line, or `{ ok: false, reason }`. */
@@ -38,7 +41,7 @@ export function moderateSay(raw) {
   const text = cleanSay(raw);
   if (text.length === 0) return rejected("empty");
   if ([...text].length > SAY_MAX_CHARS) return rejected("too long");
-  if (LINK.test(text) || BARE_DOMAIN.test(text) || isDenied(text)) return rejected("moderated");
+  if (hasLink(text) || isDenied(text)) return rejected("moderated");
   return Object.freeze({ ok: true, text });
 }
 

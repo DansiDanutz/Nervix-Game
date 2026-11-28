@@ -3,11 +3,16 @@
  * so `node --test` loads this module as is. The hook lives in ./presence.
  */
 
-/** A player as the server broadcasts it. `id` is an opaque per-connection handle, never a user id. */
+/**
+ * A player as the server broadcasts it: exactly server/src/presence-privacy.mjs PUBLIC_FIELDS
+ * (id, name, preset, place, x, z, yaw). `id` is an opaque per-connection handle, never a user id.
+ * `yaw` is the look yaw (forward = (-sin yaw, -cos yaw), cameraRig.moveVector).
+ */
 export interface RemotePlayer {
   id: string;
   name: string;
-  district: string;
+  /** Legacy, no longer broadcast (C9). Never read it. */
+  district?: string;
   /** Shared contract place id (plaza, openpoker, prop_*). */
   place: string;
   /** Avatar preset id from shared/contracts/avatar-presets.json. */
@@ -15,8 +20,8 @@ export interface RemotePlayer {
   x: number;
   z: number;
   yaw: number;
-  /** The sender's last accepted move sequence (0 before the first move). */
-  seq: number;
+  /** Legacy, no longer broadcast (C9): samples arrive in order on the socket. Never read it. */
+  seq?: number;
 }
 
 /**

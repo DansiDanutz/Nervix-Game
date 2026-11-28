@@ -129,13 +129,14 @@ test("no frame sent to anyone contains a usr_ or demo_ id", withPresence({ resol
   closeAll(watcher, guest);
 }));
 
-test("a client-sent district must be a plain slug", withPresence({}, async (url) => {
+test("a client-sent district is never broadcast (C9 dropped the legacy field)", withPresence({}, async (url) => {
   const ws = await open(url);
   const w = await join(ws, { district: "Bad District!" });
-  assert.equal(w.players[0].district, "central-plaza");
+  assert.equal(w.players[0].district, undefined);
   const moved = nextRoom(ws, (v) => selfIn(v, w.id)?.x === 1);
   ws.send(JSON.stringify({ type: "move", x: 1, z: 1, district: "merchant-quarter" }));
-  assert.equal(selfIn(await moved, w.id).district, "merchant-quarter");
+  assert.equal(selfIn(await moved, w.id).district, undefined);
+  assert.doesNotMatch(ws.frames.join("\n"), /merchant-quarter|Bad District/);
   ws.close();
 }));
 

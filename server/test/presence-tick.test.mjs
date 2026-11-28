@@ -45,7 +45,7 @@ test("moves inside one tick reach others as one delta with the latest state", wi
   await sync(watcher);
   const sent = deltas(watcher).slice(before);
   assert.equal(sent.length, 1, "one delta per tick");
-  assert.deepEqual(sent[0].players.map((p) => [p.id, p.x, p.seq]), [[wm.id, 5, 5]]);
+  assert.deepEqual(sent[0].players.map((p) => [p.id, p.x]), [[wm.id, 5]]);
   assert.deepEqual(sent[0].left, []);
   assert.equal(sent[0].place, "plaza");
   closeAll(watcher, mover);
@@ -98,7 +98,7 @@ test("a delta's players carry exactly the public fields", withClock({}, async (u
   clock.advance(TICK);
   await sync(watcher);
   const [player] = deltas(watcher).at(-1).players;
-  assert.deepEqual(Object.keys(player).sort(), ["district", "id", "name", "place", "preset", "seq", "x", "yaw", "z"]);
+  assert.deepEqual(Object.keys(player).sort(), ["id", "name", "place", "preset", "x", "yaw", "z"]);
   assert.deepEqual(Object.keys(deltas(watcher).at(-1)).sort(), ["left", "place", "players", "tick", "type"]);
   closeAll(watcher, mover);
 }));
@@ -109,7 +109,7 @@ test("moves over the rate are dropped, and the bucket refills with time", withCl
   await sync(mover);
   clock.advance(TICK);
   await sync(watcher);
-  assert.deepEqual([selfIn(deltas(watcher).at(-1), wm.id).x, selfIn(deltas(watcher).at(-1), wm.id).seq], [3, 3], "only the burst of 3 applied");
+  assert.equal(selfIn(deltas(watcher).at(-1), wm.id).x, 3, "only the burst of 3 applied");
 
   clock.advance(1000 - TICK); // one second of refill at 10/s, capped at the burst
   await sync(watcher);

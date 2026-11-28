@@ -7,8 +7,8 @@ import { PostgresStore } from "../src/store.mjs";
 const API = JSON.parse(readFileSync(new URL("./snapshots/store-api.json", import.meta.url), "utf8"));
 const methods = () => Object.getOwnPropertyNames(PostgresStore.prototype).filter((n) => n !== "constructor").sort();
 
-test("PostgresStore keeps the same 61 public methods (59 from F0 plus C5 getAvatar and setAvatarPreset)", () => {
-  assert.equal(API.length, 61);
+test("PostgresStore keeps the same 63 public methods (59 from F0, C5 getAvatar and setAvatarPreset, C9 getPresenceSettings and setPresenceSettings)", () => {
+  assert.equal(API.length, 63);
   assert.deepEqual(methods(), API);
 });
 

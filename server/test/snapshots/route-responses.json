@@ -983,10 +983,11 @@
   },
   {
     "label": "listing add invalid",
-    "status": 200,
+    "status": 400,
     "setCookie": null,
     "body": {
-      "error": "name_required"
+      "error": "name_required",
+      "message": "listing refused: name_required"
     }
   },
   {
