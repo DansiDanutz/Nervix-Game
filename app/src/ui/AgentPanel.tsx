@@ -6,6 +6,7 @@ interface Turn {
   text: string;
 }
 
+// Merchant replies are captions only (decision D8): no browser or system voice.
 export function AgentPanel({ propertyId, agentName }: { propertyId: string; agentName: string }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
@@ -29,22 +30,6 @@ export function AgentPanel({ propertyId, agentName }: { propertyId: string; agen
       setError(e instanceof Error ? e.message : "request failed");
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function speak(text: string) {
-    try {
-      const res = await api.speak(propertyId, text);
-      if (res.audioUrl) {
-        void new Audio(res.audioUrl).play();
-        return;
-      }
-    } catch {
-      /* fall through to the browser voice */
-    }
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(utterance);
     }
   }
 
@@ -74,11 +59,6 @@ export function AgentPanel({ propertyId, agentName }: { propertyId: string; agen
         {turns.map((turn, i) => (
           <p key={i} className={turn.role === "player" ? "turn turn--player" : "turn"}>
             {turn.text}
-            {turn.role === "agent" && (
-              <button type="button" className="turn__speak" onClick={() => void speak(turn.text)} aria-label="Read aloud">
-                Read aloud
-              </button>
-            )}
           </p>
         ))}
         {busy && <p className="panel__hint">…</p>}
